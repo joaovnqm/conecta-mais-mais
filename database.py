@@ -1,5 +1,4 @@
 import sqlite3
-from cryptography.fernet import Fernet
 
 connection = sqlite3.connect("conecta++.db")
 cursor = connection.cursor()
@@ -10,8 +9,11 @@ def login(email, password):
     cursor.execute("SELECT password FROM users WHERE email = ?", (email,))
     account_password = str(cursor.fetchone()[0])
     if str(password) == account_password:
+        cursor.execute("SELECT name FROM users WHERE email = ?", (email,))
+        name = str(cursor.fetchone()[0])
         print("Login realizado com sucesso!")
-        return True
+        return name
+    
     else: 
         print("Login não realizado.")
 
@@ -27,10 +29,3 @@ def register(name, email, password, recovery_word):
         cursor.execute("INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (None, name, email, password, recovery_word, None, None, None, None, None, None))
         connection.commit()
         print("Cadastro realizado!")
-
-register("João Macêdo", "joao@gmail.com", 12345678, "Eu")
-
-accounts = [
-    ("Wellison", "123"),
-    ("Joao", "123")
-]
