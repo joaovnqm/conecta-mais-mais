@@ -1,0 +1,71 @@
+from textual.app import ComposeResult
+from textual.screen import Screen
+from textual.widgets import Static, Button
+from textual.containers import Center, Vertical
+
+MAIN_PAGE_CSS = """
+Screen {
+    align: center middle;
+    background: $surface;
+}
+
+#main-box { 
+    width: 60;
+    height: auto;
+    border: round $primary;
+    padding: 1 2;
+    background: $panel;
+}
+
+#main-title {
+    content-align: center middle;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.main-subtitle{
+    content-align: center middle;
+    color: $text-muted;
+    margin-bottom: 1;
+}
+
+Button {
+    width: 100%;
+    margin-top: 1;
+}
+"""
+
+
+class MainPageView(Screen):
+    CSS = MAIN_PAGE_CSS
+
+    def __init__(self, user_name: str):
+        super().__init__()
+        self.user_name = user_name
+
+    def compose(self) -> ComposeResult:
+        with Center():
+            with Vertical(id="main-box"):
+                yield Static("Main Page", id="main-title")
+                yield Static(
+                    f"Bem-vindo(a), {self.user_name}!",
+                    classes="main-subtitle"
+                )
+
+                yield Button("Meu perfil", id="button-profile")
+                yield Button("Meus eventos", id="button_events")
+                yield Button("Meus amigos", id="button_friends")
+                yield Button("Logout", id="button_logout", variant="error")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "button_profile":
+            self.notify("TELA DE PERFIL EM CONSTRUÇÃO")
+
+        elif event.button.id == "button_events":
+            self.notify("TELA DE MEUS EVENTOS EM CONSTRUÇÃO")
+
+        elif event.button.id == "button_friends":
+            self.notify("TELA DE MEUS AMIGOS EM CONSTRUÇÃO")
+
+        elif event.button.id == "button_logout":
+            self.app.pop_screen()
