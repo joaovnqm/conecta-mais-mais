@@ -81,6 +81,20 @@ class LoginView(Screen):
                 yield Button("Entrar", id="button_login", variant="primary")
                 yield Button("Cadastrar", id="button_register_view")
 
+    def reset_form(self) -> None:
+        email_input = self.query_one("#email", Input)
+        password_input = self.query_one("#password", Input)
+        message_label = self.query_one("#message", Label)
+
+        email_input.value = ""
+        password_input.value = ""
+
+        email_input.remove_class("invalid")
+        password_input.remove_class("invalid")
+
+        message_label.update("")
+        email_input.focus()
+
     def _set_invalid_if_needed(self, input_widget: Input, is_invalid: bool) -> None:
         if is_invalid:
             input_widget.add_class("invalid")

@@ -52,7 +52,7 @@ class MainPageView(Screen):
                     classes="main-subtitle"
                 )
 
-                yield Button("Meu perfil", id="button-profile")
+                yield Button("Meu perfil", id="button_profile")
                 yield Button("Meus eventos", id="button_events")
                 yield Button("Meus amigos", id="button_friends")
                 yield Button("Logout", id="button_logout", variant="error")
@@ -69,3 +69,7 @@ class MainPageView(Screen):
 
         elif event.button.id == "button_logout":
             self.app.pop_screen()
+
+            current_screen = self.app.screen
+            if hasattr(current_screen, "reset_form"):
+                current_screen.reset_form()
