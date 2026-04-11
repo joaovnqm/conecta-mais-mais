@@ -2,7 +2,7 @@ import re
 
 
 def valid_name(name: str) -> bool:
-    return len(name.strip()) >= 3
+    return len(name.strip()) >= 2
 
 
 def valid_email(email: str) -> bool:
