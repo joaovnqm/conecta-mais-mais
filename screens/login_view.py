@@ -2,10 +2,10 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical
-from database import login
-from validations import valid_email, valid_password
+from services.users import login
+from services.validations import valid_email, valid_password
 from screens.register_view import RegisterView
-from screens.main_page import MainPageView
+from screens.main_page_view import MainPageView
 
 
 AUTH_CSS = """
@@ -134,10 +134,10 @@ class LoginView(Screen):
             email = self.query_one("#email", Input).value
             password = self.query_one("#password", Input).value
 
-            success, message, name = login(email, password)
+            success, message, name, user_id = login(email, password)
 
             if success:
-                self.app.push_screen(MainPageView(name))
+                self.app.push_screen(MainPageView(name, user_id))
             else:
                 response.update(message)
 

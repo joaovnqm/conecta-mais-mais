@@ -9,7 +9,7 @@ Screen {
     background: $surface;
 }
 
-#main-box { 
+#main_box { 
     width: 60;
     height: auto;
     border: round $primary;
@@ -17,13 +17,13 @@ Screen {
     background: $panel;
 }
 
-#main-title {
+#main_title {
     content-align: center middle;
     text-style: bold;
     margin-bottom: 1;
 }
 
-.main-subtitle{
+.main_subtitle{
     content-align: center middle;
     color: $text-muted;
     margin-bottom: 1;
@@ -39,17 +39,18 @@ Button {
 class MainPageView(Screen):
     CSS = MAIN_PAGE_CSS
 
-    def __init__(self, user_name: str):
+    def __init__(self, user_id: int, user_name: str):
         super().__init__()
         self.user_name = user_name
+        self.user_id = user_id
 
     def compose(self) -> ComposeResult:
         with Center():
-            with Vertical(id="main-box"):
-                yield Static("Main Page", id="main-title")
+            with Vertical(id="main_box"):
+                yield Static("Main Page", id="main_title")
                 yield Static(
                     f"Bem-vindo(a), {self.user_name}!",
-                    classes="main-subtitle"
+                    classes="main_subtitle"
                 )
 
                 yield Button("Meu perfil", id="button_profile")

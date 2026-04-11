@@ -2,8 +2,9 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical
-from database import register
-from validations import valid_name, valid_email, valid_password, valid_recovery_word
+from screens.interests_view import InterestsView
+from services.users import register
+from services.validations import valid_name, valid_email, valid_password, valid_recovery_word
 
 AUTH_CSS = """
 Screen {
@@ -11,7 +12,7 @@ Screen {
     background: $surface;
 }
 
-#auth-box {
+#auth_box {
     width: 52;
     height: auto;
     border: round $primary;
@@ -52,45 +53,37 @@ Button {
 }
 """
 
-
 class RegisterView(Screen):
     CSS = AUTH_CSS
 
     def compose(self) -> ComposeResult:
         with Center():
-            with Vertical(id="auth-box"):
+            with Vertical(id="auth_box"):
                 yield Static("Conecta++", id="title")
                 yield Static("Crie sua conta", classes="subtitle")
-
                 yield Input(
                     placeholder="Digite seu nome...",
                     id="name"
                 )
-
                 yield Input(
                     placeholder="Digite seu e-mail...",
                     id="email"
                 )
-
                 yield Input(
                     placeholder="Digite sua senha...",
                     id="password",
                     password=True
                 )
-
                 yield Input(
                     placeholder="Confirme sua senha...",
                     id="re_password",
                     password=True
                 )
-
                 yield Input(
                     placeholder="Digite sua palavra de recuperação...",
                     id="recovery_word"
                 )
-
                 yield Label("", id="message")
-
                 yield Button("Cadastrar", id="button_register", variant="primary")
                 yield Button("Voltar", id="button_back")
 
@@ -108,7 +101,7 @@ class RegisterView(Screen):
             name_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(name_input, len(value) < 3)
+        self._set_invalid_if_needed(name_input, not valid_name(value))
 
     def _validate_email_field(self) -> None:
         email_input = self.query_one("#email", Input)
@@ -191,11 +184,11 @@ class RegisterView(Screen):
                 self.query_one("#re_password", Input).add_class("invalid")
                 return
 
-            success, message = register(name, email, password, recovery_word)
+            success, message, user_id = register(name, email, password, recovery_word)
             response.update(message)
 
             if success:
-                self.app.pop_screen()
+                self.app.push_screen(InterestsView(user_id, name))
 
         elif event.button.id == "button_back":
             self.app.pop_screen()
