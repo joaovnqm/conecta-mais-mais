@@ -1,5 +1,6 @@
 import sqlite3
 from validations import valid_email, valid_password, valid_recovery_word
+from security import hash_value, verify_value
 
 connection = sqlite3.connect("conecta++.db")
 cursor = connection.cursor()
@@ -21,7 +22,7 @@ def login(email, password):
 
     name, saved_password = user
 
-    if password != saved_password:
+    if not verify_value(password, saved_password):
         return False, "Senha incorreta.", None
 
     return True, "Login realizado com sucesso!", name
@@ -32,8 +33,8 @@ def register(name, email, password, recovery_word):
     email = email.strip().lower()
     recovery_word = recovery_word.strip()
 
-    if len(name) < 3:
-        return False, "O nome precisa ter pelo menos 3 caracteres."
+    if len(name) < 2:
+        return False, "O nome precisa ter pelo menos 2 caracteres."
 
     if not valid_email(email):
         return False, "Esse e-mail é inválido!"
@@ -53,9 +54,12 @@ def register(name, email, password, recovery_word):
     if email_registered:
         return False, "Esse e-mail já foi cadastrado. Prossiga para o login."
 
+    password_hash = hash_value(password)
+    recovery_word_hash = hash_value(recovery_word)
+
     cursor.execute(
         "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (None, name, email, password, recovery_word,
+        (None, name, email, password_hash, recovery_word_hash,
          None, None, None, None, None, None)
     )
     connection.commit()
