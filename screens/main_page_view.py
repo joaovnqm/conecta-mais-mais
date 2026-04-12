@@ -59,6 +59,7 @@ class MainPageView(Screen):
                 yield Button("Logout", id="button_logout", variant="error")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        from screens.login_view import LoginView
         if event.button.id == "button_profile":
             self.notify("TELA DE PERFIL EM CONSTRUÇÃO")
 
@@ -69,7 +70,7 @@ class MainPageView(Screen):
             self.notify("TELA DE MEUS AMIGOS EM CONSTRUÇÃO")
 
         elif event.button.id == "button_logout":
-            self.app.pop_screen()
+            self.app.push_screen(LoginView())
 
             current_screen = self.app.screen
             if hasattr(current_screen, "reset_form"):

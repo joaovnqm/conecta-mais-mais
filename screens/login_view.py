@@ -137,7 +137,7 @@ class LoginView(Screen):
             success, message, name, user_id = login(email, password)
 
             if success:
-                self.app.push_screen(MainPageView(name, user_id))
+                self.app.push_screen(MainPageView(user_id, name))
             else:
                 response.update(message)
 
