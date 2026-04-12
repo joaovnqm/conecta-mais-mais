@@ -12,17 +12,24 @@ cursor.execute("CREATE TABLE IF NOT EXISTS users_interests(user_id INTEGER, inte
     "FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE, FOREIGN KEY (interest_id) REFERENCES interests(interest_id) " \
     "ON DELETE CASCADE)")
 
-# Função que checa o id do interesse com base no nome de entrada da função.
-def index_interest(interest):
+# Função que checa o id do interesse com base no nome de entrada da função, caso o interesse não exista, ele o cria e o insere na tabela.
+def index_interest(interest: str):
     cursor.execute(
         "SELECT interest_id FROM interests WHERE name = ?",
-        (str(interest),)
+        (interest,)
     )
     result = cursor.fetchone()
-    if result is None:
-        return None
     
-    return result[0]
+    if result:
+        return result[0]
+    
+    cursor.execute(
+        "INSERT INTO interests (name) VALUES (?)",
+        (interest,)
+    )
+    connection.commit()
+    
+    return cursor.lastrowid
 
 # Função que adiciona interesses ao perfil do usuário.
 def add_interests(user_id, interest):
@@ -43,8 +50,13 @@ def add_interests(user_id, interest):
 
     return "Interesse(s) adicionado(s) com sucesso!", True
 
+# Função que checa os interesses de um usuário.
+def check_interests(user_id) -> tuple:
+    cursor.execute(
+        "SELECT * FROM users_interests WHERE interest_id = ?",
+        (user_id)
+        )
+    user = cursor.fetchmany()
+    user_interests = user
 
-"""
-cursor.execute("INSERT INTO interests(interest_id, name) VALUES (1, 'Inteligência Artificial'), (2, 'Engenharia de Software'), "
-    "(3, 'Cibersegurança'), (4, 'Empreendedorismo'), (5, 'Ciência de Dados')")
-"""
+    return user_interests

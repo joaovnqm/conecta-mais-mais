@@ -4,7 +4,7 @@ from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical
 from screens.interests_view import InterestsView
 from services.users import register
-from services.validations import valid_name, valid_email, valid_password, valid_recovery_word
+from services.validations import valid_name_users, valid_email, valid_password, valid_recovery_word
 
 AUTH_CSS = """
 Screen {
@@ -101,7 +101,7 @@ class RegisterView(Screen):
             name_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(name_input, not valid_name(value))
+        self._set_invalid_if_needed(name_input, not valid_name_users(value))
 
     def _validate_email_field(self) -> None:
         email_input = self.query_one("#email", Input)

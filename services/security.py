@@ -1,6 +1,4 @@
-import hashlib
-import hmac
-import secrets
+import hashlib, hmac, secrets
 
 ITERATIONS = 200_000
 

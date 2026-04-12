@@ -1,12 +1,12 @@
 import sqlite3
-from services.validations import valid_name, valid_email, valid_password, valid_recovery_word
+from services.validations import valid_name_users, valid_email, valid_password, valid_recovery_word
 from services.security import hash_value, verify_value
 
 connection = sqlite3.connect("conecta++.db")
 connection.execute("PRAGMA foreign_keys = ON")
 cursor = connection.cursor()
 cursor.execute("CREATE TABLE IF NOT EXISTS users(user_id INTEGER PRIMARY KEY ASC AUTOINCREMENT, name NOT NULL, " \
-                "email NOT NULL, password NOT NULL, recovery_word NOT_NULL)")
+                "email NOT NULL, password NOT NULL, recovery_word NOT NULL)")
 
 def login(email, password):
     email = email.strip().lower()
@@ -18,7 +18,7 @@ def login(email, password):
     user = cursor.fetchone()
 
     if user is None:
-        return False, "Usuário não encontrado.", None
+        return False, "Usuário não encontrado.", None, None
 
     name, saved_password, user_id = user
 
@@ -32,8 +32,8 @@ def register(name, email, password, recovery_word):
     email = email.strip().lower()
     recovery_word = recovery_word.strip()
 
-    if not valid_name(name):
-        return False, "O nome precisa ter pelo menos 2 caracteres."
+    if not valid_name_users(name):
+        return False, "O nome precisa ter pelo menos 2 caracteres e não pode conter números."
 
     if not valid_email(email):
         return False, "Esse e-mail é inválido!"

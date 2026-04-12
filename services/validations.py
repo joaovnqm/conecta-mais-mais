@@ -1,7 +1,13 @@
 import re
+from datetime import datetime
 
-def valid_name(name: str) -> bool:
-    return len(name.strip()) >= 2
+def valid_name_users(name: str) -> bool:
+    pattern = r'^[A-Za-zÀ-ÿ ]{2,}$'
+    return re.fullmatch(pattern, name.strip()) is not None
+
+def valid_name_events(name: str) -> bool:
+    pattern = r'^[A-Za-zÀ-ÿ0-9 ]{2,}$'
+    return re.fullmatch(pattern, name.strip()) is not None
 
 def valid_email(email: str) -> bool:
     pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
@@ -13,4 +19,18 @@ def valid_password(password: str) -> bool:
 
 def valid_recovery_word(recovery_word: str) -> bool:
     pattern = r'^[A-Za-z]+$'
-    return re.fullmatch(pattern, recovery_word.strip()) is not None
+    return re.fullmatch(pattern, recovery_word) is not None
+
+def valid_date(date: str) -> bool:
+    try:
+        datetime.strptime(date, "%d-%m-%Y")
+        return True
+    except ValueError:
+        return False
+
+def valid_hour(hour: str) -> bool:
+    try:
+        datetime.strptime(hour, "%H:%M")
+        return True
+    except ValueError:
+        return False

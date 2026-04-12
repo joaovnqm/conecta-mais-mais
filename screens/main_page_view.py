@@ -2,6 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
+from screens.events_view import EventsView
 
 MAIN_PAGE_CSS = """
 Screen {
@@ -54,7 +55,7 @@ class MainPageView(Screen):
                 )
 
                 yield Button("Meu perfil", id="button_profile")
-                yield Button("Meus eventos", id="button_events")
+                yield Button("Eventos", id="button_events")
                 yield Button("Meus amigos", id="button_friends")
                 yield Button("Logout", id="button_logout", variant="error")
 
@@ -64,7 +65,7 @@ class MainPageView(Screen):
             self.notify("TELA DE PERFIL EM CONSTRUÇÃO")
 
         elif event.button.id == "button_events":
-            self.notify("TELA DE MEUS EVENTOS EM CONSTRUÇÃO")
+            self.app.push_screen(EventsView(self.user_id, self.user_name))
 
         elif event.button.id == "button_friends":
             self.notify("TELA DE MEUS AMIGOS EM CONSTRUÇÃO")
