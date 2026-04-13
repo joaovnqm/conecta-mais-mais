@@ -33,16 +33,16 @@ def register(name, email, password, recovery_word):
     recovery_word = recovery_word.strip()
 
     if not valid_name_users(name):
-        return False, "O nome precisa ter pelo menos 2 caracteres e não pode conter números."
+        return False, "O nome precisa ter pelo menos 2 caracteres e não pode conter números.", None
 
     if not valid_email(email):
-        return False, "Esse e-mail é inválido!"
+        return False, "Esse e-mail é inválido!", None
 
     if not valid_password(password):
-        return False, "Essa senha é inválida!"
+        return False, "Essa senha é inválida!", None
 
     if not valid_recovery_word(recovery_word):
-        return False, "Esse campo é inválido."
+        return False, "Esse campo é inválido.", None
 
     cursor.execute(
         "SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)",
