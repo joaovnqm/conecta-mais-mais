@@ -1,5 +1,5 @@
 import sqlite3
-from services.validations import valid_name_users, valid_email, valid_password, valid_recovery_word
+from services.validations import valid_name_users, valid_email, valid_password, valid_recovery_word, password_error_message, recovery_word_error_message
 from services.security import hash_value, verify_value
 
 connection = sqlite3.connect("conecta++.db")
@@ -23,7 +23,7 @@ def login(email, password):
     name, saved_password, user_id = user
 
     if not verify_value(password, saved_password):
-        return False, "Senha incorreta.", None
+        return False, "Senha incorreta.", None, None
 
     return True, "Login realizado com sucesso!", name, user_id
 
@@ -33,16 +33,18 @@ def register(name, email, password, recovery_word):
     recovery_word = recovery_word.strip()
 
     if not valid_name_users(name):
-        return False, "O nome precisa ter pelo menos 2 caracteres e não pode conter números."
+        return False, "O nome precisa ter pelo menos 2 caracteres e não pode conter números.", None
 
     if not valid_email(email):
-        return False, "Esse e-mail é inválido!"
+        return False, "Esse e-mail é inválido!", None
 
-    if not valid_password(password):
-        return False, "Essa senha é inválida!"
+    password_messsage = password_error_message(password)
+    if password_messsage is not None:
+        return False, password_messsage, None
 
-    if not valid_recovery_word(recovery_word):
-        return False, "Esse campo é inválido."
+    recovery_word_message = recovery_word_error_message(recovery_word)
+    if recovery_word_message is not None:
+        return False, recovery_word_message, None
 
     cursor.execute(
         "SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)",

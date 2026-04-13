@@ -1,9 +1,10 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input, Label
-from textual.containers import Center, Vertical
+from textual.containers import Center, Vertical, Horizontal
+
 from services.users import login
-from services.validations import valid_email, valid_password
+from services.validations import valid_email, valid_password, password_error_message
 from screens.register_view import RegisterView
 from screens.main_page_view import MainPageView
 
@@ -53,6 +54,28 @@ Button {
     margin-top: 1;
     color: $warning;
 }
+
+#password-row {
+    width: 100%;
+    height: auto;
+    margin-top: 1;
+}
+
+#password-row Input {
+    width: 1fr;
+    margin-top: 0;
+}
+
+#toggle_password {
+    width: 12;
+    min-width: 12;
+    margin-top: 0;
+    margin-left: 1;
+}
+
+#password-row Button {
+    margin-top: 0;
+}
 """
 
 
@@ -70,11 +93,13 @@ class LoginView(Screen):
                     id="email"
                 )
 
-                yield Input(
-                    placeholder="Digite sua senha...",
-                    id="password",
-                    password=True
-                )
+                with Horizontal(id="password-row"):
+                    yield Input(
+                        placeholder="Digite sua senha...",
+                        id="password",
+                        password=True
+                    )
+                    yield Button("Mostrar", id="toggle_password")
 
                 yield Label("", id="message")
 
@@ -94,6 +119,13 @@ class LoginView(Screen):
 
         message_label.update("")
         email_input.focus()
+
+    def _toggle_password_visibility(self) -> None:
+        password_input = self.query_one("#password", Input)
+        toggle_button = self.query_one("#toggle_password", Button)
+
+        password_input.password = not password_input.password
+        toggle_button.label = "Mostrar" if password_input.password else "Ocultar"
 
     def _set_invalid_if_needed(self, input_widget: Input, is_invalid: bool) -> None:
         if is_invalid:
@@ -119,6 +151,7 @@ class LoginView(Screen):
             password_input.remove_class("invalid")
             return
 
+        error_message = password_error_message(value)
         self._set_invalid_if_needed(password_input, not valid_password(value))
 
     def on_input_changed(self, event: Input.Changed) -> None:
@@ -129,6 +162,9 @@ class LoginView(Screen):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         response = self.query_one("#message", Label)
+
+        if event.button.id == "toggle_password":
+            self._toggle_password_visibility()
 
         if event.button.id == "button_login":
             email = self.query_one("#email", Input).value

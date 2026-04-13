@@ -1,10 +1,18 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Static, Button, Input, Label
-from textual.containers import Center, Vertical
+from textual.widgets import Static, Button, Input
+from textual.containers import Center, Vertical, Horizontal
+
 from screens.interests_view import InterestsView
 from services.users import register
-from services.validations import valid_name_users, valid_email, valid_password, valid_recovery_word
+from services.validations import (
+    valid_name_users,
+    valid_email,
+    valid_recovery_word,
+    password_error_message,
+    recovery_word_error_message,
+)
+
 
 AUTH_CSS = """
 Screen {
@@ -47,11 +55,40 @@ Button {
 }
 
 #message {
-    height: 2;
+    width: 100%;
+    height: auto;
+    min-height: 1;
     margin-top: 1;
     color: $warning;
 }
+
+#password-row,
+#re-password-row {
+    width: 100%;
+    height: auto;
+    margin-top: 1;
+}
+
+#password-row Input,
+#re-password-row Input {
+    width: 1fr;
+    margin-top: 0;
+}
+
+#toggle_password,
+#toggle_re_password {
+    width: 12;
+    min-width: 12;
+    margin-top: 0;
+    margin-left: 1;
+}
+
+#password-row Button,
+#re-password-row Button {
+    margin-top: 0;
+}
 """
+
 
 class RegisterView(Screen):
     CSS = AUTH_CSS
@@ -61,29 +98,40 @@ class RegisterView(Screen):
             with Vertical(id="auth_box"):
                 yield Static("Conecta++", id="title")
                 yield Static("Crie sua conta", classes="subtitle")
+
                 yield Input(
                     placeholder="Digite seu nome...",
                     id="name"
                 )
+
                 yield Input(
                     placeholder="Digite seu e-mail...",
                     id="email"
                 )
-                yield Input(
-                    placeholder="Digite sua senha...",
-                    id="password",
-                    password=True
-                )
-                yield Input(
-                    placeholder="Confirme sua senha...",
-                    id="re_password",
-                    password=True
-                )
+
+                with Horizontal(id="password-row"):
+                    yield Input(
+                        placeholder="Digite sua senha...",
+                        id="password",
+                        password=True
+                    )
+                    yield Button("Mostrar", id="toggle_password")
+
+                with Horizontal(id="re-password-row"):
+                    yield Input(
+                        placeholder="Confirme sua senha...",
+                        id="re_password",
+                        password=True
+                    )
+                    yield Button("Mostrar", id="toggle_re_password")
+
                 yield Input(
                     placeholder="Digite sua palavra de recuperação...",
                     id="recovery_word"
                 )
-                yield Label("", id="message")
+
+                yield Static("", id="message")
+
                 yield Button("Cadastrar", id="button_register", variant="primary")
                 yield Button("Voltar", id="button_back")
 
@@ -121,7 +169,8 @@ class RegisterView(Screen):
             password_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(password_input, not valid_password(value))
+        error_message = password_error_message(value)
+        self._set_invalid_if_needed(password_input, error_message is not None)
 
     def _validate_re_password_field(self) -> None:
         password_input = self.query_one("#password", Input)
@@ -141,16 +190,41 @@ class RegisterView(Screen):
 
     def _validate_recovery_word_field(self) -> None:
         recovery_word_input = self.query_one("#recovery_word", Input)
+        response = self.query_one("#message", Static)
         value = recovery_word_input.value.strip()
 
         if not value:
             recovery_word_input.remove_class("invalid")
+            response.update("")
             return
+
+        recovery_word_message = recovery_word_error_message(value)
+
+        if recovery_word_message is None:
+            recovery_word_input.remove_class("invalid")
+            response.update("")
+        else:
+            recovery_word_input.add_class("invalid")
+            response.update(recovery_word_message)
 
         self._set_invalid_if_needed(
             recovery_word_input,
             not valid_recovery_word(value)
         )
+
+    def _toggle_password_visibility(self) -> None:
+        password_input = self.query_one("#password", Input)
+        toggle_button = self.query_one("#toggle_password", Button)
+
+        password_input.password = not password_input.password
+        toggle_button.label = "Mostrar" if password_input.password else "Ocultar"
+
+    def _toggle_re_password_visibility(self) -> None:
+        re_password_input = self.query_one("#re_password", Input)
+        toggle_button = self.query_one("#toggle_re_password", Button)
+
+        re_password_input.password = not re_password_input.password
+        toggle_button.label = "Mostrar" if re_password_input.password else "Ocultar"
 
     def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "name":
@@ -170,7 +244,15 @@ class RegisterView(Screen):
             self._validate_recovery_word_field()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        response = self.query_one("#message", Label)
+        response = self.query_one("#message", Static)
+
+        if event.button.id == "toggle_password":
+            self._toggle_password_visibility()
+            return
+
+        if event.button.id == "toggle_re_password":
+            self._toggle_re_password_visibility()
+            return
 
         if event.button.id == "button_register":
             name = self.query_one("#name", Input).value
@@ -184,7 +266,8 @@ class RegisterView(Screen):
                 self.query_one("#re_password", Input).add_class("invalid")
                 return
 
-            success, message, user_id = register(name, email, password, recovery_word)
+            success, message, user_id = register(
+                name, email, password, recovery_word)
             response.update(message)
 
             if success:
