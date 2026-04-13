@@ -68,7 +68,7 @@ class InterestsView(Screen):
                 checkboxes = self.query(".interests")
                 for checkbox in checkboxes:
                     if checkbox.value == True:
-                        add_interests(self.user_id[0], str(checkbox.label))
+                        add_interests(self.user_id, str(checkbox.label))
 
                     else:
                         continue
