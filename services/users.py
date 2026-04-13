@@ -1,12 +1,27 @@
 import sqlite3
-from services.validations import valid_name_users, valid_email, valid_password, valid_recovery_word, password_error_message, recovery_word_error_message
+from services.validations import (
+    valid_name_users,
+    valid_email,
+    password_error_message,
+    recovery_word_error_message,
+)
 from services.security import hash_value, verify_value
 
 connection = sqlite3.connect("conecta++.db")
 connection.execute("PRAGMA foreign_keys = ON")
 cursor = connection.cursor()
-cursor.execute("CREATE TABLE IF NOT EXISTS users(user_id INTEGER PRIMARY KEY ASC AUTOINCREMENT, name NOT NULL, " \
-                "email NOT NULL, password NOT NULL, recovery_word NOT NULL)")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    user_id INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    recovery_word TEXT NOT NULL
+)
+""")
+connection.commit()
+
 
 def login(email, password):
     email = email.strip().lower()
@@ -27,6 +42,7 @@ def login(email, password):
 
     return True, "Login realizado com sucesso!", name, user_id
 
+
 def register(name, email, password, recovery_word):
     name = name.strip()
     email = email.strip().lower()
@@ -38,9 +54,9 @@ def register(name, email, password, recovery_word):
     if not valid_email(email):
         return False, "Esse e-mail é inválido!", None
 
-    password_messsage = password_error_message(password)
-    if password_messsage is not None:
-        return False, password_messsage, None
+    password_message = password_error_message(password)
+    if password_message is not None:
+        return False, password_message, None
 
     recovery_word_message = recovery_word_error_message(recovery_word)
     if recovery_word_message is not None:
@@ -59,16 +75,11 @@ def register(name, email, password, recovery_word):
     recovery_word_hash = hash_value(recovery_word)
 
     cursor.execute(
-        "INSERT INTO users VALUES(?, ?, ?, ?, ?)",
-        (None, name, email, password_hash, recovery_word_hash,)
+        "INSERT INTO users (name, email, password, recovery_word) VALUES (?, ?, ?, ?)",
+        (name, email, password_hash, recovery_word_hash)
     )
     connection.commit()
 
-    cursor.execute(
-    "SELECT user_id FROM users WHERE email = ?",
-    (email,)
-    )
-    user = cursor.fetchone()
-    user_id = user
+    user_id = cursor.lastrowid
 
     return True, "Cadastro realizado!", user_id
