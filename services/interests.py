@@ -52,11 +52,20 @@ def add_interests(user_id, interest):
 
 # Função que checa os interesses de um usuário.
 def check_interests(user_id) -> tuple:
+    user_id = str(user_id)
     cursor.execute(
-        "SELECT * FROM users_interests WHERE interest_id = ?",
-        (user_id)
+        "SELECT interest_id FROM users_interests WHERE user_id = ?",
+        (user_id,)
         )
-    user = cursor.fetchmany()
+    user = cursor.fetchall()
     user_interests = user
 
     return user_interests
+
+def check_all_interests() -> tuple:
+    cursor.execute(
+        "SELECT name FROM interests"
+    )
+    interests = cursor.fetchall()
+
+    return interests

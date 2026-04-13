@@ -3,7 +3,8 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Checkbox, Label
 from textual.containers import Center, Vertical
 from screens.main_page_view import MainPageView
-from services.interests import add_interests
+from services.interests import add_interests, check_all_interests
+from unidecode import unidecode
 
 AUTH_CSS = """
 Screen {
@@ -52,15 +53,19 @@ class InterestsView(Screen):
         self.user_name = user_name
 
     def compose(self) -> ComposeResult:
+        interests = check_all_interests()
         with Center():
             with Vertical(id="interest_box"):
                 yield Static("Conecta++", id="title")
                 yield Static("Selecione os seus interesses abaixo", classes="subtitle")
-                yield Checkbox("Inteligência Artificial", id="ia", classes="interests")
-                yield Checkbox("Engenharia de Software", id="eng_software", classes="interests")
-                yield Checkbox("Cibersegurança", id="cyber", classes="interests")
-                yield Checkbox("Empreendedorismo", id="empreendedorismo", classes="interests")
-                yield Checkbox("Ciência de Dados", id="ciencia_dados", classes="interests")
+                if interests:
+                    for interest in interests:
+                        interest_id = interest[0].replace(" ", "_").lower().strip()
+                        interest_id = unidecode(interest_id)
+                        yield Checkbox(interest[0], id=f"interesse_{interest_id}", classes="interests")
+
+                else:
+                    yield Static("Nenhum interesse encontrado.", classes="main_subtitle")
                 yield Button("Definir interesses", id="button_register_interests", variant="primary")
     
     def on_button_pressed(self, event: Button.Pressed) -> None:

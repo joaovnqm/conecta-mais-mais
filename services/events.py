@@ -60,9 +60,27 @@ def create_event(name: str, event_location: str, date: str, hour: str, creator_i
 def check_events_with_interests(user_id: int):
     interests = check_interests(user_id)
     events = []
+    seen_ids = set()  # controla duplicatas de forma mais simples
+
     for interest in interests:
         cursor.execute(
-            "SELECT * FROM events WHERE interest_id = ?", (interest)
+            "SELECT event_id FROM events_interests WHERE interest_id = ?",
+            (interest[0],)  # ✅ vírgula para tupla
+        )
+
+        for row in cursor.fetchall():
+            event_id = row[0]  # ✅ pega o inteiro diretamente
+            if event_id in seen_ids:
+                continue
+
+            cursor.execute(
+                "SELECT name FROM events WHERE event_id = ?",
+                (event_id,)  # ✅ vírgula para tupla
             )
-        result = cursor.fetchmany()
-        events.append(result)
+            result = cursor.fetchone()  # ✅ fetchone() já que é um único resultado
+
+            if result:
+                seen_ids.add(event_id)
+                events.append([event_id, result[0]])  # ✅ [id, nome]
+
+    return events
