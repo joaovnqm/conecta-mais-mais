@@ -65,22 +65,22 @@ def check_events_with_interests(user_id: int):
     for interest in interests:
         cursor.execute(
             "SELECT event_id FROM events_interests WHERE interest_id = ?",
-            (interest[0],)  # ✅ vírgula para tupla
+            (interest[0],)
         )
 
         for row in cursor.fetchall():
-            event_id = row[0]  # ✅ pega o inteiro diretamente
+            event_id = row[0]
             if event_id in seen_ids:
                 continue
 
             cursor.execute(
                 "SELECT name FROM events WHERE event_id = ?",
-                (event_id,)  # ✅ vírgula para tupla
+                (event_id,)
             )
-            result = cursor.fetchone()  # ✅ fetchone() já que é um único resultado
+            result = cursor.fetchone()
 
             if result:
                 seen_ids.add(event_id)
-                events.append([event_id, result[0]])  # ✅ [id, nome]
+                events.append([event_id, result[0]])
 
     return events
