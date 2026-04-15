@@ -1,5 +1,6 @@
 import sqlite3
 from services.validations import (
+    normalize_name,
     valid_name_users,
     valid_email,
     password_error_message,
@@ -39,6 +40,8 @@ def login(email, password):
 
     if not verify_value(password, saved_password):
         return False, "Senha incorreta.", None, None
+
+    name = normalize_name(name)
 
     return True, "Login realizado com sucesso!", name, user_id
 

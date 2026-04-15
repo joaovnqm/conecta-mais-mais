@@ -3,6 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
 from screens.events_view import EventsView
+from services.validations import normalize_name
 
 MAIN_PAGE_CSS = """
 Screen {
@@ -42,7 +43,7 @@ class MainPageView(Screen):
 
     def __init__(self, user_id: int, user_name: str):
         super().__init__()
-        self.user_name = user_name
+        self.user_name = normalize_name(user_name)
         self.user_id = user_id
 
     def compose(self) -> ComposeResult:

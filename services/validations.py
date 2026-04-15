@@ -1,7 +1,11 @@
 import re
 from datetime import datetime
 
+def normalize_name(name: str) -> str:
+    return " ".join(name.strip().split())
+
 def valid_name_users(name: str) -> bool:
+    normalized_name = normalize_name(name)
     pattern = r'^[A-Za-zÀ-ÿ ]{2,}$'
     return re.fullmatch(pattern, name.strip()) is not None
 
