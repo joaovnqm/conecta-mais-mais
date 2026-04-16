@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import datetime, timedelta, timedelta
+from datetime import datetime, timedelta
 from random import randint
 
 from services.security import hash_value, verify_value
@@ -16,8 +16,7 @@ CREATE TABLE IF NOT EXISTS password_reset_codes (
     code_hash TEXT NOT NULL
     expires_at TEXT NOT NULL
 )               
-"""
-               )
+""")
 connection.commit()
 
 # Função para gerar código numérico de 6 dígitos
@@ -85,14 +84,21 @@ def reset_password(email: str, code: str, new_password: str):
         )
         connection.commit()
         return False, "O código de recuperação expirou."
+    
     if not verify_value (code, code_hash):
         return False, "Código inválido"
     
     new_password_hash = hash_value(new_password)
     
     cursor.execute(
-        "UPDATE users SET password_hash = ? WHERE email = ?",
+        "UPDATE users SET password = ? WHERE email = ?",
         (new_password_hash, email)
     )
+    
+    cursor.execute(
+        "DELETE FROM password_reset_codes WHERE email = ?",
+        (email,)
+    )
+        
     connection.commit()
     return True, "Senha alterada com sucesso."
