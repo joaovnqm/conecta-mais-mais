@@ -4,7 +4,7 @@ from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical
 
 from services.password_reset import request_password_reset
-from screens.reset_password_view import ResetPasswordView
+from screens.code_verification_view import CodeVerificationView
 
 
 AUTH_CSS = """
@@ -82,7 +82,12 @@ class ForgotPasswordView(Screen):
             response.update(message)
 
             if success:
-                self.app.push_screen(ResetPasswordView(email))
+                self.app.push_screen(
+                    CodeVerificationView(
+                        mode="reset_password",
+                        email=email
+                    )
+                )
 
         elif event.button.id == "button_back":
             self.app.pop_screen()

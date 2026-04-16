@@ -3,13 +3,13 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
 
-from screens.interests_view import InterestsView
-from services.users import register
+from services.password_reset import request_registration_code
 from services.validations import (
     valid_name_users,
     valid_email,
     password_error_message,
 )
+from screens.code_verification_view import CodeVerificationView
 
 
 AUTH_CSS = """
@@ -226,16 +226,39 @@ class RegisterView(Screen):
             password = self.query_one("#password", Input).value
             re_password = self.query_one("#re_password", Input).value
 
+            if not valid_name_users(name):
+                response.update("O nome precisa ter pelo menos 2 caracteres e não pode conter números.")
+                self.query_one("#name", Input).add_class("invalid")
+                return
+
+            if not valid_email(email):
+                response.update("Esse e-mail é inválido!")
+                self.query_one("#email", Input).add_class("invalid")
+                return
+
+            password_message = password_error_message(password)
+            if password_message is not None:
+                response.update(password_message)
+                self.query_one("#password", Input).add_class("invalid")
+                return
+
             if password != re_password:
                 response.update("As senhas não coincidem.")
                 self.query_one("#re_password", Input).add_class("invalid")
                 return
 
-            success, message, user_id = register(name, email, password)
+            success, message = request_registration_code(email)
             response.update(message)
 
             if success:
-                self.app.push_screen(InterestsView(user_id, name))
+                self.app.push_screen(
+                    CodeVerificationView(
+                        mode="register",
+                        email=email,
+                        pending_name=name,
+                        pending_password=password
+                    )
+                )
 
         elif event.button.id == "button_back":
             self.app.pop_screen()
