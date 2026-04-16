@@ -8,21 +8,31 @@ load_dotenv()
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 465
 
-def send_recovery_email(destinatario: str, code: str) -> None:
+def send_verification_email(destinatario: str, code: str, purpose: str) -> None:
     remetente = os.getenv("APP_EMAIL")
     password_app = os.getenv("APP_EMAIL_PASSWORD")
     
     if not remetente or not password_app:
         raise ValueError("Defina APP_EMAIL e APP_EMAIL_PASSWORD nas variáveis de ambiente. .env")
     
-    assunto = "Código de recuperação de senha"
-    mensagem = f"""
+    if purpose == "register":
+        assunto = "Código de verificação de e-mail - Conecta++"
+        mensagem = f"""
     Olá!
-    Seu código de recuperação de senha é: 
+    Seu código para verificar seu e-mail é: 
+    {code}
+    Esse código expira em 10 minutos.
+    Se você não solicitou esse cadastro, por favor ignore este email.
+    """
+    else:
+        assunto = "Código de recuperação de senha - Conecta++"
+        mensagem = f"""
+    Olá!
+    Seu código para recuperação de senha é:
     {code}
     Esse código expira em 10 minutos.
     Se você não solicitou essa recuperação, por favor ignore este email.
-    """
+        """
     
     msg = EmailMessage()
     msg["From"] = remetente
