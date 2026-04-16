@@ -7,8 +7,8 @@ connection.execute("PRAGMA foreign_keys = ON")
 cursor = connection.cursor()
 
 # Criando tabela eventos caso não exista.
-cursor.execute("CREATE TABLE IF NOT EXISTS events(event_id INTEGER PRIMARY KEY AUTOINCREMENT, name NOT NULL, event_location NOT NULL, "
-    "date NOT NULL, hour NOT NULL, creator_id INTEGER, FOREIGN KEY (creator_id) REFERENCES users(user_id) ON DELETE CASCADE)"
+cursor.execute("CREATE TABLE IF NOT EXISTS events(event_id INTEGER PRIMARY KEY AUTOINCREMENT, name NOT NULL, event_location, "
+    "date, hour, creator_id INTEGER NOT NULL, FOREIGN KEY (creator_id) REFERENCES users(user_id) ON DELETE CASCADE)"
     )
 
 # Criando tabela de áreas de interesse dos eventos caso ela não exista.
@@ -20,15 +20,21 @@ cursor.execute("CREATE TABLE IF NOT EXISTS events_interests(event_id INTEGER, in
 # Função que cria um evento e insere na tabela "events" do banco.
 def create_event(name: str, event_location: str, date: str, hour: str, creator_id: int, *interests: list):
     name = name.strip()
-    event_location = event_location.strip()
-    date = date.strip()
-    hour = hour.strip()
     if not valid_name_events(name):
         return False, "O nome precisa ter pelo menos 2 caracteres."
-    if not valid_date(date):
-        return False, "O formato da data está errado. Por favor, siga o padrão dd-mm-aaaa."
-    if not valid_hour(hour):
-        return False, "O formato da hora está errado. Por favor, siga o padrão hh:mm."
+    
+    if event_location:
+        event_location = event_location.strip()
+
+    if date:
+        date = date.strip()
+        if not valid_date(date):
+            return False, "O formato da data está errado. Por favor, siga o padrão dd-mm-aaaa."
+
+    if hour:
+        hour = hour.strip()
+        if not valid_hour(hour):
+            return False, "O formato da hora está errado. Por favor, siga o padrão hh:mm."
     
     cursor.execute(
         "SELECT EXISTS(SELECT 1 FROM events WHERE name = ? AND creator_id = ?)",
