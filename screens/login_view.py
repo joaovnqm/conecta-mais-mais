@@ -7,6 +7,7 @@ from services.users import login
 from services.validations import valid_email, valid_password, password_error_message
 from screens.register_view import RegisterView
 from screens.main_page_view import MainPageView
+from screens.forgot_password_view import ForgotPasswordView
 
 
 AUTH_CSS = """
@@ -104,6 +105,7 @@ class LoginView(Screen):
                 yield Label("", id="message")
 
                 yield Button("Entrar", id="button_login", variant="primary")
+                yield Button("Esqueci minha senha", id="button_forgot_password")
                 yield Button("Cadastrar", id="button_register_view")
 
     def reset_form(self) -> None:
@@ -152,7 +154,7 @@ class LoginView(Screen):
             return
 
         error_message = password_error_message(value)
-        self._set_invalid_if_needed(password_input, not valid_password(value))
+        self._set_invalid_if_needed(password_input, error_message is not None)
 
     def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "email":
@@ -165,6 +167,7 @@ class LoginView(Screen):
 
         if event.button.id == "toggle_password":
             self._toggle_password_visibility()
+            return
 
         if event.button.id == "button_login":
             email = self.query_one("#email", Input).value
@@ -176,6 +179,9 @@ class LoginView(Screen):
                 self.app.push_screen(MainPageView(user_id, name))
             else:
                 response.update(message)
+
+        elif event.button.id == "button_forgot_password":
+            self.app.push_screen(ForgotPasswordView())
 
         elif event.button.id == "button_register_view":
             self.app.push_screen(RegisterView())

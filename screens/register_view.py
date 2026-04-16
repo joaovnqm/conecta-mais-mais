@@ -8,9 +8,7 @@ from services.users import register
 from services.validations import (
     valid_name_users,
     valid_email,
-    valid_recovery_word,
     password_error_message,
-    recovery_word_error_message,
 )
 
 
@@ -125,11 +123,6 @@ class RegisterView(Screen):
                     )
                     yield Button("Mostrar", id="toggle_re_password")
 
-                yield Input(
-                    placeholder="Digite sua palavra de recuperação...",
-                    id="recovery_word"
-                )
-
                 yield Static("", id="message")
 
                 yield Button("Cadastrar", id="button_register", variant="primary")
@@ -188,30 +181,6 @@ class RegisterView(Screen):
             re_password_value != password_value
         )
 
-    def _validate_recovery_word_field(self) -> None:
-        recovery_word_input = self.query_one("#recovery_word", Input)
-        response = self.query_one("#message", Static)
-        value = recovery_word_input.value.strip()
-
-        if not value:
-            recovery_word_input.remove_class("invalid")
-            response.update("")
-            return
-
-        recovery_word_message = recovery_word_error_message(value)
-
-        if recovery_word_message is None:
-            recovery_word_input.remove_class("invalid")
-            response.update("")
-        else:
-            recovery_word_input.add_class("invalid")
-            response.update(recovery_word_message)
-
-        self._set_invalid_if_needed(
-            recovery_word_input,
-            not valid_recovery_word(value)
-        )
-
     def _toggle_password_visibility(self) -> None:
         password_input = self.query_one("#password", Input)
         toggle_button = self.query_one("#toggle_password", Button)
@@ -240,9 +209,6 @@ class RegisterView(Screen):
         elif event.input.id == "re_password":
             self._validate_re_password_field()
 
-        elif event.input.id == "recovery_word":
-            self._validate_recovery_word_field()
-
     def on_button_pressed(self, event: Button.Pressed) -> None:
         response = self.query_one("#message", Static)
 
@@ -259,15 +225,13 @@ class RegisterView(Screen):
             email = self.query_one("#email", Input).value
             password = self.query_one("#password", Input).value
             re_password = self.query_one("#re_password", Input).value
-            recovery_word = self.query_one("#recovery_word", Input).value
 
             if password != re_password:
                 response.update("As senhas não coincidem.")
                 self.query_one("#re_password", Input).add_class("invalid")
                 return
 
-            success, message, user_id = register(
-                name, email, password, recovery_word)
+            success, message, user_id = register(name, email, password)
             response.update(message)
 
             if success:
