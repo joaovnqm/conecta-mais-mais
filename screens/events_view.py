@@ -32,7 +32,7 @@ Screen {
 }
 
 .event_buttons{
-    content-allign: center middle;
+    content-align: center middle;
     color: 
 }
 
