@@ -26,7 +26,7 @@ create_event("Teste 4", "Aldeia, casa de João", "28-05-2026", "12:45", 1, "Ciê
 create_event("Teste 5", "Aldeia, casa de João", "28-05-2026", "12:45", 1, "Engenharia de Software", "Cibersegurança")
 """
 
-cursor.execute("DELETE FROM users WHERE user_id = 14")
+# cursor.execute("ALTER TABLE users DROP COLUMN recovery_word")
 
 
 connection.commit()
