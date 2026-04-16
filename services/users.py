@@ -44,7 +44,7 @@ def login(email, password):
     return True, "Login realizado com sucesso!", name, user_id
 
 
-def register(name, email, password, recovery_word):
+def register(name, email, password):
     name = name.strip()
     email = email.strip().lower()
 
