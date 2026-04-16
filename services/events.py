@@ -84,3 +84,13 @@ def check_events_with_interests(user_id: int) -> list:
                 events.append([event_id, result[0]])
 
     return events
+
+def check_event(event_id) -> tuple:
+    cursor.execute(
+        "SELECT * FROM events WHERE event_id = ?",
+        (event_id,) # <-- Vírgula adicionada aqui
+    )
+    
+    event = cursor.fetchone()
+
+    return event
