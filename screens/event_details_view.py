@@ -2,6 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll
+from services.events import check_event
 
 EVENT_DETAILS_VIEW = """
 Screen {
@@ -48,4 +49,12 @@ class EventDetailsView(Screen):
         self.event_id = event_id
 
     def compose(self) -> ComposeResult:
-        return super().compose()
+        event = check_event(self.event_id)
+        with Center():
+            with VerticalScroll(id="main_box"):
+                yield Static("Clique em algum evento abaixo para saber mais.", id="main_title")
+                yield Button("Voltar", id="button_return", variant="error")
+    
+    def on_button_pressed(self, event: Button.Pressed):
+        if event.button.id == "button_return":
+            self.app.pop_screen()

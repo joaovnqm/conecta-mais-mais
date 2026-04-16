@@ -85,10 +85,11 @@ def check_events_with_interests(user_id: int) -> list:
 
     return events
 
+# Função que retorna as informações de um evento com base em seu event_id.
 def check_event(event_id) -> tuple:
     cursor.execute(
         "SELECT * FROM events WHERE event_id = ?",
-        (event_id,) # <-- Vírgula adicionada aqui
+        (event_id,)
     )
     
     event = cursor.fetchone()
