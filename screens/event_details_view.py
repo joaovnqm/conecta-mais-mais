@@ -16,27 +16,22 @@ Screen {
     border: round $primary;
     padding: 1 2;
     background: $panel;
+    align: center top;
 }
 
 #main_title {
     content-align: center middle;
     text-style: bold;
-    margin-bottom: 1;
+    color: black;
+    border: solid white;
+    padding: 1 2;
+    margin: 1;
 }
 
-.main_subtitle{
-    content-align: center middle;
-    color: $text-muted;
-    margin-bottom: 1;
-}
-
-.event_buttons{
-    content-align: center middle;
-}
-
-Button {
+#button_return {
     width: 100%;
-    margin-top: 1;
+    content-align: center middle;
+    margin: 1;
 }
 """
 
@@ -49,9 +44,14 @@ class EventDetailsView(Screen):
 
     def compose(self) -> ComposeResult:
         event = check_event(self.event_id)
+        
         with Center():
             with VerticalScroll(id="main_box"):
-                yield Static("Clique em algum evento abaixo para saber mais.", id="main_title")
+                yield Static(f"Evento: {event[1]}", id="main_title")
+                yield Static(f"Local: {event[2]}")
+                yield Static(f"Data: {event[3]}")
+                yield Static(f"Hora: {event[4]}")
+                yield Static(str(event[5]))
                 yield Button("Voltar", id="button_return", variant="error")
     
     def on_button_pressed(self, event: Button.Pressed):
