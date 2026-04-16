@@ -78,3 +78,13 @@ def register(name, email, password):
     user_id = cursor.lastrowid
 
     return True, "Cadastro realizado!", user_id
+
+# Função que checa o nome do usuário com base em seu ID.
+def check_user_name(user_id: int) -> str:
+    cursor.execute(
+        "SELECT name FROM users WHERE user_id = ?",
+        (user_id,)
+    )
+    name = cursor.fetchone()
+    name = name[0]
+    return name
