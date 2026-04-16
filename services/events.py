@@ -7,8 +7,8 @@ connection.execute("PRAGMA foreign_keys = ON")
 cursor = connection.cursor()
 
 # Criando tabela eventos caso não exista.
-cursor.execute("CREATE TABLE IF NOT EXISTS events(event_id INTEGER PRIMARY KEY AUTOINCREMENT, name NOT NULL, event_location, "
-    "date, hour, creator_id INTEGER NOT NULL, FOREIGN KEY (creator_id) REFERENCES users(user_id) ON DELETE CASCADE)"
+cursor.execute("CREATE TABLE IF NOT EXISTS events(event_id INTEGER PRIMARY KEY AUTOINCREMENT, name NOT NULL, description NOT NULL, "
+    "event_location, date, hour, creator_id INTEGER NOT NULL, FOREIGN KEY (creator_id) REFERENCES users(user_id) ON DELETE CASCADE)"
     )
 
 # Criando tabela de áreas de interesse dos eventos caso ela não exista.
@@ -18,10 +18,14 @@ cursor.execute("CREATE TABLE IF NOT EXISTS events_interests(event_id INTEGER, in
     )
 
 # Função que cria um evento e insere na tabela "events" do banco.
-def create_event(name: str, event_location: str, date: str, hour: str, creator_id: int, *interests: list):
+def create_event(name: str, description: str, event_location: str, date: str, hour: str, creator_id: int, *interests: list):
     name = name.strip()
+    description = description.strip()
     if not valid_name_events(name):
         return False, "O nome precisa ter pelo menos 2 caracteres."
+    
+    if description == None:
+        return False, "Por favor, insira uma descrição para o evento."
     
     if event_location:
         event_location = event_location.strip()
@@ -46,8 +50,8 @@ def create_event(name: str, event_location: str, date: str, hour: str, creator_i
         return False, "Esse evento já foi cadastrado.", None
     
     cursor.execute(
-        "INSERT INTO events VALUES(?, ?, ?, ?, ?, ?)",
-        (None, name, event_location, date, hour, creator_id)
+        "INSERT INTO events VALUES(?, ?, ?, ?, ?, ?, ?)",
+        (None, name, description, event_location, date, hour, creator_id)
     )
     
     connection.commit()
