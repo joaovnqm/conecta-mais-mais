@@ -3,6 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll
 from services.events import check_events_with_interests
+from screens.event_details_view import EventDetailsView
 
 MAIN_PAGE_CSS = """
 Screen {
@@ -30,6 +31,10 @@ Screen {
     margin-bottom: 1;
 }
 
+.event_buttons{
+    content-align: center middle;
+}
+
 Button {
     width: 100%;
     margin-top: 1;
@@ -48,10 +53,10 @@ class EventsView(Screen):
         events = check_events_with_interests(self.user_id)
         with Center():
             with VerticalScroll(id="main_box"):
-                yield Static("Eventos", id="main_title")
+                yield Static("Clique em algum evento abaixo para saber mais.", id="main_title")
                 if events:
                     for event in events:
-                        yield Button(event[1], id=f"event_{event[0]}")
+                        yield Button(event[1], id=f"event_{event[0]}", classes="event_buttons")
 
                 else:
                     yield Static("Nenhum evento encontrado.", classes="main_subtitle")
@@ -59,5 +64,10 @@ class EventsView(Screen):
                 yield Button("Voltar", id="button_return", variant="error")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "button_return":
+        if event.button.has_class("event_buttons"):
+            button_id = event.button.id
+            numero_do_evento = str(button_id.split("_")[1])
+            self.app.push_screen(EventDetailsView(numero_do_evento))
+
+        elif event.button.id == "button_return":
             self.app.pop_screen()

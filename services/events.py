@@ -56,8 +56,8 @@ def create_event(name: str, event_location: str, date: str, hour: str, creator_i
         )
         connection.commit()
 
-# Função que retorna eventos com base nos interesses do usuário.
-def check_events_with_interests(user_id: int):
+# Função que retorna lista de tuplas de eventos com base nos interesses do usuário.
+def check_events_with_interests(user_id: int) -> list:
     interests = check_interests(user_id)
     events = []
     seen_ids = set()  # controla duplicatas de forma mais simples
@@ -84,3 +84,14 @@ def check_events_with_interests(user_id: int):
                 events.append([event_id, result[0]])
 
     return events
+
+# Função que retorna as informações de um evento com base em seu event_id.
+def check_event(event_id) -> tuple:
+    cursor.execute(
+        "SELECT * FROM events WHERE event_id = ?",
+        (event_id,)
+    )
+    
+    event = cursor.fetchone()
+
+    return event
