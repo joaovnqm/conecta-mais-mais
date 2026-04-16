@@ -1,6 +1,9 @@
 import os
 import smtplib
 from email.message import EmailMessage
+from dotenv import load_dotenv
+
+load_dotenv()
 
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 465
@@ -10,7 +13,7 @@ def send_recovery_email(destinatario: str, code: str) -> None:
     password_app = os.getenv("APP_EMAIL_PASSWORD")
     
     if not remetente or not password_app:
-        raise ValueError("Defina APP_EMAIL e APP_EMAIL_PASSWORD nas variáveis de ambiente.")
+        raise ValueError("Defina APP_EMAIL e APP_EMAIL_PASSWORD nas variáveis de ambiente. .env")
     
     assunto = "Código de recuperação de senha"
     mensagem = f"""

@@ -50,25 +50,29 @@ Button {
     color: $warning;
 }
 
-#password-row {
+#password-row,
+#confirm-password-row {
     width: 100%;
     height: auto;
     margin-top: 1;
 }
 
-#password-row Input {
+#password-row Input,
+#confirm-password-row Input {
     width: 1fr;
     margin-top: 0;
 }
 
-#toggle_password {
+#toggle_password,
+#toggle_confirm_password {
     width: 12;
     min-width: 12;
     margin-top: 0;
     margin-left: 1;
 }
 
-#password-row Button {
+#password-row Button,
+#confirm-password-row Button {
     margin-top: 0;
 }
 """
@@ -85,7 +89,10 @@ class ResetPasswordView(Screen):
         with Center():
             with Vertical(id="auth_box"):
                 yield Static("Redefinir senha", id="title")
-                yield Static("Digite o código recebido por e-mail e a nova senha.", classes="subtitle")
+                yield Static(
+                    "Digite o código recebido e a nova senha.",
+                    classes="subtitle"
+                )
 
                 yield Input(
                     placeholder="Digite seu e-mail...",
@@ -106,15 +113,21 @@ class ResetPasswordView(Screen):
                     )
                     yield Button("Mostrar", id="toggle_password")
 
-                yield Input(
-                    placeholder="Confirme a nova senha...",
-                    id="confirm_password",
-                    password=True
-                )
+                with Horizontal(id="confirm-password-row"):
+                    yield Input(
+                        placeholder="Confirme a nova senha...",
+                        id="confirm_password",
+                        password=True
+                    )
+                    yield Button("Mostrar", id="toggle_confirm_password")
 
                 yield Label("", id="message")
 
-                yield Button("Alterar senha", id="button_reset_password", variant="primary")
+                yield Button(
+                    "Alterar senha",
+                    id="button_reset_password",
+                    variant="primary"
+                )
                 yield Button("Voltar", id="button_back")
 
     def _toggle_password_visibility(self) -> None:
@@ -124,11 +137,22 @@ class ResetPasswordView(Screen):
         password_input.password = not password_input.password
         toggle_button.label = "Mostrar" if password_input.password else "Ocultar"
 
+    def _toggle_confirm_password_visibility(self) -> None:
+        confirm_input = self.query_one("#confirm_password", Input)
+        toggle_button = self.query_one("#toggle_confirm_password", Button)
+
+        confirm_input.password = not confirm_input.password
+        toggle_button.label = "Mostrar" if confirm_input.password else "Ocultar"
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         response = self.query_one("#message", Label)
 
         if event.button.id == "toggle_password":
             self._toggle_password_visibility()
+            return
+
+        if event.button.id == "toggle_confirm_password":
+            self._toggle_confirm_password_visibility()
             return
 
         if event.button.id == "button_reset_password":
