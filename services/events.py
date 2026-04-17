@@ -95,11 +95,12 @@ def check_events_with_interests(user_id: int) -> list:
 
     return events
 
+# Função que retorna uma lista de eventos por interesse.
 def check_events_by_interest(selected_interest: str):
     events = []
     interest_id = index_interest(selected_interest)
     cursor.execute(
-        "SELECT FROM events WHERE interest_id = ?",
+        "SELECT event_id FROM events_interests WHERE interest_id = ?",
         (interest_id,)
     )
 

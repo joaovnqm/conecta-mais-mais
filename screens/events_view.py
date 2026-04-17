@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Select
 from textual.containers import Center, VerticalScroll
-from services.events import check_events_with_interests
+from services.events import check_events_with_interests, check_events_by_interest
 from services.interests import check_interests_name
 from screens.event_details_view import EventDetailsView
 
@@ -75,3 +75,8 @@ class EventsView(Screen):
 
         elif event.button.id == "button_return":
             self.app.pop_screen()
+
+    def on_select_changed(self, event: Select.Changed) -> None:
+        selected_value = event.value
+        result = check_events_by_interest(selected_value)
+        result = result
