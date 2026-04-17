@@ -95,6 +95,25 @@ def check_events_with_interests(user_id: int) -> list:
 
     return events
 
+def check_events_by_interest(selected_interest: str):
+    events = []
+    interest_id = index_interest(selected_interest)
+    cursor.execute(
+        "SELECT FROM events WHERE interest_id = ?",
+        (interest_id,)
+    )
+
+    for row in cursor.fetchall():
+        event_id = row[0]
+        cursor.execute(
+            "SELECT name FROM events WHERE event_id = ?",
+            (event_id,)
+        )
+        result = cursor.fetchone()
+        events.append([event_id, result[0]])
+
+    return events
+
 # Função que retorna as informações de um evento com base em seu event_id.
 def check_event(event_id) -> tuple:
     cursor.execute(

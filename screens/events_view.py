@@ -55,6 +55,7 @@ class EventsView(Screen):
         interests = check_interests_name(self.user_id)
         with Center():
             with VerticalScroll(id="main_box"):
+                yield Static("Filtrar por interesse:")
                 yield Select((interest, interest) for interest in interests)
                 yield Static("Clique em algum evento abaixo para saber mais.", id="main_title")
                 if events:

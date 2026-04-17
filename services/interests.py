@@ -13,7 +13,7 @@ cursor.execute("CREATE TABLE IF NOT EXISTS users_interests(user_id INTEGER, inte
     "ON DELETE CASCADE)")
 
 # Função que checa o id do interesse com base no nome de entrada da função, caso o interesse não exista, ele o cria e o insere na tabela.
-def index_interest(interest: str):
+def index_interest(interest: str) -> int:
     cursor.execute(
         "SELECT interest_id FROM interests WHERE name = ?",
         (interest,)
