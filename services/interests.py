@@ -50,8 +50,8 @@ def add_interests(user_id, interest):
 
     return "Interesse(s) adicionado(s) com sucesso!", True
 
-# Função que checa os interesses de um usuário.
-def check_interests(user_id) -> tuple:
+# Função que checa os interesses de um usuário. (retorna os interest_id dos interesses)
+def check_interests_id(user_id) -> tuple:
     user_id = str(user_id)
     cursor.execute(
         "SELECT interest_id FROM users_interests WHERE user_id = ?",
@@ -61,6 +61,20 @@ def check_interests(user_id) -> tuple:
     user_interests = user
 
     return user_interests
+
+# Função que checa os interesses de um usuário. (retorna os nome dos interesses)
+def check_interests_name(user_id) -> tuple:
+    interests_id = check_interests_id(user_id)
+    interests_names = []
+    for interest in interests_id:
+        cursor.execute(
+            "SELECT name FROM interests WHERE interest_id = ?",
+            (interest[0],)
+            )
+        interest_result = cursor.fetchone()
+        interests_names.append(interest_result[0])
+
+    return interests_names
 
 def check_all_interests() -> tuple:
     cursor.execute(

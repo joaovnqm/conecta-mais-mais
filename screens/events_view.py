@@ -1,8 +1,9 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Static, Button
+from textual.widgets import Static, Button, Select
 from textual.containers import Center, VerticalScroll
 from services.events import check_events_with_interests
+from services.interests import check_interests_name
 from screens.event_details_view import EventDetailsView
 
 MAIN_PAGE_CSS = """
@@ -51,8 +52,10 @@ class EventsView(Screen):
 
     def compose(self) -> ComposeResult:
         events = check_events_with_interests(self.user_id)
+        interests = check_interests_name(self.user_id)
         with Center():
             with VerticalScroll(id="main_box"):
+                yield Select((interest, interest) for interest in interests)
                 yield Static("Clique em algum evento abaixo para saber mais.", id="main_title")
                 if events:
                     for event in events:
