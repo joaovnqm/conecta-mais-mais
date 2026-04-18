@@ -27,6 +27,7 @@ connection.commit()
 
 # Função de login
 
+
 def login(email, password):
     email = email.strip().lower()
 
@@ -41,11 +42,11 @@ def login(email, password):
         return False, "Usuário não encontrado.", None, None
 
     name, saved_password, user_id = user
-    
+
     # Verifica se a senha digitada corresponde ao hash salvo
     if not verify_value(password, saved_password):
         return False, "Senha incorreta.", None, None
-    
+
     # Normaliza o nome para remover espaços extras
     name = normalize_name(name)
 
@@ -53,19 +54,19 @@ def login(email, password):
 
 # Função de registro
 
+
 def register(name, email, password):
     name = name.strip()
     email = email.strip().lower()
-    recovery_word = recovery_word.strip()
-    
+
     # Valida o nome do usuário
     if not valid_name_users(name):
         return False, "O nome precisa ter pelo menos 2 caracteres e não pode conter números.", None
-    
+
     # Valida o e-mail do usuário
     if not valid_email(email):
         return False, "Esse e-mail é inválido!", None
-    
+
     # Valida a senha do usuário e retorna mensagem de erro se houver erro.
     password_message = password_error_message(password)
     if password_message is not None:
@@ -89,53 +90,56 @@ def register(name, email, password):
         (name, email, password_hash)
     )
     connection.commit()
-    
+
     # Obtém o ID do usuário recém-criado
     user_id = cursor.lastrowid
 
     return True, "Cadastro realizado!", user_id
 
 # Função que busca os dados básicos do perfil do usuário
+
+
 def get_user_profile(user_id: int):
     cursor.execute(
         "SELECT name, email FROM users WHERE user_id = ?",
-        (user_id)
+        (user_id,)
     )
     user = cursor.fetchone()
-    
+
     if user is None:
         return None
-    
+
     name, email = user
     return {
-        "name":normalize_name(name),
+        "name": normalize_name(name),
         "email": email,
     }
 
 # Função que altera o nome do usuário
-def update_user_name(user_id: int, new_game: str):
-    new_game = normalize_name(new_game)
-    
-    if not valid_name_users(new_game):
-        return False, "O nome precisa ter pelo menos 2 caracteres e não pode conter números"
-    
+
+
+def update_user_name(user_id: int, new_name: str):
+    new_name = normalize_name(new_name)
+
+    if not valid_name_users(new_name):
+        return False, "O nome precisa ter pelo menos 2 caracteres e não pode conter números."
+
     cursor.execute(
         "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)",
-        (user_id),
+        (user_id,)
     )
     user_exists = bool(cursor.fetchone()[0])
-    
+
     if not user_exists:
-        return False, "Usuário não encontrado"
-    
+        return False, "Usuário não encontrado."
+
     cursor.execute(
         "UPDATE users SET name = ? WHERE user_id = ?",
         (new_name, user_id)
     )
     connection.commit()
-    
-    return True, "Nome alterado com sucesso"
-    
+
+    return True, "Nome alterado com sucesso."
 
 
 # Função que altera a senha do usuário
@@ -145,33 +149,65 @@ def change_user_password(user_id, current_password: str, new_password: str):
         (user_id,)
     )
     user = cursor.fetchone()
-    
+
     # Verfica se o usuário existe
     if user is None:
         return False, "Usuário não encontrado"
-    
+
     saved_password = user[0]
-    
+
     # Confere a senha atual
     if not verify_value(current_password, saved_password):
         return False, "A senha atual está incorreta"
-    
+
     # Valida a nova senha
     password_message = password_error_message(new_password)
     if password_message is not None:
         return False, password_message
-    
+
     # Impede que a nova senha seja igual à senha atual
     if verify_value(new_password, saved_password):
         return False, "A nova senha deve ser diferente da senha atual"
-    
+
     # Criptografia a nova senha
     new_password_hash = hash_value(new_password)
-    
+
     cursor.execute(
         "UPDATE users SET password = ? WHERE user_id = ?",
         (new_password_hash, user_id)
     )
     connection.commit()
-    
+
     return True, "Senha alterada com sucesso!"
+
+
+def delete_user_account(user_id: int):
+    cursor.execute(
+        "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)",
+        (user_id,)
+    )
+    user_exists = bool(cursor.fetchone()[0])
+
+    if not user_exists:
+        return False, "Usuário não encontrado."
+
+    cursor.execute(
+        "DELETE FROM users WHERE user_id = ?",
+        (user_id,)
+    )
+    connection.commit()
+
+    return True, "Conta deletada com sucesso."
+
+
+def check_user_name(user_id: int):
+    cursor.execute(
+        "SELECT name FROM users WHERE user_id = ?",
+        (user_id,)
+    )
+    user = cursor.fetchone()
+
+    if user is None:
+        return None
+
+    return normalize_name(user[0])
