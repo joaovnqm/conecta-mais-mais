@@ -72,3 +72,12 @@ class ProfileView(Screen):
                     yield Static(profile["email"], id="email_value", classes="profile_value")
                 
                 yield Button("Voltar", id="button_back", variant="error")
+    
+    # Atualiza os dados mostrados na tela após uma alteração
+    def reload_profile(self) -> None:
+        profile = get_user_profile(self.user_id)
+        if profile is None:
+            return
+        
+        self.query_one("#name_value", Static).update(profile["name"])
+        self.query_one("#email_value", Static).update(profile["email"])
