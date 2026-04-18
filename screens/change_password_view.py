@@ -5,6 +5,7 @@ from textual.containers import Center, Vertical, Horizontal
 
 from services.users import change_user_password
 
+
 AUTH_CSS = """
 Screen {
     align: center middle;
@@ -12,7 +13,7 @@ Screen {
 }
 
 #auth_box {
-    width: 52;
+    width: 58;
     height: auto;
     border: round $primary;
     padding: 1 2;
@@ -31,22 +32,20 @@ Screen {
     margin-bottom: 1;
 }
 
-Input {
-    width: 100%;
-    margin-top: 1;
-}
-
-Button {
-    width: 100%;
-    margin-top: 1;
-}
-
 #message {
     width: 100%;
     height: auto;
     min-height: 1;
     margin-top: 1;
     color: $warning;
+}
+
+#current-password-row,
+#new-password-row,
+#confirm-password-row {
+    width: 100%;
+    height: auto;
+    margin-top: 1;
 }
 
 #current-password-row Input,
@@ -60,7 +59,8 @@ Button {
 #toggle_new_password,
 #toggle_confirm_password {
     width: 12;
-    min-width; 12;
+    min-width: 12;
+    max-width: 12;
     margin-top: 0;
     margin-left: 1;
 }
@@ -68,6 +68,18 @@ Button {
 #current-password-row Button,
 #new-password-row Button,
 #confirm-password-row Button {
+    width: 12;
+    min-width: 12;
+    max-width: 12;
+    margin-top: 0;
+}
+
+.action_button {
+    width: 100%;
+    margin-top: 1;
+}
+
+#button_back {
     margin-top: 0;
 }
 """
@@ -85,10 +97,13 @@ class ChangePasswordView(Screen):
     def compose(self) -> ComposeResult:
         with Center():
             with Vertical(id="auth_box"):
-                yield Static("Alterar senha", id="title")
-                yield Static("Digite sua senha atual e a nova senha", classes="subtitle")
+                yield Static("Atualizar senha", id="title")
+                yield Static(
+                    "Digite sua senha atual e depois defina a nova senha",
+                    classes="subtitle"
+                )
 
-                with Horizontal(id="current_password_row"):
+                with Horizontal(id="current-password-row"):
                     yield Input(
                         placeholder="Digite sua senha atual...",
                         id="current_password",
@@ -96,28 +111,47 @@ class ChangePasswordView(Screen):
                     )
                     yield Button("Mostrar", id="toggle_current_password")
 
-                with Horizontal(id="new_password_row"):
+                with Horizontal(id="new-password-row"):
                     yield Input(
                         placeholder="Digite a sua nova senha...",
                         id="new_password",
+                        password=True
+                    )
+                    yield Button("Mostrar", id="toggle_new_password")
+
+                with Horizontal(id="confirm-password-row"):
+                    yield Input(
+                        placeholder="Confirme a nova senha...",
+                        id="confirm_password",
                         password=True
                     )
                     yield Button("Mostrar", id="toggle_confirm_password")
 
                 yield Static("", id="message")
 
-                yield Button("Salvar", id="button_save", variant="primary")
-                yield Button("Voltar", id="button_back")
+                yield Button(
+                    "Salvar",
+                    id="button_save",
+                    variant="primary",
+                    classes="action_button"
+                )
+                yield Button(
+                    "Voltar",
+                    id="button_back",
+                    variant="error",
+                    classes="action_button"
+                )
 
     # Função auxiliar para mostrar ou ocultar senha nos campos
     def _toggle_visibility(self, input_id: str, button_id: str) -> None:
-        password_input = self.query.one(f"#{input_id}", Input)
-        toggle_button = self.query.one(f"#{button_id}, Button")
+        password_input = self.query_one(f"#{input_id}", Input)
+        toggle_button = self.query_one(f"#{button_id}", Button)
 
         password_input.password = not password_input.password
         toggle_button.label = "Mostrar" if password_input.password else "Ocultar"
 
     # Trata os cliques do botão
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         response = self.query_one("#message", Static)
 
@@ -127,28 +161,32 @@ class ChangePasswordView(Screen):
             return
 
         if event.button.id == "toggle_new_password":
-            self._toggle_visibility("new password", "toggle_new_password")
+            self._toggle_visibility("new_password", "toggle_new_password")
+            return
+
+        if event.button.id == "toggle_confirm_password":
+            self._toggle_visibility(
+                "confirm_password", "toggle_confirm_password")
             return
 
         if event.button.id == "button_save":
             current_password = self.query_one("#current_password", Input).value
             new_password = self.query_one("#new_password", Input).value
-            confirm_password = self.query_one(
-                "#confirm_password#", Input).value
+            confirm_password = self.query_one("#confirm_password", Input).value
 
             if new_password != confirm_password:
-                response.update("As senhas não coincidem")
+                response.update("As senhas não coincidem.")
                 return
 
-            sucess, message = change_user_password(
+            success, message = change_user_password(
                 self.user_id,
                 current_password,
                 new_password
             )
             response.update(message)
 
-            if sucess:
-                self.notify("Senha alterada com sucesso!")
+            if success:
+                self.notify("Senha alterada com sucesso.")
                 self.app.pop_screen()
 
         elif event.button.id == "button_back":
