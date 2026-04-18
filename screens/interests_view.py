@@ -43,15 +43,17 @@ Button {
     color: $warning;
 }
 """
-
+# Tela de seleção inicial de interesses do usuário
 class InterestsView(Screen):
     CSS = AUTH_CSS
-
+    
+    # Inicializa a tela com os dados do usuário recém cadastrado
     def __init__(self, user_id: int, user_name: str):
         super().__init__()
         self.user_id = user_id
         self.user_name = user_name
-
+        
+    # Monta a interface com a lista de interesses disponíveis
     def compose(self) -> ComposeResult:
         interests = check_all_interests()
         with Center():
@@ -68,6 +70,7 @@ class InterestsView(Screen):
                     yield Static("Nenhum interesse encontrado.", classes="main_subtitle")
                 yield Button("Definir interesses", id="button_register_interests", variant="primary")
     
+    # Salva os interesses marcados e encaminha o usuário para a tela principal
     def on_button_pressed(self, event: Button.Pressed) -> None:
             if event.button.id == "button_register_interests":
                 checkboxes = self.query(".interests")
