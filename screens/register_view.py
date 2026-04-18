@@ -3,15 +3,13 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
 
-from screens.interests_view import InterestsView
-from services.users import register
+from services.password_reset import request_registration_code
 from services.validations import (
     valid_name_users,
     valid_email,
-    valid_recovery_word,
     password_error_message,
-    recovery_word_error_message,
 )
+from screens.code_verification_view import CodeVerificationView
 
 
 AUTH_CSS = """
@@ -125,11 +123,6 @@ class RegisterView(Screen):
                     )
                     yield Button("Mostrar", id="toggle_re_password")
 
-                yield Input(
-                    placeholder="Digite sua palavra de recuperação...",
-                    id="recovery_word"
-                )
-
                 yield Static("", id="message")
 
                 yield Button("Cadastrar", id="button_register", variant="primary")
@@ -188,30 +181,6 @@ class RegisterView(Screen):
             re_password_value != password_value
         )
 
-    def _validate_recovery_word_field(self) -> None:
-        recovery_word_input = self.query_one("#recovery_word", Input)
-        response = self.query_one("#message", Static)
-        value = recovery_word_input.value.strip()
-
-        if not value:
-            recovery_word_input.remove_class("invalid")
-            response.update("")
-            return
-
-        recovery_word_message = recovery_word_error_message(value)
-
-        if recovery_word_message is None:
-            recovery_word_input.remove_class("invalid")
-            response.update("")
-        else:
-            recovery_word_input.add_class("invalid")
-            response.update(recovery_word_message)
-
-        self._set_invalid_if_needed(
-            recovery_word_input,
-            not valid_recovery_word(value)
-        )
-
     def _toggle_password_visibility(self) -> None:
         password_input = self.query_one("#password", Input)
         toggle_button = self.query_one("#toggle_password", Button)
@@ -240,9 +209,6 @@ class RegisterView(Screen):
         elif event.input.id == "re_password":
             self._validate_re_password_field()
 
-        elif event.input.id == "recovery_word":
-            self._validate_recovery_word_field()
-
     def on_button_pressed(self, event: Button.Pressed) -> None:
         response = self.query_one("#message", Static)
 
@@ -259,19 +225,40 @@ class RegisterView(Screen):
             email = self.query_one("#email", Input).value
             password = self.query_one("#password", Input).value
             re_password = self.query_one("#re_password", Input).value
-            recovery_word = self.query_one("#recovery_word", Input).value
+
+            if not valid_name_users(name):
+                response.update("O nome precisa ter pelo menos 2 caracteres e não pode conter números.")
+                self.query_one("#name", Input).add_class("invalid")
+                return
+
+            if not valid_email(email):
+                response.update("Esse e-mail é inválido!")
+                self.query_one("#email", Input).add_class("invalid")
+                return
+
+            password_message = password_error_message(password)
+            if password_message is not None:
+                response.update(password_message)
+                self.query_one("#password", Input).add_class("invalid")
+                return
 
             if password != re_password:
                 response.update("As senhas não coincidem.")
                 self.query_one("#re_password", Input).add_class("invalid")
                 return
 
-            success, message, user_id = register(
-                name, email, password, recovery_word)
+            success, message = request_registration_code(email)
             response.update(message)
 
             if success:
-                self.app.push_screen(InterestsView(user_id, name))
+                self.app.push_screen(
+                    CodeVerificationView(
+                        mode="register",
+                        email=email,
+                        pending_name=name,
+                        pending_password=password
+                    )
+                )
 
         elif event.button.id == "button_back":
             self.app.pop_screen()

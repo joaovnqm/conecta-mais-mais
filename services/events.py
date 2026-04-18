@@ -1,5 +1,5 @@
 import sqlite3
-from services.interests import check_interests, index_interest
+from services.interests import check_interests_id, index_interest
 from services.validations import valid_name_events, valid_date, valid_hour
 
 connection = sqlite3.connect("conecta++.db")
@@ -7,8 +7,8 @@ connection.execute("PRAGMA foreign_keys = ON")
 cursor = connection.cursor()
 
 # Criando tabela eventos caso não exista.
-cursor.execute("CREATE TABLE IF NOT EXISTS events(event_id INTEGER PRIMARY KEY AUTOINCREMENT, name NOT NULL, event_location NOT NULL, "
-    "date NOT NULL, hour NOT NULL, creator_id INTEGER, FOREIGN KEY (creator_id) REFERENCES users(user_id) ON DELETE CASCADE)"
+cursor.execute("CREATE TABLE IF NOT EXISTS events(event_id INTEGER PRIMARY KEY AUTOINCREMENT, name NOT NULL, description NOT NULL, "
+    "event_location, date, hour, creator_id INTEGER NOT NULL, FOREIGN KEY (creator_id) REFERENCES users(user_id) ON DELETE CASCADE)"
     )
 
 # Criando tabela de áreas de interesse dos eventos caso ela não exista.
@@ -18,17 +18,27 @@ cursor.execute("CREATE TABLE IF NOT EXISTS events_interests(event_id INTEGER, in
     )
 
 # Função que cria um evento e insere na tabela "events" do banco.
-def create_event(name: str, event_location: str, date: str, hour: str, creator_id: int, *interests: list):
+def create_event(name: str, description: str, event_location: str, date: str, hour: str, creator_id: int, *interests: list):
     name = name.strip()
-    event_location = event_location.strip()
-    date = date.strip()
-    hour = hour.strip()
+    description = description.strip()
     if not valid_name_events(name):
         return False, "O nome precisa ter pelo menos 2 caracteres."
-    if not valid_date(date):
-        return False, "O formato da data está errado. Por favor, siga o padrão dd-mm-aaaa."
-    if not valid_hour(hour):
-        return False, "O formato da hora está errado. Por favor, siga o padrão hh:mm."
+    
+    if description == None:
+        return False, "Por favor, insira uma descrição para o evento."
+    
+    if event_location:
+        event_location = event_location.strip()
+
+    if date:
+        date = date.strip()
+        if not valid_date(date):
+            return False, "O formato da data está errado. Por favor, siga o padrão dd-mm-aaaa."
+
+    if hour:
+        hour = hour.strip()
+        if not valid_hour(hour):
+            return False, "O formato da hora está errado. Por favor, siga o padrão hh:mm."
     
     cursor.execute(
         "SELECT EXISTS(SELECT 1 FROM events WHERE name = ? AND creator_id = ?)",
@@ -40,8 +50,8 @@ def create_event(name: str, event_location: str, date: str, hour: str, creator_i
         return False, "Esse evento já foi cadastrado.", None
     
     cursor.execute(
-        "INSERT INTO events VALUES(?, ?, ?, ?, ?, ?)",
-        (None, name, event_location, date, hour, creator_id)
+        "INSERT INTO events VALUES(?, ?, ?, ?, ?, ?, ?)",
+        (None, name, description, event_location, date, hour, creator_id)
     )
     
     connection.commit()
@@ -56,9 +66,9 @@ def create_event(name: str, event_location: str, date: str, hour: str, creator_i
         )
         connection.commit()
 
-# Função que retorna eventos com base nos interesses do usuário.
-def check_events_with_interests(user_id: int):
-    interests = check_interests(user_id)
+# Função que retorna lista de tuplas de eventos com base nos interesses do usuário.
+def check_events_with_interests(user_id: int) -> list:
+    interests = check_interests_id(user_id)
     events = []
     seen_ids = set()  # controla duplicatas de forma mais simples
 
@@ -84,3 +94,34 @@ def check_events_with_interests(user_id: int):
                 events.append([event_id, result[0]])
 
     return events
+
+# Função que retorna uma lista de eventos por interesse.
+def check_events_by_interest(selected_interest: str):
+    events = []
+    interest_id = index_interest(selected_interest)
+    cursor.execute(
+        "SELECT event_id FROM events_interests WHERE interest_id = ?",
+        (interest_id,)
+    )
+
+    for row in cursor.fetchall():
+        event_id = row[0]
+        cursor.execute(
+            "SELECT name FROM events WHERE event_id = ?",
+            (event_id,)
+        )
+        result = cursor.fetchone()
+        events.append([event_id, result[0]])
+
+    return events
+
+# Função que retorna as informações de um evento com base em seu event_id.
+def check_event(event_id) -> tuple:
+    cursor.execute(
+        "SELECT * FROM events WHERE event_id = ?",
+        (event_id,)
+    )
+    
+    event = cursor.fetchone()
+
+    return event
