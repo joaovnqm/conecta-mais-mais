@@ -38,11 +38,11 @@ Button {
 }
 """
 
-
+# Tela principal exibida após a autenticação do usuário
 class MainPageView(Screen):
     CSS = MAIN_PAGE_CSS
     
-    # Recebe o id e o nome do usuário logado
+    # Inicializa a tela principal com os dados do usuário autenticado
     def __init__(self, user_id: int, user_name: str):
         super().__init__()
         self.user_name = normalize_name(user_name)
@@ -63,7 +63,7 @@ class MainPageView(Screen):
                 yield Button("Meus amigos", id="button_friends")
                 yield Button("Logout", id="button_logout", variant="error")
     
-    # Trata os botões da tela principal
+    # Trata a navegação para perfil, eventos, amigos ou logout
     def on_button_pressed(self, event: Button.Pressed) -> None:
         from screens.login_view import LoginView
         
