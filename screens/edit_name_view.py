@@ -12,7 +12,7 @@ Screen {
 }
 
 #auth_box {
-    width: 52;
+    width: 56;
     height: auto;
     border: round $primary;
     padding: 1 2;
@@ -36,11 +36,6 @@ Input {
     margin-top: 1;
 }
 
-Button {
-    width: 100%;
-    margin-top: 1;
-}
-
 #message {
     width: 100%;
     height: auto;
@@ -48,7 +43,13 @@ Button {
     margin-top: 1;
     color: $warning;
 }
+
+.action_button {
+    width: 100%;
+    margin-top: 1;
+}
 """
+
 
 class EditNameView(Screen):
     CSS = AUTH_CSS
@@ -61,11 +62,11 @@ class EditNameView(Screen):
     # Monta a tela de alteração de nome
     def compose(self) -> ComposeResult:
         profile = get_user_profile(self.user_id)
-        current_name = profile['name'] if profile else ""
+        current_name = profile["name"] if profile else ""
         
         with Center():
             with Vertical(id="auth_box"):
-                yield Static("Alterar nome", id="title")
+                yield Static("Atualizar nome", id="title")
                 yield Static("Digite seu novo nome", classes="subtitle")
                 
                 yield Input (
@@ -76,8 +77,8 @@ class EditNameView(Screen):
                 
                 yield Static("", id="message")
                 
-                yield Button("Salvar", id="button_save", variant="primary")
-                yield Button("Voltar", id="button_back")
+                yield Button("Salvar", id="button_save", variant="primary", classes="action_button")
+                yield Button("Voltar", id="button_back", variant="error", classes="action_button")
                 
     # Trata os botões da tela
     def on_button_pressed(self, event: Button.Pressed) -> None:
