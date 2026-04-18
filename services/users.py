@@ -56,13 +56,9 @@ def login(email, password):
 def register(name, email, password):
     name = name.strip()
     email = email.strip().lower()
-<<<<<<< HEAD
     recovery_word = recovery_word.strip()
     
     # Valida o nome do usuário
-=======
-
->>>>>>> 12bf3307102d57c271450daa1dc61adb748b32c2
     if not valid_name_users(name):
         return False, "O nome precisa ter pelo menos 2 caracteres e não pode conter números.", None
     
@@ -75,14 +71,7 @@ def register(name, email, password):
     if password_message is not None:
         return False, password_message, None
 
-<<<<<<< HEAD
-    recovery_word_message = recovery_word_error_message(recovery_word)
-    if recovery_word_message is not None:
-        return False, recovery_word_message, None
-
     # Verifica se já existe usuário com esse e-mail cadastrado
-=======
->>>>>>> 12bf3307102d57c271450daa1dc61adb748b32c2
     cursor.execute(
         "SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)",
         (email,)
@@ -106,7 +95,6 @@ def register(name, email, password):
 
     return True, "Cadastro realizado!", user_id
 
-<<<<<<< HEAD
 # Função que altera a senha do usuário
 def change_user_password(user_id, current_password: str, new_password: str):
     cursor.execute(
@@ -144,14 +132,3 @@ def change_user_password(user_id, current_password: str, new_password: str):
     connection.commit()
     
     return True, "Senha alterada com sucesso!"
-=======
-# Função que checa o nome do usuário com base em seu ID.
-def check_user_name(user_id: int) -> str:
-    cursor.execute(
-        "SELECT name FROM users WHERE user_id = ?",
-        (user_id,)
-    )
-    name = cursor.fetchone()
-    name = name[0]
-    return name
->>>>>>> 12bf3307102d57c271450daa1dc61adb748b32c2
