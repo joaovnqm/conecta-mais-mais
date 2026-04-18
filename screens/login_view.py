@@ -79,10 +79,11 @@ Button {
 }
 """
 
-
+# Tela de autenticação do sistema
 class LoginView(Screen):
     CSS = AUTH_CSS
 
+    # Monta a interface de login com campos de e-mail e senha
     def compose(self) -> ComposeResult:
         with Center():
             with Vertical(id="auth-box"):
@@ -108,6 +109,7 @@ class LoginView(Screen):
                 yield Button("Esqueci minha senha", id="button_forgot_password")
                 yield Button("Cadastrar", id="button_register_view")
 
+    # Limpa os campos do formulário e remove estados visuais de erro
     def reset_form(self) -> None:
         email_input = self.query_one("#email", Input)
         password_input = self.query_one("#password", Input)
@@ -122,6 +124,7 @@ class LoginView(Screen):
         message_label.update("")
         email_input.focus()
 
+    # Alterna a visibilidade do campo e senha
     def _toggle_password_visibility(self) -> None:
         password_input = self.query_one("#password", Input)
         toggle_button = self.query_one("#toggle_password", Button)
@@ -129,12 +132,14 @@ class LoginView(Screen):
         password_input.password = not password_input.password
         toggle_button.label = "Mostrar" if password_input.password else "Ocultar"
 
+    # Aplica ou remove a classe visual do campo inválido
     def _set_invalid_if_needed(self, input_widget: Input, is_invalid: bool) -> None:
         if is_invalid:
             input_widget.add_class("invalid")
         else:
             input_widget.remove_class("invalid")
 
+    # Valida o campo de senha em tempo real
     def _validate_email_field(self) -> None:
         email_input = self.query_one("#email", Input)
         value = email_input.value.strip()
@@ -145,6 +150,7 @@ class LoginView(Screen):
 
         self._set_invalid_if_needed(email_input, not valid_email(value))
 
+    # Valida o campo de senha em tempo real
     def _validate_password_field(self) -> None:
         password_input = self.query_one("#password", Input)
         value = password_input.value
@@ -156,12 +162,14 @@ class LoginView(Screen):
         error_message = password_error_message(value)
         self._set_invalid_if_needed(password_input, error_message is not None)
 
+    # Dispara a validação adequada sempre que um campo é alterado
     def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "email":
             self._validate_email_field()
         elif event.input.id == "password":
             self._validate_password_field()
 
+    # Trata as ações de tela de login, incluindo autenticação e navegação
     def on_button_pressed(self, event: Button.Pressed) -> None:
         response = self.query_one("#message", Label)
 
