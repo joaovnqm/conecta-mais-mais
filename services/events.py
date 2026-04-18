@@ -1,5 +1,5 @@
 import sqlite3
-from services.interests import check_interests, index_interest
+from services.interests import check_interests_id, index_interest
 from services.validations import valid_name_events, valid_date, valid_hour
 
 connection = sqlite3.connect("conecta++.db")
@@ -68,7 +68,7 @@ def create_event(name: str, description: str, event_location: str, date: str, ho
 
 # Função que retorna lista de tuplas de eventos com base nos interesses do usuário.
 def check_events_with_interests(user_id: int) -> list:
-    interests = check_interests(user_id)
+    interests = check_interests_id(user_id)
     events = []
     seen_ids = set()  # controla duplicatas de forma mais simples
 
@@ -92,6 +92,26 @@ def check_events_with_interests(user_id: int) -> list:
             if result:
                 seen_ids.add(event_id)
                 events.append([event_id, result[0]])
+
+    return events
+
+# Função que retorna uma lista de eventos por interesse.
+def check_events_by_interest(selected_interest: str):
+    events = []
+    interest_id = index_interest(selected_interest)
+    cursor.execute(
+        "SELECT event_id FROM events_interests WHERE interest_id = ?",
+        (interest_id,)
+    )
+
+    for row in cursor.fetchall():
+        event_id = row[0]
+        cursor.execute(
+            "SELECT name FROM events WHERE event_id = ?",
+            (event_id,)
+        )
+        result = cursor.fetchone()
+        events.append([event_id, result[0]])
 
     return events
 
