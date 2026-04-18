@@ -52,10 +52,11 @@ Button {
 }
 """
 
-
+# Tela de solicitação de código para recuperação de senha
 class ForgotPasswordView(Screen):
     CSS = AUTH_CSS
-
+    
+    # Monta a interface para envio do código de recuperação por e-mail
     def compose(self) -> ComposeResult:
         with Center():
             with Vertical(id="auth_box"):
@@ -72,6 +73,7 @@ class ForgotPasswordView(Screen):
                 yield Button("Enviar código", id="button_send_code", variant="primary")
                 yield Button("Voltar", id="button_back")
 
+    # Solicita o envio do código de recuperação ou retorna para a tela anterior
     def on_button_pressed(self, event: Button.Pressed) -> None:
         response = self.query_one("#message", Label)
 
