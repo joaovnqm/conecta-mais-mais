@@ -50,16 +50,16 @@ Input {
 }
 """
 
-
+# Tela responsável pela atualização do nome do usuário
 class EditNameView(Screen):
     CSS = AUTH_CSS
     
-    # Recebe o id do usuário para saber quem será alterado
+    # Inicializa a tela com o identificador do usuário
     def __init__(self, user_id: int):
         super().__init__()
         self.user_id = user_id
         
-    # Monta a tela de alteração de nome
+    # Monta a interface de edição de nome com valor atual preenchido, quando disponível
     def compose(self) -> ComposeResult:
         profile = get_user_profile(self.user_id)
         current_name = profile["name"] if profile else ""
@@ -80,7 +80,7 @@ class EditNameView(Screen):
                 yield Button("Salvar", id="button_save", variant="primary", classes="action_button")
                 yield Button("Voltar", id="button_back", variant="error", classes="action_button")
                 
-    # Trata os botões da tela
+    # Processa o salvamento do novo nome ou retorna para a tela anterior
     def on_button_pressed(self, event: Button.Pressed) -> None:
         response = self.query_one("#message", Static)
         
@@ -94,7 +94,6 @@ class EditNameView(Screen):
                 self.notify("Nome alterado com sucesso")
                 self.app.pop_screen()
                 
-                # Após voltar, recarrega a tela de perfil
                 current_screen = self.app.screen
                 if hasattr(current_screen, "reload_profile"):
                     current_screen.reload_profile()
