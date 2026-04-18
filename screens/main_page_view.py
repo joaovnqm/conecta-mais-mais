@@ -3,6 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
 from screens.events_view import EventsView
+from screens.profile_view import ProfileView
 from services.validations import normalize_name
 
 MAIN_PAGE_CSS = """
@@ -40,12 +41,14 @@ Button {
 
 class MainPageView(Screen):
     CSS = MAIN_PAGE_CSS
-
+    
+    # Recebe o id e o nome do usuário logado
     def __init__(self, user_id: int, user_name: str):
         super().__init__()
         self.user_name = normalize_name(user_name)
         self.user_id = user_id
-
+    
+    # Monta a tela principal após o login
     def compose(self) -> ComposeResult:
         with Center():
             with Vertical(id="main_box"):
@@ -59,11 +62,13 @@ class MainPageView(Screen):
                 yield Button("Eventos", id="button_events")
                 yield Button("Meus amigos", id="button_friends")
                 yield Button("Logout", id="button_logout", variant="error")
-
+    
+    # Trata os botões da tela principal
     def on_button_pressed(self, event: Button.Pressed) -> None:
         from screens.login_view import LoginView
+        
         if event.button.id == "button_profile":
-            self.notify("TELA DE PERFIL EM CONSTRUÇÃO")
+            self.app.push_screen(ProfileView(self.user_id))
 
         elif event.button.id == "button_events":
             self.app.push_screen(EventsView(self.user_id, self.user_name))
