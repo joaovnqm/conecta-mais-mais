@@ -77,14 +77,16 @@ Button {
 }
 """
 
-
+# Tela de redefinição de senha a partir do código enviado por e-mail
 class ResetPasswordView(Screen):
     CSS = AUTH_CSS
 
+    # Inicializa a tela com um e-mail opcionalmente preenchido
     def __init__(self, email: str = ""):
         super().__init__()
         self.initial_email = email
 
+    # Monta a interface de redefinição de senha com o código e nova credencial
     def compose(self) -> ComposeResult:
         with Center():
             with Vertical(id="auth_box"):
@@ -130,20 +132,23 @@ class ResetPasswordView(Screen):
                 )
                 yield Button("Voltar", id="button_back")
 
+    # Alterna a visibilidade do campo de nova senha
     def _toggle_password_visibility(self) -> None:
         password_input = self.query_one("#new_password", Input)
         toggle_button = self.query_one("#toggle_password", Button)
 
         password_input.password = not password_input.password
         toggle_button.label = "Mostrar" if password_input.password else "Ocultar"
-
+        
+    # Alterna a visibilidade do campo de confirmação de senha
     def _toggle_confirm_password_visibility(self) -> None:
         confirm_input = self.query_one("#confirm_password", Input)
         toggle_button = self.query_one("#toggle_confirm_password", Button)
 
         confirm_input.password = not confirm_input.password
         toggle_button.label = "Mostrar" if confirm_input.password else "Ocultar"
-
+    
+    # Processa redefinição de senha e controla a navegação de tela
     def on_button_pressed(self, event: Button.Pressed) -> None:
         response = self.query_one("#message", Label)
 
