@@ -45,15 +45,17 @@ Button {
     margin-top: 1;
 }
 """
-
+# Tela de listagem e filtragem de eventos disponíveis ao usuário
 class EventsView(Screen):
     CSS = MAIN_PAGE_CSS
 
+    # Inicializa a tela com os dados básicos do usuário autenticado
     def __init__(self, user_id: int, user_name: str):
         super().__init__()
         self.user_name = user_name
         self.user_id = user_id
 
+    # Monta a interface com filtros por interesse e listagem de eventos
     def compose(self) -> ComposeResult:
         events = check_events_with_interests(self.user_id)
         interests = check_interests_name(self.user_id)
@@ -72,7 +74,8 @@ class EventsView(Screen):
                         yield Static("Nenhum evento encontrado.", classes="main_subtitle")
 
                 yield Button("Voltar", id="button_return", variant="error")
-
+                
+    # Trata a abertura dos detalhes de um evento ou o retorno à tela anterior
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.has_class("event_buttons"):
             button_id = event.button.id
@@ -81,7 +84,8 @@ class EventsView(Screen):
 
         elif event.button.id == "button_return":
             self.app.pop_screen()
-
+            
+    # Atualiza a listagem quando o filtro de interesse é alterado
     async def on_select_changed(self, event: Select.Changed) -> None:
         selected_value = event.value
         if selected_value is "all_events":
@@ -92,6 +96,7 @@ class EventsView(Screen):
 
         await self.update_events_on_screen(result)
 
+    # Substitui os eventos exibidos com base no resultado do filtro aplicado
     async def update_events_on_screen(self, result):
         container = self.query_one("#events_container")
         await container.remove_children()
