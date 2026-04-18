@@ -95,6 +95,49 @@ def register(name, email, password):
 
     return True, "Cadastro realizado!", user_id
 
+# Função que busca os dados básicos do perfil do usuário
+def get_user_profile(user_id: int):
+    cursor.execute(
+        "SELECT name, email FROM users WHERE user_id = ?",
+        (user_id)
+    )
+    user = cursor.fetchone()
+    
+    if user is None:
+        return None
+    
+    name, email = user
+    return {
+        "name":normalize_name(name),
+        "email": email,
+    }
+
+# Função que altera o nome do usuário
+def update_user_name(user_id: int, new_game: str):
+    new_game = normalize_name(new_game)
+    
+    if not valid_name_users(new_game):
+        return False, "O nome precisa ter pelo menos 2 caracteres e não pode conter números"
+    
+    cursor.execute(
+        "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)",
+        (user_id),
+    )
+    user_exists = bool(cursor.fetchone()[0])
+    
+    if not user_exists:
+        return False, "Usuário não encontrado"
+    
+    cursor.execute(
+        "UPDATE users SET name = ? WHERE user_id = ?",
+        (new_name, user_id)
+    )
+    connection.commit()
+    
+    return True, "Nome alterado com sucesso"
+    
+
+
 # Função que altera a senha do usuário
 def change_user_password(user_id, current_password: str, new_password: str):
     cursor.execute(
