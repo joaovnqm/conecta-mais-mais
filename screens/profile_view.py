@@ -4,6 +4,8 @@ from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
 
 from services.users import get_user_profile
+from screens.edit_name_view import EditNameView
+from screens.change_password_view import ChangePasswordView
 
 PROFILE_CSS = """
 Screen {
@@ -14,7 +16,7 @@ Screen {
 #profile_box {
     width: 60%;
     height: auto;
-    border: round $primary;
+    border: round $primary; 
     padding: 1 2;
     background: $panel;
 }
@@ -81,3 +83,14 @@ class ProfileView(Screen):
         
         self.query_one("#name_value", Static).update(profile["name"])
         self.query_one("#email_value", Static).update(profile["email"])
+    
+    # Trata os cliques dos botões da tela
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "button_edit_name":
+            self.app.push_screen(EditNameView(self.user_id))
+            
+        elif event.button.id == "button_change_password":
+            self.app.push_screen(ChangePasswordView(self.user_id))
+            
+        elif event.button.id == "button_back":
+            self.app.pop_screen()
