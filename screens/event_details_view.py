@@ -35,14 +35,16 @@ Screen {
     margin: 1;
 }
 """
-
+# Tela que exibe os detalhes completos de um evento selecionado
 class EventDetailsView(Screen):
     CSS = EVENT_DETAILS_VIEW
 
+    # Inicializa a tela com o evento que será exibido
     def __init__(self, event_id: int):
         super().__init__()
         self.event_id = event_id
 
+    # Monta a interface com as informações do evento e do criador
     def compose(self) -> ComposeResult:
         event = check_event(self.event_id)
         creator_name = check_user_name(event[6])
@@ -68,6 +70,7 @@ class EventDetailsView(Screen):
                 yield Static(f"Criador do evento: {creator_name}")
                 yield Button("Voltar", id="button_return", variant="error")
     
+    # Retorna para a tela anterior
     def on_button_pressed(self, event: Button.Pressed):
         if event.button.id == "button_return":
             self.app.pop_screen()
