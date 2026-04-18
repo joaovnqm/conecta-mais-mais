@@ -54,16 +54,16 @@ Screen {
 }
 """
 
-
+# Tela de visualização e gerenciamento dos dados do perfil do usuário
 class ProfileView(Screen):
     CSS = PROFILE_CSS
 
-    # Recebe o user_id para saber qual perfil mostrar
+    # Inicializa a tela com o usuário que terá o perfil exibido
     def __init__(self, user_id: int):
         super().__init__()
         self.user_id = user_id
 
-    # Monta a interface da tela de perfil
+    # Monta a interface com os dados do perfil e as ações disponíveis
     def compose(self) -> ComposeResult:
         profile = get_user_profile(self.user_id)
 
@@ -92,7 +92,7 @@ class ProfileView(Screen):
 
                 yield Button("Voltar", id="button_back", variant="error")
 
-    # Atualiza os dados mostrados na tela após uma alteração
+    # Recarga os dados exibidos após uma atualização de perfil
     def reload_profile(self) -> None:
         profile = get_user_profile(self.user_id)
         if profile is None:
@@ -101,7 +101,7 @@ class ProfileView(Screen):
         self.query_one("#name_value", Static).update(profile["name"])
         self.query_one("#email_value", Static).update(profile["email"])
 
-    # Trata os cliques dos botões da tela
+    # Controla a navegação para edição de nome, senha, exclusão ou retorno
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "button_edit_name":
             self.app.push_screen(EditNameView(self.user_id))
