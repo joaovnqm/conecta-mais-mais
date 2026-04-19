@@ -26,6 +26,7 @@ create_event("Teste 5", "Esse evento é bom", "Aldeia, casa de João", "28-05-20
 
 """
 # cursor.execute("ALTER TABLE users DROP COLUMN recovery_word")
-create_event("Teste 6", "Esse evento é bom", "Aldeia, casa de João", "28-05-2026", "12:45", 1, "Desenvolvimento Mobile")
+#create_event("Teste 6", "Esse evento é bom", "Aldeia, casa de João", "28-05-2026", "12:45", 1, "Desenvolvimento Mobile")
 #cursor.execute("INSERT INTO interests (interest_id, name) VALUES (?, ?)", (None, "Ciência de Dados",))
+cursor.execute("DELETE FROM interests WHERE interest_id = 7")
 connection.commit()
