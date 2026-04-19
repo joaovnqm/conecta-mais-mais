@@ -76,15 +76,32 @@ class EventDetailsView(Screen):
                     yield Static(f"Hora: {event[5]}")
 
                 yield Static(f"Criador do evento: {creator_name}")
-                if check_favorite_event(self.user_id, self.event_id):
-                    yield Button("Desfavoritar o Evento", id="button_favorite_event", variant="error")
+                with Center(id="button_favorite_event_container"):
+                    if check_favorite_event(self.user_id, self.event_id):
+                        yield Button("Desfavoritar o Evento", id="button_favorite_event", variant="error")
 
-                else:
-                    yield Button("★ Favoritar o evento ★", id="button_favorite_event", variant="warning")
+                    else:
+                        yield Button("★ Favoritar o evento ★", id="button_favorite_event", variant="warning")
 
                 yield Button("Voltar", id="button_return", variant="error")
     
     # Retorna para a tela anterior
-    def on_button_pressed(self, event: Button.Pressed):
-        if event.button.id == "button_return":
+    async def on_button_pressed(self, event: Button.Pressed):
+        if event.button.id == "button_favorite_event" and event.button.variant == "warning":
+            result = favorite_event(self.user_id, self.event_id)
+            await self.update_events_on_screen(result)
+            if result == True:
+                self.app.notify(result[1])
+            
+            else:
+                self.app.notify(result[1])
+
+        elif event.button.id == "button_return":
             self.app.pop_screen()
+
+    async def update_events_on_screen(self, result):
+        container = self.query_one("#button_favorite_event_container")
+        await container.remove_children()
+        container.mount(
+            Button("Desfavoritar o Evento", id="button_favorite_event")
+        )
