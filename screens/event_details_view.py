@@ -4,7 +4,7 @@ from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll
 from services.events import check_event
 from services.users import check_user_name
-from services.favorite_events import check_favorite_event, favorite_event
+from services.favorite_events import check_favorite_event, favorite_event, remove_from_favorite_event
 
 EVENT_DETAILS_VIEW = """
 Screen {
@@ -96,8 +96,8 @@ class EventDetailsView(Screen):
             else:
                 self.app.notify(result[1])
                 
-        if event.button.id == "button_favorite_event" and event.button.variant == "warning":
-            result = favorite_event(self.user_id, self.event_id)
+        elif event.button.id == "button_favorite_event" and event.button.variant == "default":
+            result = remove_from_favorite_event(self.user_id, self.event_id)
             await self.update_events_on_screen(result)
             if result == True:
                 self.app.notify(result[1])
@@ -111,6 +111,11 @@ class EventDetailsView(Screen):
     async def update_events_on_screen(self, result):
         container = self.query_one("#button_favorite_event_container")
         await container.remove_children()
-        container.mount(
-            Button("Desfavoritar o Evento", id="button_favorite_event", variant="default")
-        )
+        if result [1] == "Evento favoritado com sucesso.":
+            container.mount(
+                Button("Desfavoritar o Evento", id="button_favorite_event", variant="default")
+            )
+        else:
+            container.mount(
+                Button("★ Favoritar o evento ★", id="button_favorite_event", variant="warning")
+            )
