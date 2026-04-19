@@ -1,4 +1,5 @@
 import sqlite3
+from services.events import check_event
 
 connection = sqlite3.connect("conecta++.db")
 connection.execute("PRAGMA foreign_keys = ON")
@@ -47,3 +48,18 @@ def check_favorite_event(user_id, event_id) -> bool:
     )
 
     return bool(cursor.fetchone()[0])
+
+# Função que checa os eventos favoritados pelo usuário.
+def check_favorited_events(user_id):
+    events_list = []
+    cursor.execute(
+        "SELECT event_id FROM favorite_events WHERE user_id = ?",
+        (user_id,)
+    )
+
+    events = cursor.fetchall()
+    for event in events:
+        event = check_event(event[0])
+        events_list.append(event)
+
+    return events_list
