@@ -26,6 +26,19 @@ def favorite_event(user_id, event_id):
     connection.commit()
     return True, "Evento favoritado com sucesso."
 
+# Função que remove o status de favorito de um evento, removendo-o da lista de favoritos.
+def remove_from_favorite_event(user_id, event_id):
+    if check_favorite_event(user_id, event_id) == False:
+        return False, "Você já desfavoritou esse evento."
+    
+    cursor.execute(
+        "DELETE FROM favorite_events WHERE user_id = ? AND event_id = ?",
+        (user_id, event_id,)
+    )
+
+    connection.commit()
+    return True, "Evento desfavoritado com sucesso."
+
 # Função que checa se o evento já foi favoritado.
 def check_favorite_event(user_id, event_id) -> bool:
     cursor.execute(

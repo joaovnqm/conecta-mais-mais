@@ -78,7 +78,7 @@ class EventDetailsView(Screen):
                 yield Static(f"Criador do evento: {creator_name}")
                 with Center(id="button_favorite_event_container"):
                     if check_favorite_event(self.user_id, self.event_id):
-                        yield Button("Desfavoritar o Evento", id="button_favorite_event", variant="error")
+                        yield Button("Desfavoritar o Evento", id="button_favorite_event", variant="default")
 
                     else:
                         yield Button("★ Favoritar o evento ★", id="button_favorite_event", variant="warning")
@@ -95,6 +95,15 @@ class EventDetailsView(Screen):
             
             else:
                 self.app.notify(result[1])
+                
+        if event.button.id == "button_favorite_event" and event.button.variant == "warning":
+            result = favorite_event(self.user_id, self.event_id)
+            await self.update_events_on_screen(result)
+            if result == True:
+                self.app.notify(result[1])
+            
+            else:
+                self.app.notify(result[1])
 
         elif event.button.id == "button_return":
             self.app.pop_screen()
@@ -103,5 +112,5 @@ class EventDetailsView(Screen):
         container = self.query_one("#button_favorite_event_container")
         await container.remove_children()
         container.mount(
-            Button("Desfavoritar o Evento", id="button_favorite_event")
+            Button("Desfavoritar o Evento", id="button_favorite_event", variant="default")
         )
