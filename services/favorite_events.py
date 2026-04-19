@@ -13,16 +13,9 @@ cursor.execute("CREATE TABLE IF NOT EXISTS favorite_events (" \
     "FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE)"
     )
 
-# Criando função que favorita um evento e salva na lista de eventos favoritos.
+# Função que favorita um evento e salva na lista de eventos favoritos.
 def favorite_event(user_id, event_id):
-    cursor.execute(
-        "SELECT EXISTS(SELECT 1 FROM favorite_events WHERE user_id = ? AND event_id = ?)",
-        (user_id, event_id,)
-    )
-
-    result = bool(cursor.fetchone()[0])
-
-    if result:
+    if check_favorite_event(user_id, event_id):
         return False, "Você já favoritou esse evento."
     
     cursor.execute(
@@ -32,3 +25,12 @@ def favorite_event(user_id, event_id):
 
     connection.commit()
     return True, "Evento favoritado com sucesso."
+
+# Função que checa se o evento já foi favoritado.
+def check_favorite_event(user_id, event_id) -> bool:
+    cursor.execute(
+        "SELECT EXISTS(SELECT 1 FROM favorite_events WHERE user_id = ? AND event_id = ?)",
+        (user_id, event_id,)
+    )
+
+    return bool(cursor.fetchone()[0])
