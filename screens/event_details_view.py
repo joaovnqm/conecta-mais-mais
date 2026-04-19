@@ -4,6 +4,7 @@ from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll
 from services.events import check_event
 from services.users import check_user_name
+from services.favorite_events import check_favorite_event, favorite_event, remove_from_favorite_event
 
 EVENT_DETAILS_VIEW = """
 Screen {
@@ -29,6 +30,12 @@ Screen {
     margin: 1;
 }
 
+#button_favorite_event {
+    width: 100%;
+    content-align: center middle;
+    margin: 1;
+}
+
 #button_return {
     width: 100%;
     content-align: center middle;
@@ -40,8 +47,9 @@ class EventDetailsView(Screen):
     CSS = EVENT_DETAILS_VIEW
 
     # Inicializa a tela com o evento que será exibido
-    def __init__(self, event_id: int):
+    def __init__(self, user_id: int, event_id: int):
         super().__init__()
+        self.user_id = user_id
         self.event_id = event_id
 
     # Monta a interface com as informações do evento e do criador
@@ -68,9 +76,46 @@ class EventDetailsView(Screen):
                     yield Static(f"Hora: {event[5]}")
 
                 yield Static(f"Criador do evento: {creator_name}")
+                with Center(id="button_favorite_event_container"):
+                    if check_favorite_event(self.user_id, self.event_id):
+                        yield Button("Desfavoritar o Evento", id="button_favorite_event", variant="default")
+
+                    else:
+                        yield Button("★ Favoritar o evento ★", id="button_favorite_event", variant="warning")
+
                 yield Button("Voltar", id="button_return", variant="error")
     
     # Retorna para a tela anterior
-    def on_button_pressed(self, event: Button.Pressed):
-        if event.button.id == "button_return":
+    async def on_button_pressed(self, event: Button.Pressed):
+        if event.button.id == "button_favorite_event" and event.button.variant == "warning":
+            result = favorite_event(self.user_id, self.event_id)
+            await self.update_events_on_screen(result)
+            if result == True:
+                self.app.notify(result[1])
+            
+            else:
+                self.app.notify(result[1])
+                
+        elif event.button.id == "button_favorite_event" and event.button.variant == "default":
+            result = remove_from_favorite_event(self.user_id, self.event_id)
+            await self.update_events_on_screen(result)
+            if result == True:
+                self.app.notify(result[1])
+            
+            else:
+                self.app.notify(result[1])
+
+        elif event.button.id == "button_return":
             self.app.pop_screen()
+
+    async def update_events_on_screen(self, result):
+        container = self.query_one("#button_favorite_event_container")
+        await container.remove_children()
+        if result [1] == "Evento favoritado com sucesso.":
+            container.mount(
+                Button("Desfavoritar o Evento", id="button_favorite_event", variant="default")
+            )
+        else:
+            container.mount(
+                Button("★ Favoritar o evento ★", id="button_favorite_event", variant="warning")
+            )

@@ -79,8 +79,8 @@ class EventsView(Screen):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.has_class("event_buttons"):
             button_id = event.button.id
-            numero_do_evento = str(button_id.split("_")[1])
-            self.app.push_screen(EventDetailsView(numero_do_evento))
+            event_id = str(button_id.split("_")[1])
+            self.app.push_screen(EventDetailsView(self.user_id, event_id))
 
         elif event.button.id == "button_return":
             self.app.pop_screen()

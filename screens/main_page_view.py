@@ -4,6 +4,7 @@ from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
 from screens.events_view import EventsView
 from screens.profile_view import ProfileView
+from screens.favorite_events_list_view import FavoriteEventsList
 from services.validations import normalize_name
 
 MAIN_PAGE_CSS = """
@@ -60,7 +61,7 @@ class MainPageView(Screen):
 
                 yield Button("Meu perfil", id="button_profile")
                 yield Button("Eventos", id="button_events")
-                yield Button("Meus amigos", id="button_friends")
+                yield Button("Eventos Favoritados", id="button_favorite_events")
                 yield Button("Logout", id="button_logout", variant="error")
     
     # Trata a navegação para perfil, eventos, amigos ou logout
@@ -73,8 +74,8 @@ class MainPageView(Screen):
         elif event.button.id == "button_events":
             self.app.push_screen(EventsView(self.user_id, self.user_name))
 
-        elif event.button.id == "button_friends":
-            self.notify("TELA DE MEUS AMIGOS EM CONSTRUÇÃO")
+        elif event.button.id == "button_favorite_events":
+            self.app.push_screen(FavoriteEventsList(self.user_id))
 
         elif event.button.id == "button_logout":
             self.app.push_screen(LoginView())
