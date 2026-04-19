@@ -60,7 +60,7 @@ class MainPageView(Screen):
 
                 yield Button("Meu perfil", id="button_profile")
                 yield Button("Eventos", id="button_events")
-                yield Button("Meus amigos", id="button_friends")
+                yield Button("Eventos Favoritados", id="button_favorite_events")
                 yield Button("Logout", id="button_logout", variant="error")
     
     # Trata a navegação para perfil, eventos, amigos ou logout
@@ -73,7 +73,7 @@ class MainPageView(Screen):
         elif event.button.id == "button_events":
             self.app.push_screen(EventsView(self.user_id, self.user_name))
 
-        elif event.button.id == "button_friends":
+        elif event.button.id == "button_favorite_events":
             self.notify("TELA DE MEUS AMIGOS EM CONSTRUÇÃO")
 
         elif event.button.id == "button_logout":
