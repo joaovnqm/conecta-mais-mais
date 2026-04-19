@@ -4,6 +4,7 @@ from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll
 from services.events import check_event
 from services.users import check_user_name
+from services.favorite_events import check_favorite_event, favorite_event
 
 EVENT_DETAILS_VIEW = """
 Screen {
@@ -40,8 +41,9 @@ class EventDetailsView(Screen):
     CSS = EVENT_DETAILS_VIEW
 
     # Inicializa a tela com o evento que será exibido
-    def __init__(self, event_id: int):
+    def __init__(self, user_id: int, event_id: int):
         super().__init__()
+        self.user_id = user_id
         self.event_id = event_id
 
     # Monta a interface com as informações do evento e do criador
@@ -68,6 +70,12 @@ class EventDetailsView(Screen):
                     yield Static(f"Hora: {event[5]}")
 
                 yield Static(f"Criador do evento: {creator_name}")
+                if check_favorite_event(self.user_id, self.event_id):
+                    yield Button("Desfavoritar o Evento", id="button_favorite_event", variant="error")
+
+                else:
+                    yield Button("Favoritar o evento", id="button_favorite_event", variant="success")
+                    
                 yield Button("Voltar", id="button_return", variant="error")
     
     # Retorna para a tela anterior
