@@ -30,6 +30,12 @@ Screen {
     margin: 1;
 }
 
+#button_favorite_event {
+    width: 100%;
+    content-align: center middle;
+    margin: 1;
+}
+
 #button_return {
     width: 100%;
     content-align: center middle;
@@ -74,8 +80,8 @@ class EventDetailsView(Screen):
                     yield Button("Desfavoritar o Evento", id="button_favorite_event", variant="error")
 
                 else:
-                    yield Button("Favoritar o evento", id="button_favorite_event", variant="success")
-                    
+                    yield Button("★ Favoritar o evento ★", id="button_favorite_event", variant="warning")
+
                 yield Button("Voltar", id="button_return", variant="error")
     
     # Retorna para a tela anterior
