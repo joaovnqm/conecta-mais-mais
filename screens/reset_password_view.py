@@ -4,6 +4,7 @@ from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical, Horizontal
 
 from services.password_reset import reset_password
+from screens.password_toggle import toggle_password_visibility
 
 
 AUTH_CSS = """
@@ -131,33 +132,17 @@ class ResetPasswordView(Screen):
                     variant="primary"
                 )
                 yield Button("Voltar", id="button_back")
-
-    # Alterna a visibilidade do campo de nova senha
-    def _toggle_password_visibility(self) -> None:
-        password_input = self.query_one("#new_password", Input)
-        toggle_button = self.query_one("#toggle_password", Button)
-
-        password_input.password = not password_input.password
-        toggle_button.label = "Mostrar" if password_input.password else "Ocultar"
-        
-    # Alterna a visibilidade do campo de confirmação de senha
-    def _toggle_confirm_password_visibility(self) -> None:
-        confirm_input = self.query_one("#confirm_password", Input)
-        toggle_button = self.query_one("#toggle_confirm_password", Button)
-
-        confirm_input.password = not confirm_input.password
-        toggle_button.label = "Mostrar" if confirm_input.password else "Ocultar"
     
     # Processa redefinição de senha e controla a navegação de tela
     def on_button_pressed(self, event: Button.Pressed) -> None:
         response = self.query_one("#message", Label)
 
         if event.button.id == "toggle_password":
-            self._toggle_password_visibility()
+            toggle_password_visibility(self, "new_password", "toggle_password")
             return
 
         if event.button.id == "toggle_confirm_password":
-            self._toggle_confirm_password_visibility()
+            toggle_password_visibility(self, "confirm_password", "toggle_confirm_password")
             return
 
         if event.button.id == "button_reset_password":

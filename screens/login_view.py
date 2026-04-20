@@ -8,6 +8,7 @@ from services.validations import valid_email, valid_password, password_error_mes
 from screens.register_view import RegisterView
 from screens.main_page_view import MainPageView
 from screens.forgot_password_view import ForgotPasswordView
+from screens.password_toggle import toggle_password_visibility
 
 
 AUTH_CSS = """
@@ -122,15 +123,7 @@ class LoginView(Screen):
         password_input.remove_class("invalid")
 
         message_label.update("")
-        email_input.focus()
-
-    # Alterna a visibilidade do campo e senha
-    def _toggle_password_visibility(self) -> None:
-        password_input = self.query_one("#password", Input)
-        toggle_button = self.query_one("#toggle_password", Button)
-
-        password_input.password = not password_input.password
-        toggle_button.label = "Mostrar" if password_input.password else "Ocultar"
+        email_input.focus()    
 
     # Aplica ou remove a classe visual do campo inválido
     def _set_invalid_if_needed(self, input_widget: Input, is_invalid: bool) -> None:
@@ -174,7 +167,7 @@ class LoginView(Screen):
         response = self.query_one("#message", Label)
 
         if event.button.id == "toggle_password":
-            self._toggle_password_visibility()
+            toggle_password_visibility(self, "password", "toggle_password")
             return
 
         if event.button.id == "button_login":

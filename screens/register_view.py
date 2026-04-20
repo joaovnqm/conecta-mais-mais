@@ -10,7 +10,7 @@ from services.validations import (
     password_error_message,
 )
 from screens.code_verification_view import CodeVerificationView
-
+from screens.password_toggle import toggle_password_visibility
 
 AUTH_CSS = """
 Screen {
@@ -186,20 +186,6 @@ class RegisterView(Screen):
             re_password_input,
             re_password_value != password_value
         )
-    # Alterna a visibilidade do campo de senha
-    def _toggle_password_visibility(self) -> None:
-        password_input = self.query_one("#password", Input)
-        toggle_button = self.query_one("#toggle_password", Button)
-
-        password_input.password = not password_input.password
-        toggle_button.label = "Mostrar" if password_input.password else "Ocultar"
-    # Alterna a visibilidade da confirmação de campo de senha
-    def _toggle_re_password_visibility(self) -> None:
-        re_password_input = self.query_one("#re_password", Input)
-        toggle_button = self.query_one("#toggle_re_password", Button)
-
-        re_password_input.password = not re_password_input.password
-        toggle_button.label = "Mostrar" if re_password_input.password else "Ocultar"
         
     # Dispara a validação apropriada conforme o campo alterado
     def on_input_changed(self, event: Input.Changed) -> None:
@@ -221,11 +207,11 @@ class RegisterView(Screen):
         response = self.query_one("#message", Static)
 
         if event.button.id == "toggle_password":
-            self._toggle_password_visibility()
+            toggle_password_visibility(self, "password", "toggle_password")
             return
 
         if event.button.id == "toggle_re_password":
-            self._toggle_re_password_visibility()
+            toggle_password_visibility(self, "re_password", "toggle_re_password")
             return
 
         if event.button.id == "button_register":
