@@ -28,7 +28,7 @@ Função que valida nomes de eventos.
     2. Pode conter letras, números, acentos e espaços
 """
 def valid_name_events(name: str) -> bool:
-    pattern = r'^[A-Za-zÀ-ÿ0-9 ]{2,}$'
+    pattern = r'^[A-Za-zÀ-ÿ0-9 \-_.,()\'"&@!]{2,}$'
     return re.fullmatch(pattern, name.strip()) is not None
 
 """
