@@ -87,7 +87,7 @@ class EventDetailsView(Screen):
                     else:
                         yield Button("★ Favoritar o evento ★", id="button_favorite_event", variant="warning")
 
-                yield Button("Voltar", id="button_return", variant="error")
+                yield Button("Voltar", id="button_return", variant="primary")
     
     async def on_button_pressed(self, event: Button.Pressed):
         """

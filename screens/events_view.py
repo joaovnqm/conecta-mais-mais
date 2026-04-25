@@ -77,7 +77,7 @@ class EventsView(Screen):
                     else:
                         yield Static("Nenhum evento encontrado.", classes="main_subtitle")
 
-                yield Button("Voltar", id="button_return", variant="error")
+                yield Button("Voltar", id="button_return", variant="primary")
                 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """

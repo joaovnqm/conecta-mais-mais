@@ -93,7 +93,7 @@ class ProfileView(Screen):
                         variant="error"
                     )
 
-                yield Button("Voltar", id="button_back", variant="error")
+                yield Button("Voltar", id="button_back", variant="primary")
 
     def reload_profile(self) -> None:
         """

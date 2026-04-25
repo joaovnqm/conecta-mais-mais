@@ -63,7 +63,7 @@ class FavoriteEventsList(Screen):
             with VerticalScroll(id="main_box"):
                 yield Static("Esses são os eventos favoritados.", id="main_title")
                 yield VerticalScroll(id="events_container") 
-                yield Button("Voltar", id="button_return", variant="error")
+                yield Button("Voltar", id="button_return", variant="primary")
     
     async def update_events(self) -> None:
         """

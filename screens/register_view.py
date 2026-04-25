@@ -5,7 +5,7 @@ from textual.containers import Center, Vertical, Horizontal
 from services.password_reset import request_registration_code
 from services.validations import (valid_name_users, valid_email, password_error_message)
 from screens.code_verification_view import CodeVerificationView
-from screens.password_toggle import toggle_password_visibility
+from services.password_toggle import toggle_password_visibility
 
 AUTH_CSS = """
 Screen {
@@ -125,7 +125,7 @@ class RegisterView(Screen):
                 yield Static("", id="message")
 
                 yield Button("Cadastrar", id="button_register", variant="primary")
-                yield Button("Voltar", id="button_back")
+                yield Button("Voltar", id="button_back", variant="primary")
 
     def _set_invalid_if_needed(self, input_widget: Input, is_invalid: bool) -> None:
         """

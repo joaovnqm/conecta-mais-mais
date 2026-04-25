@@ -74,7 +74,7 @@ class ForgotPasswordView(Screen):
                 yield Label("", id="message")
 
                 yield Button("Enviar código", id="button_send_code", variant="primary")
-                yield Button("Voltar", id="button_back")
+                yield Button("Voltar", id="button_back", variant="primary")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """

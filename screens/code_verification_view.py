@@ -11,7 +11,7 @@ from services.password_reset import (
 )
 from services.users import register
 from screens.interests_view import InterestsView
-from screens.password_toggle import toggle_password_visibility
+from services.password_toggle import toggle_password_visibility
 
 AUTH_CSS = """
 Screen {
@@ -112,53 +112,31 @@ class CodeVerificationView(Screen):
             with Vertical(id="auth_box"):
                 if self.mode == "register":
                     yield Static("Verificar e-mail", id="title")
-                    yield Static(
-                        f"Digite o código enviado para {self.email}.",
-                        classes="subtitle"
-                    )
+                    yield Static(f"Digite o código enviado para {self.email}.", classes="subtitle")
                 elif self.verified:
                     yield Static("Nova senha", id="title")
-                    yield Static(
-                        f"Código validado para {self.email}. Agora defina sua nova senha.",
-                        classes="subtitle"
-                    )
+                    yield Static(f"Código validado para {self.email}. Agora defina sua nova senha.", classes="subtitle")
                 else:
                     yield Static("Verificar código", id="title")
-                    yield Static(
-                        f"Digite o código enviado para {self.email}.",
-                        classes="subtitle"
-                    )
+                    yield Static(f"Digite o código enviado para {self.email}.", classes="subtitle")
                 if not self.verified:
-                    yield Input(
-                        placeholder="Digite o código recebido...",
-                        id="code"
-                    )
+                    yield Input(placeholder="Digite o código recebido...", id="code")
                     yield Static("", id="message")
-
                     yield Button("Validar código", id="button_verify_code", variant="primary")
                     yield Button("Reenviar código", id="button_resend_code")
                     yield Button("Voltar", id="button_back")
                 else:
                     with Horizontal(id="password-row"):
-                        yield Input(
-                            placeholder="Digite a nova senha...",
-                            id="new_password",
-                            password=True
-                        )
+                        yield Input(placeholder="Digite a nova senha...", id="new_password", password=True)
                         yield Button("Mostrar", id="toggle_password")
 
                     with Horizontal(id="confirm-password-row"):
-                        yield Input(
-                            placeholder="Confirme a nova senha...",
-                            id="confirm_password",
-                            password=True
-                        )
+                        yield Input(placeholder="Confirme a nova senha...", id="confirm_password", password=True)
                         yield Button("Mostrar", id="toggle_confirm_password")
 
                     yield Static("", id="message")
-
                     yield Button("Alterar senha", id="button_change_password", variant="primary")
-                    yield Button("Voltar", id="button_back")
+                    yield Button("Voltar", id="button_back", variant="primary")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """

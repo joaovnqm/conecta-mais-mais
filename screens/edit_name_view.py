@@ -81,8 +81,8 @@ class EditNameView(Screen):
                 
                 yield Static("", id="message")
                 
-                yield Button("Salvar", id="button_save", variant="primary", classes="action_button")
-                yield Button("Voltar", id="button_back", variant="error", classes="action_button")
+                yield Button("Salvar", id="button_save", classes="action_button")
+                yield Button("Voltar", id="button_back", variant="primary", classes="action_button")
                 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """

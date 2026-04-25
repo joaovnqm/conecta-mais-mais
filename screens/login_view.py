@@ -8,7 +8,7 @@ from services.validations import valid_email, password_error_message
 from screens.register_view import RegisterView
 from screens.main_page_view import MainPageView
 from screens.forgot_password_view import ForgotPasswordView
-from screens.password_toggle import toggle_password_visibility
+from services.password_toggle import toggle_password_visibility
 
 
 AUTH_CSS = """

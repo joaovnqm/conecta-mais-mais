@@ -58,15 +58,8 @@ class DeleteAccountView(Screen):
                     "Tem certeza que deseja deletar sua conta?",
                     classes="subtitle"
                 )
-                yield Button(
-                    "Sim, deletar",
-                    id="button_confirm_delete",
-                    variant="error"
-                )
-                yield Button(
-                    "Não, voltar",
-                    id="button_cancel_delete"
-                )
+                yield Button("Sim, deletar", id="button_confirm_delete", variant="error")
+                yield Button("Não, voltar", id="button_cancel_delete", variant="primary")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """

@@ -4,7 +4,7 @@ from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical, Horizontal
 
 from services.password_reset import reset_password
-from screens.password_toggle import toggle_password_visibility
+from services.password_toggle import toggle_password_visibility
 
 
 AUTH_CSS = """
@@ -128,13 +128,8 @@ class ResetPasswordView(Screen):
                     yield Button("Mostrar", id="toggle_confirm_password")
 
                 yield Label("", id="message")
-
-                yield Button(
-                    "Alterar senha",
-                    id="button_reset_password",
-                    variant="primary"
-                )
-                yield Button("Voltar", id="button_back")
+                yield Button("Alterar senha", id="button_reset_password", variant="primary")
+                yield Button("Voltar", id="button_back", variant="primary")
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """

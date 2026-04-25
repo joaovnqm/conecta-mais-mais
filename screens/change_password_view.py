@@ -4,7 +4,7 @@ from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
 
 from services.users import change_user_password
-from screens.password_toggle import toggle_password_visibility
+from services.password_toggle import toggle_password_visibility
 
 AUTH_CSS = """
 Screen {
@@ -105,44 +105,22 @@ class ChangePasswordView(Screen):
         with Center():
             with Vertical(id="auth_box"):
                 yield Static("Atualizar senha", id="title")
-                yield Static(
-                    "Digite sua senha atual e depois defina a nova senha",
-                    classes="subtitle"
-                )
+                yield Static("Digite sua senha atual e depois defina a nova senha", classes="subtitle")
                 with Horizontal(id="current-password-row"):
-                    yield Input(
-                        placeholder="Digite sua senha atual...",
-                        id="current_password",
-                        password=True
-                    )
+                    yield Input(placeholder="Digite sua senha atual...", id="current_password", password=True)
                     yield Button("Mostrar", id="toggle_current_password")
+
                 with Horizontal(id="new-password-row"):
-                    yield Input(
-                        placeholder="Digite a sua nova senha...",
-                        id="new_password",
-                        password=True
-                    )
+                    yield Input(placeholder="Digite a sua nova senha...", id="new_password", password=True)
                     yield Button("Mostrar", id="toggle_new_password")
+
                 with Horizontal(id="confirm-password-row"):
-                    yield Input(
-                        placeholder="Confirme a nova senha...",
-                        id="confirm_password",
-                        password=True
-                    )
+                    yield Input(placeholder="Confirme a nova senha...", id="confirm_password", password=True)
                     yield Button("Mostrar", id="toggle_confirm_password")
+
                 yield Static("", id="message")
-                yield Button(
-                    "Salvar",
-                    id="button_save",
-                    variant="primary",
-                    classes="action_button"
-                )
-                yield Button(
-                    "Voltar",
-                    id="button_back",
-                    variant="error",
-                    classes="action_button"
-                )
+                yield Button("Salvar", id="button_save", classes="action_button")
+                yield Button("Voltar", id="button_back", variant="primary", classes="action_button")
                 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """
