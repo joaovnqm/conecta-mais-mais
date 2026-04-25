@@ -95,35 +95,17 @@ class RegisterView(Screen):
             with Vertical(id="auth_box"):
                 yield Static("Conecta++", id="title")
                 yield Static("Crie sua conta", classes="subtitle")
-
-                yield Input(
-                    placeholder="Digite seu nome...",
-                    id="name"
-                )
-
-                yield Input(
-                    placeholder="Digite seu e-mail...",
-                    id="email"
-                )
-
+                yield Input(placeholder="Digite seu nome...",id="name")
+                yield Input(placeholder="Digite seu e-mail...", id="email")
                 with Horizontal(id="password-row"):
-                    yield Input(
-                        placeholder="Digite sua senha...",
-                        id="password",
-                        password=True
-                    )
+                    yield Input(placeholder="Digite sua senha...", id="password", password=True)
                     yield Button("Mostrar", id="toggle_password")
 
                 with Horizontal(id="re-password-row"):
-                    yield Input(
-                        placeholder="Confirme sua senha...",
-                        id="re_password",
-                        password=True
-                    )
+                    yield Input(placeholder="Confirme sua senha...", id="re_password", password=True)
                     yield Button("Mostrar", id="toggle_re_password")
 
                 yield Static("", id="message")
-
                 yield Button("Cadastrar", id="button_register", variant="primary")
                 yield Button("Voltar", id="button_back", variant="primary")
 
