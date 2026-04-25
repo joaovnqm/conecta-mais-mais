@@ -37,11 +37,11 @@ Button {
 }
 """
 
-"""
-Classe responsável pela tela de confirmação de exclusão da conta.
-Ela exibe uma mensagem perguntando se o usuário realmente deseja deletar a conta, com opções para confirmar ou cancelar.
-"""
 class DeleteAccountView(Screen):
+    """
+    Classe responsável pela tela de confirmação de exclusão da conta.
+    Ela exibe uma mensagem perguntando se o usuário realmente deseja deletar a conta, com opções para confirmar ou cancelar.
+    """
     CSS = AUTH_CSS
     
     # Inicializa a tela com usuário que poderá ser removido
@@ -68,8 +68,14 @@ class DeleteAccountView(Screen):
                     id="button_cancel_delete"
                 )
 
-    # Trata a confirmação ou cancelamento da exclusão de conta
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """
+        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado, 
+        e executa a ação correspondente:
+        - Se for o botão de confirmar exclusão, ela chama a função delete_user_account para tentar deletar a conta, 
+        e atualiza a mensagem de resposta com o resultado.
+        - Se for o botão de cancelar exclusão, ela simplesmente retorna para a tela anterior.
+        """
         if event.button.id == "button_confirm_delete":
             success, message = delete_user_account(self.user_id)
 

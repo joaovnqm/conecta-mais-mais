@@ -45,8 +45,12 @@ Button {
     margin-top: 1;
 }
 """
-# Tela de listagem e filtragem de eventos disponíveis ao usuário
+
 class EventsView(Screen):
+    """
+    Classe responsável pela tela de listagem de eventos. Ela exibe uma lista de eventos disponíveis, com a opção de filtrar 
+    por interesse.
+    """
     CSS = MAIN_PAGE_CSS
 
     # Inicializa a tela com os dados básicos do usuário autenticado
@@ -75,8 +79,13 @@ class EventsView(Screen):
 
                 yield Button("Voltar", id="button_return", variant="error")
                 
-    # Trata a abertura dos detalhes de um evento ou o retorno à tela anterior
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """
+        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado,
+        e executa a ação correspondente:
+        - Se for um botão de evento, ela extrai o ID do evento a partir do ID do botão e navega para a tela de detalhes do evento.
+        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
+        """
         if event.button.has_class("event_buttons"):
             button_id = event.button.id
             event_id = str(button_id.split("_")[1])
@@ -85,8 +94,13 @@ class EventsView(Screen):
         elif event.button.id == "button_return":
             self.app.pop_screen()
             
-    # Atualiza a listagem quando o filtro de interesse é alterado
     async def on_select_changed(self, event: Select.Changed) -> None:
+        """
+        Função que lida com os eventos de mudança na seleção do filtro por interesse. Ela verifica o valor selecionado,
+        e chama a função correspondente para obter os eventos filtrados, e então atualiza a listagem de eventos exibida na 
+        tela com base no resultado do filtro aplicado. Se "Todos os Eventos" for selecionado, ela chama check_events_with_interests 
+        para obter todos os eventos relacionados aos interesses do usuário.
+        """
         selected_value = event.value
         if selected_value is "all_events":
             result = check_events_with_interests(self.user_id)
@@ -96,8 +110,12 @@ class EventsView(Screen):
 
         await self.update_events_on_screen(result)
 
-    # Substitui os eventos exibidos com base no resultado do filtro aplicado
     async def update_events_on_screen(self, result):
+        """
+        Função auxiliar para atualizar a listagem de eventos exibida na tela, com base no resultado da aplicação do filtro 
+        por interesse. Ela remove os eventos atualmente exibidos e monta novos botões para os eventos filtrados, 
+        ou exibe uma mensagem caso nenhum evento esteja disponível para os filtros selecionados.
+        """
         container = self.query_one("#events_container")
         await container.remove_children()
         if result:

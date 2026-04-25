@@ -43,8 +43,14 @@ Button {
     color: $warning;
 }
 """
-# Tela de seleção inicial de interesses do usuário
+
 class InterestsView(Screen):
+    """
+    Classe responsável pela tela de seleção de interesses. Ela é exibida após o cadastro do usuário, e permite que ele selecione 
+    os seus interesses a partir de uma lista de opções disponíveis. Os interesses selecionados são salvos no banco de dados e 
+    associados ao perfil do usuário, para que possam ser utilizados posteriormente para personalizar a experiência do usuário 
+    na plataforma, como por exemplo, exibir eventos relacionados aos interesses selecionados.
+    """
     CSS = AUTH_CSS
     
     # Inicializa a tela com os dados do usuário recém cadastrado
@@ -70,8 +76,13 @@ class InterestsView(Screen):
                     yield Static("Nenhum interesse encontrado.", classes="main_subtitle")
                 yield Button("Definir interesses", id="button_register_interests", variant="primary")
     
-    # Salva os interesses marcados e encaminha o usuário para a tela principal
     def on_button_pressed(self, event: Button.Pressed) -> None:
+            """
+            Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado,
+            e executa a ação correspondente:
+            - Se for o botão de definir interesses, ela coleta os interesses marcados, chama a função de adição de interesses,
+              e exibe a mensagem de resposta. Se a operação for bem-sucedida, ela navega para a tela principal.
+            """
             if event.button.id == "button_register_interests":
                 checkboxes = self.query(".interests")
                 for checkbox in checkboxes:

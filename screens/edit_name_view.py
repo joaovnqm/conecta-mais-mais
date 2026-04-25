@@ -50,8 +50,12 @@ Input {
 }
 """
 
-# Tela responsável pela atualização do nome do usuário
 class EditNameView(Screen):
+    """
+    Classe responsável pela tela de edição de nome. Ela é acessada a partir da tela de perfil, e permite que o usuário 
+    altere seu nome atual para um novo nome. A tela inclui um campo para o novo nome, que é pré-preenchido com o nome 
+    atual do usuário, além de botões para salvar as alterações ou voltar para a tela anterior.
+    """
     CSS = AUTH_CSS
     
     # Inicializa a tela com o identificador do usuário
@@ -80,8 +84,14 @@ class EditNameView(Screen):
                 yield Button("Salvar", id="button_save", variant="primary", classes="action_button")
                 yield Button("Voltar", id="button_back", variant="error", classes="action_button")
                 
-    # Processa o salvamento do novo nome ou retorna para a tela anterior
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """
+        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado, 
+        e executa a ação correspondente:
+        - Se for o botão de salvar, ela coleta o novo nome digitado e chama a função update_user_name para tentar atualizar o nome, 
+        e atualiza a mensagem de resposta com o resultado.
+        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
+        """
         response = self.query_one("#message", Static)
         
         if event.button.id == "button_save":

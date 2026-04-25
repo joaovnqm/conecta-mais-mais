@@ -12,8 +12,10 @@ cursor.execute("CREATE TABLE IF NOT EXISTS users_interests(user_id INTEGER, inte
     "FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE, FOREIGN KEY (interest_id) REFERENCES interests(interest_id) " \
     "ON DELETE CASCADE)")
 
-# Função que checa o id do interesse com base no nome de entrada da função, caso o interesse não exista, ele o cria e o insere na tabela.
 def index_interest(interest: str) -> int:
+    """
+    Essa função retorna o id de um interesse. Se o interesse não existir, ele é criado e o id é retornado.
+    """
     cursor.execute(
         "SELECT interest_id FROM interests WHERE name = ?",
         (interest,)
@@ -31,8 +33,11 @@ def index_interest(interest: str) -> int:
     
     return cursor.lastrowid
 
-# Função que adiciona interesses ao perfil do usuário.
 def add_interests(user_id, interest):
+    """
+    Essa função adiciona um interesse à lista de interesses do usuário. Ela verifica se o interesse já foi adicionado e, se não,
+    adiciona o interesse à lista de interesses do usuário.
+    """
     interest_id = index_interest(interest)
     cursor.execute(
         "SELECT EXISTS(SELECT 1 FROM users_interests WHERE user_id = ? AND interest_id = ?)",
@@ -50,8 +55,11 @@ def add_interests(user_id, interest):
 
     return "Interesse(s) adicionado(s) com sucesso!", True
 
-# Função que checa os interesses de um usuário. (retorna os interest_id dos interesses)
 def check_interests_id(user_id) -> tuple:
+    """
+    Essa função retorna uma tupla de interesses com base no id do usuário. Ela consulta a tabela de interesses dos 
+    usuários para obter os ids dos interesses, e retorna uma tupla contendo os ids dos interesses do usuário.
+    """
     user_id = str(user_id)
     cursor.execute(
         "SELECT interest_id FROM users_interests WHERE user_id = ?",
@@ -62,8 +70,12 @@ def check_interests_id(user_id) -> tuple:
 
     return user_interests
 
-# Função que checa os interesses de um usuário. (retorna os nome dos interesses)
 def check_interests_name(user_id) -> tuple:
+    """
+    Essa função retorna uma tupla de interesses com base no id do usuário. Ela consulta a tabela de interesses dos 
+    usuários para obter os ids dos interesses, depois consulta a tabela de interesses para obter os nomes
+    dos interesses, e retorna uma tupla contendo os nomes dos interesses do usuário.
+    """
     interests_id = check_interests_id(user_id)
     interests_names = []
     for interest in interests_id:
@@ -77,6 +89,10 @@ def check_interests_name(user_id) -> tuple:
     return interests_names
 
 def check_all_interests() -> tuple:
+    """
+    Essa função retorna uma tupla de todos os interesses cadastrados. Ela consulta a tabela de interesses e retorna 
+    uma tupla contendo os nomes de todos os interesses cadastrados.
+    """
     cursor.execute(
         "SELECT name FROM interests"
     )

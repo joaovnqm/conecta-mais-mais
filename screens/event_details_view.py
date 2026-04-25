@@ -42,8 +42,12 @@ Screen {
     margin: 1;
 }
 """
-# Tela que exibe os detalhes completos de um evento selecionado
+
 class EventDetailsView(Screen):
+    """
+    Classe responsável pela tela de detalhes do evento. Ela exibe as informações do evento selecionado, como nome, descrição, local, 
+    data, hora e criador.
+    """
     CSS = EVENT_DETAILS_VIEW
 
     # Inicializa a tela com o evento que será exibido
@@ -85,8 +89,16 @@ class EventDetailsView(Screen):
 
                 yield Button("Voltar", id="button_return", variant="error")
     
-    # Retorna para a tela anterior
     async def on_button_pressed(self, event: Button.Pressed):
+        """
+        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado, 
+        e executa a ação correspondente:
+        - Se for o botão de favoritar, ela chama a função favorite_event para tentar favoritar o evento, 
+        e atualiza a mensagem de resposta com o resultado.
+        - Se for o botão de desfavoritar, ela chama a função remove_from_favorite_event para tentar remover o evento dos favoritos, 
+        e atualiza a mensagem de resposta com o resultado.
+        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
+        """
         if event.button.id == "button_favorite_event" and event.button.variant == "warning":
             result = favorite_event(self.user_id, self.event_id)
             await self.update_events_on_screen(result)
@@ -109,6 +121,11 @@ class EventDetailsView(Screen):
             self.app.pop_screen()
 
     async def update_events_on_screen(self, result):
+        """
+        Função auxiliar para atualizar o estado do botão de favoritar/desfavoritar na tela de detalhes do evento,
+        de acordo com o resultado da tentativa de favoritar ou desfavoritar o evento. Ela remove o botão atual e 
+        monta um novo botão com o estado atualizado (favoritado ou não favoritado) com base no resultado da operação.
+        """
         container = self.query_one("#button_favorite_event_container")
         await container.remove_children()
         if result [1] == "Evento favoritado com sucesso.":

@@ -1,53 +1,48 @@
 import re
 from datetime import datetime
-"""
-Função que normaliza o nome digitado pelo usuário
-    1. Remove espaços no começo e no fim
-    2. Reduz vários espaços internos para apenas um 
-"""
+
 def normalize_name(name: str) -> str:
+    """
+    Função que normaliza o nome, removendo espaços extras e padronizando o nome. Ela remove espaços extras no início, 
+    no final e entre as palavras, deixando apenas um espaço entre as palavras. Isso garante que o nome seja armazenado de 
+    forma consistente no banco de dados.
+    """
     return " ".join(name.strip().split())
 
-"""
-Função que valida nomes de usuário
-    1. O nome deve conter pelo menos 2 caracteres
-    2. Só pode conter letras, acentos e espaços, números e símbolos não são permitidos
-"""
 def valid_name_users(name: str) -> bool:
-    # Normaliza o nome antes de validar
+    """
+    Função que valida nomes de usuários. Ela verifica se o nome tem pelo menos 2 caracteres, e se contém apenas letras 
+    (incluindo acentos) e espaços. Números e caracteres especiais não são permitidos. A função retorna True se o nome for válido, 
+    e False caso contrário.
+    """
     normalized_name = normalize_name(name)
-    
-    # A-Za-zÀ-ÿ -> letras comuns e acentuadas, espaços são permitidos e pelo menos 2 caracteres
     pattern = r'^[A-Za-zÀ-ÿ ]{2,}$'
-    # Retorna True se o nome estiver no formato correto, False caso contrário
     return re.fullmatch(pattern, name.strip()) is not None
 
-"""
-Função que valida nomes de eventos.
-    1. O nome deve ter pelo menos 2 caracteres
-    2. Pode conter letras, números, acentos e espaços
-"""
 def valid_name_events(name: str) -> bool:
+    """
+    Função que valida nomes de eventos. Ela verifica se o nome tem pelo menos 2 caracteres, e se contém apenas letras 
+    (incluindo acentos), números, espaços e alguns caracteres especiais comuns em nomes de eventos. A função retorna True 
+    se o nome for válido, e False caso contrário.
+    """
     pattern = r'^[A-Za-zÀ-ÿ0-9 \-_.,()\'"&@!]{2,}$'
     return re.fullmatch(pattern, name.strip()) is not None
 
-"""
-Função que valida e-mails
-
-"""
 def valid_email(email: str) -> bool:
+    """
+    Função que valida o formato do e-mail. Ela verifica se o e-mail segue um formato básico de e-mail, com um nome de usuário,
+    um símbolo "@" e um domínio. A função retorna True se o e-mail for válido, e False caso contrário.
+    """
     pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
     return re.fullmatch(pattern, email.strip()) is not None
 
-"""
-Função que verifica a senha e retorna mensagem exata do erro
-    1. Pelo menos 8 caracteres
-    2. Pelo menos uma letra maiúscula
-    3. Pelo menos uma letra minúscula
-    4. Pelo menos um número
-Se a senha estiver correta, retorna None
-"""
 def password_error_message(password: str) -> str | None:
+    """
+    Função que valida a senha e retorna uma mensagem de erro específica caso a senha não atenda aos critérios de segurança.
+    Os critérios são: pelo menos 8 caracteres, pelo menos uma letra maiúscula, pelo menos uma letra minúscula, e pelo menos um número. 
+    Se a senha atender a todos os critérios, a função retorna None, indicando que a senha é válida. Se a senha não atender a algum 
+    critério, a função retorna uma mensagem de erro específica para o critério que não foi atendido.
+    """
     if len(password) < 8:
         return "A senha precisa ter pelo menos 8 caracteres."
     if not any(char.isupper() for char in password):
@@ -58,23 +53,27 @@ def password_error_message(password: str) -> str | None:
         return "A senha precisa conter pelo menos um número."
     return None
 
-"""
-Função booleana para validar senha. Ela reaproveita a função password_error_message. Se não houver mensagem de erro, a senha é válida.
-"""
 def valid_password(password: str) -> bool:
+    """
+    Função booleana para validar senha. Ela reaproveita a função password_error_message. Se não houver mensagem de erro, a senha 
+    é válida.
+    """
     return password_error_message(password) is None
 
-
-# Função que valida datas no formato dd-mm-aaaa.
 def valid_date(date: str) -> bool:
+    """
+    Função que valida datas no formato dd-mm-aaaa.
+    """
     try:
         datetime.strptime(date, "%d-%m-%Y")
         return True
     except ValueError:
         return False
 
-# Função que valida horas no formato hh:mm
 def valid_hour(hour: str) -> bool:
+    """
+    Função que valida horas no formato hh:mm.
+    """
     try:
         datetime.strptime(hour, "%H:%M")
         return True

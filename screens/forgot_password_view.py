@@ -52,8 +52,11 @@ Button {
 }
 """
 
-# Tela de solicitação de código para recuperação de senha
 class ForgotPasswordView(Screen):
+    """
+    Classe responsável pela tela de recuperação de senha. Ela é acessada a partir da tela de login, e permite que o usuário
+    solicite o envio de um código de recuperação para o e-mail associado à sua conta.
+    """
     CSS = AUTH_CSS
     
     # Monta a interface para envio do código de recuperação por e-mail
@@ -73,8 +76,14 @@ class ForgotPasswordView(Screen):
                 yield Button("Enviar código", id="button_send_code", variant="primary")
                 yield Button("Voltar", id="button_back")
 
-    # Solicita o envio do código de recuperação ou retorna para a tela anterior
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """
+        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado,
+        e executa a ação correspondente:
+        - Se for o botão de enviar código, ela coleta o e-mail digitado, chama a função de solicitação de recuperação de senha,
+          e exibe a mensagem de resposta. Se a solicitação for bem-sucedida, ela navega para a tela de verificação de código.
+        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
+        """
         response = self.query_one("#message", Label)
 
         if event.button.id == "button_send_code":

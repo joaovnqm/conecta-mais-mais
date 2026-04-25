@@ -39,8 +39,11 @@ Button {
 }
 """
 
-# Tela principal exibida após a autenticação do usuário
 class MainPageView(Screen):
+    """
+    Classe responsável pela tela principal do aplicativo. Ela é exibida após o login bem-sucedido, e oferece opções de navegação para
+    o perfil do usuário, a lista de eventos disponíveis, a lista de eventos favoritados, e a opção de logout.
+    """
     CSS = MAIN_PAGE_CSS
     
     # Inicializa a tela principal com os dados do usuário autenticado
@@ -64,8 +67,16 @@ class MainPageView(Screen):
                 yield Button("Eventos Favoritados", id="button_favorite_events")
                 yield Button("Logout", id="button_logout", variant="error")
     
-    # Trata a navegação para perfil, eventos, amigos ou logout
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """
+        Função que lida com os eventos de clique nos botões da tela principal. Ela verifica qual botão foi clicado, e executa a ação 
+        correspondente:
+        - Se for o botão de perfil, ela navega para a tela de perfil do usuário.
+        - Se for o botão de eventos, ela navega para a tela de listagem de eventos disponíveis.
+        - Se for o botão de eventos favoritados, ela navega para a tela de listagem de eventos favoritados pelo usuário.
+        - Se for o botão de logout, ela navega para a tela de login e reseta os campos do formulário de login para 
+        facilitar uma nova tentativa de login.
+        """
         from screens.login_view import LoginView
         
         if event.button.id == "button_profile":

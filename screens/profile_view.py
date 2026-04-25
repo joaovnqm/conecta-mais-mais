@@ -54,8 +54,11 @@ Screen {
 }
 """
 
-# Tela de visualização e gerenciamento dos dados do perfil do usuário
 class ProfileView(Screen):
+    """
+    Classe responsável pela tela de perfil do usuário. Ela exibe as informações do perfil, como nome e e-mail, e oferece opções para
+    atualizar o nome, atualizar a senha, deletar a conta ou voltar para a tela anterior. 
+    """
     CSS = PROFILE_CSS
 
     # Inicializa a tela com o usuário que terá o perfil exibido
@@ -92,8 +95,11 @@ class ProfileView(Screen):
 
                 yield Button("Voltar", id="button_back", variant="error")
 
-    # Recarga os dados exibidos após uma atualização de perfil
     def reload_profile(self) -> None:
+        """
+        Função para recarregar os dados do perfil na interface. Ela é chamada após ações que podem alterar as informações do perfil, como
+        atualizar o nome ou a senha, para garantir que as informações exibidas estejam sempre atualizadas.
+        """
         profile = get_user_profile(self.user_id)
         if profile is None:
             return
@@ -101,8 +107,15 @@ class ProfileView(Screen):
         self.query_one("#name_value", Static).update(profile["name"])
         self.query_one("#email_value", Static).update(profile["email"])
 
-    # Controla a navegação para edição de nome, senha, exclusão ou retorno
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """
+        Função que lida com os eventos de clique nos botões da tela de perfil. Ela verifica qual botão foi clicado, e executa a ação
+        correspondente:
+        - Se for o botão de atualizar nome, ela navega para a tela de edição de nome.
+        - Se for o botão de atualizar senha, ela navega para a tela de alteração de senha.
+        - Se for o botão de deletar conta, ela navega para a tela de confirmação de exclusão de conta.
+        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
+        """
         if event.button.id == "button_edit_name":
             self.app.push_screen(EditNameView(self.user_id))
 

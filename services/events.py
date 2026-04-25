@@ -17,8 +17,11 @@ cursor.execute("CREATE TABLE IF NOT EXISTS events_interests(event_id INTEGER, in
     "ON DELETE CASCADE)"
     )
 
-# Função que cria um evento e insere na tabela "events" do banco.
 def create_event(name: str, description: str, event_location: str, date: str, hour: str, creator_id: int, *interests: list):
+    """
+    Função que cria um evento. Ela valida os dados e retorna mensagens de erro específicas caso haja algum problema. 
+    Se tudo estiver correto, o evento é criado. Se houver algum erro, a função retorna False, mensagem de erro, None.
+    """
     name = name.strip()
     description = description.strip()
     if not valid_name_events(name):
@@ -66,11 +69,15 @@ def create_event(name: str, description: str, event_location: str, date: str, ho
         )
         connection.commit()
 
-# Função que retorna lista de tuplas de eventos com base nos interesses do usuário.
 def check_events_with_interests(user_id: int) -> list:
+    """
+    Essa função retorna uma lista de eventos com base nos interesses do usuário. Ela primeiro obtém os interesses do usuário, 
+    depois busca os eventos relacionados a esses interesses e retorna uma lista de tuplas (event_id, event_name). 
+    A função também garante que não haja eventos duplicados na lista final.
+    """
     interests = check_interests_id(user_id)
     events = []
-    seen_ids = set()  # controla duplicatas de forma mais simples
+    seen_ids = set()
 
     for interest in interests:
         cursor.execute(
@@ -97,6 +104,10 @@ def check_events_with_interests(user_id: int) -> list:
 
 # Função que retorna uma lista de eventos por interesse.
 def check_events_by_interest(selected_interest: str):
+    """
+    Essa função retorna uma lista de eventos com base em um interesse selecionado. Ela primeiro obtém o id do interesse,
+    depois busca os eventos relacionados a esse interesse e retorna uma lista de tuplas (event_id, event_name).
+    """
     events = []
     interest_id = index_interest(selected_interest)
     cursor.execute(
@@ -115,8 +126,11 @@ def check_events_by_interest(selected_interest: str):
 
     return events
 
-# Função que retorna as informações de um evento com base em seu event_id.
 def check_event(event_id) -> tuple:
+    """
+    Essa função retorna os detalhes de um evento específico com base no id do evento. 
+    Ela retorna uma tupla contendo todas as informações do evento, incluindo o nome, descrição, local, data, hora e id do criador.
+    """
     cursor.execute(
         "SELECT * FROM events WHERE event_id = ?",
         (event_id,)

@@ -46,12 +46,18 @@ Button {
 """
 
 class FavoriteEventsList(Screen):
+    """
+    Classe responsável pela tela de listagem de eventos favoritados pelo usuário. Ela exibe uma lista dos eventos que o usuário 
+    marcou como favorito, com a opção de clicar em um evento para ver seus detalhes ou voltar para a tela anterior.
+    """
     CSS = FAVORITE_EVENTS_CSS
 
+    # Inicializa a tela com o ID do usuário autenticado.
     def __init__(self, user_id: int):
         super().__init__()
         self.user_id = user_id
     
+    # Monta a interface com a listagem de eventos favoritados e um botão para voltar para a tela anterior.
     def compose(self) -> ComposeResult:
         with Center():
             with VerticalScroll(id="main_box"):
@@ -60,6 +66,10 @@ class FavoriteEventsList(Screen):
                 yield Button("Voltar", id="button_return", variant="error")
     
     async def update_events(self) -> None:
+        """
+        Função auxiliar para atualizar a listagem de eventos favoritados exibida na tela. Ela remove os eventos atualmente exibidos 
+        e monta novos botões para os eventos favoritados, ou exibe uma mensagem caso nenhum evento tenha sido favoritado pelo usuário.
+        """
         container = self.query_one("#events_container")
         await container.query("*").remove()
         events = check_favorited_events(self.user_id)
@@ -74,12 +84,27 @@ class FavoriteEventsList(Screen):
             )
 
     async def on_mount(self) -> None:
+        """
+        Função que é chamada quando a tela é montada. Ela chama a função update_events para carregar a listagem de eventos 
+        favoritados assim que a tela for exibida.
+        """
         await self.update_events()
 
     async def on_screen_resume(self) -> None:
+        """
+        Função que é chamada quando a tela é retomada após voltar de outra tela. Ela chama a função update_events para
+        garantir que a listagem de eventos favoritados esteja atualizada caso o usuário tenha adicionado ou removido eventos dos 
+        favoritos enquanto estava em outra tela.
+        """
         await self.update_events()
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """
+        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado,
+        e executa a ação correspondente:
+        - Se for um botão de evento, ela extrai o ID do evento a partir do ID do botão e navega para a tela de detalhes do evento.
+        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
+        """
         if event.button.has_class("event_buttons"):
             button_id = event.button.id
             if button_id:

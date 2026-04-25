@@ -78,8 +78,11 @@ Button {
 }
 """
 
-# Tela de redefinição de senha a partir do código enviado por e-mail
 class ResetPasswordView(Screen):
+    """
+    Classe responsável pela tela de redefinição de senha. Ela é acessada a partir da tela de código de verificação, e permite que 
+    o usuário defina uma nova senha para sua conta após verificar o código enviado por e-mail.
+    """
     CSS = AUTH_CSS
 
     # Inicializa a tela com um e-mail opcionalmente preenchido
@@ -133,8 +136,15 @@ class ResetPasswordView(Screen):
                 )
                 yield Button("Voltar", id="button_back")
     
-    # Processa redefinição de senha e controla a navegação de tela
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """
+        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado, e executa a ação 
+        correspondente: 
+        - Se for um botão de toggle, ela chama a função toggle_password_visibility para alternar a visibilidade da senha.
+        - Se for o botão de alterar senha, ela coleta os valores dos campos de e-mail, código, nova senha e confirmação de senha, 
+        verifica se a nova senha e a confirmação coincidem, e chama a função reset_password para tentar redefinir a senha.
+        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
+        """
         response = self.query_one("#message", Label)
 
         if event.button.id == "toggle_password":

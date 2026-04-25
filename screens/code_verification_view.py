@@ -89,22 +89,16 @@ Button {
 }
 """
 
-"""
-Classe responsável pela tela de verificação de código. Ela é usada em dois fluxos: verificação de e-mail no cadastrado e verificação de código para redefinir senha
-"""
+
 
 class CodeVerificationView(Screen):
+    """
+    Classe responsável pela tela de verificação de código. Ela é usada em dois fluxos: verificação de e-mail no cadastrado e verificação de código para redefinir senha
+    """
     CSS = AUTH_CSS
 
     # Inicializa a tela de verificação.
-    def __init__(
-        self,
-        mode: str,
-        email: str,
-        pending_name: str | None = None,
-        pending_password: str | None = None,
-        verified: bool = False,
-    ):
+    def __init__(self, mode: str, email: str, pending_name: str | None = None, pending_password: str | None = None, verified: bool = False,):
         super().__init__()
         self.mode = mode
         self.email = email.strip().lower()
@@ -167,6 +161,18 @@ class CodeVerificationView(Screen):
                     yield Button("Voltar", id="button_back")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """
+        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado, 
+        e executa a ação correspondente:
+        - Se for um botão de toggle, ela chama a função toggle_password_visibility para alternar a visibilidade da senha.
+        - Se for o botão de validar código, ela coleta o código digitado, verifica se ele é válido para o e-mail e a finalidade 
+        (registro ou redefinição de senha), e atualiza a interface de acordo com o resultado da verificação.
+        - Se for o botão de reenviar código, ela chama a função correspondente para solicitar um novo código, 
+        e atualiza a mensagem de resposta.
+        - Se for o botão de alterar senha, ela coleta os valores dos campos de nova senha e confirmação, verifica se coincidem,
+        e chama a função finalize_password_reset para tentar alterar a senha, atualizando a mensagem de resposta com o resultado.
+        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
+        """
         response = self.query_one("#message", Static)
 
         if event.button.id == "toggle_password":

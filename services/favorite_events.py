@@ -14,8 +14,11 @@ cursor.execute("CREATE TABLE IF NOT EXISTS favorite_events (" \
     "FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE)"
     )
 
-# Função que favorita um evento e salva na lista de eventos favoritos.
 def favorite_event(user_id, event_id):
+    """
+    Função que adiciona um evento à lista de favoritos do usuário. Ela verifica se o evento já foi favoritado e, se não, 
+    adiciona o evento à lista de favoritos.
+    """
     if check_favorite_event(user_id, event_id):
         return False, "Você já favoritou esse evento."
     
@@ -27,8 +30,11 @@ def favorite_event(user_id, event_id):
     connection.commit()
     return True, "Evento favoritado com sucesso."
 
-# Função que remove o status de favorito de um evento, removendo-o da lista de favoritos.
 def remove_from_favorite_event(user_id, event_id):
+    """
+    Função que remove um evento da lista de favoritos do usuário. Ela verifica se o evento já foi desfavoritado e, se não,
+    remove o evento da lista de favoritos.
+    """
     if check_favorite_event(user_id, event_id) == False:
         return False, "Você já desfavoritou esse evento."
     
@@ -40,8 +46,11 @@ def remove_from_favorite_event(user_id, event_id):
     connection.commit()
     return True, "Evento desfavoritado com sucesso."
 
-# Função que checa se o evento já foi favoritado.
 def check_favorite_event(user_id, event_id) -> bool:
+    """
+    Função que verifica se um evento já foi favoritado pelo usuário. Ela retorna True se o evento estiver na lista de favoritos do usuário,
+    e False caso contrário.
+    """
     cursor.execute(
         "SELECT EXISTS(SELECT 1 FROM favorite_events WHERE user_id = ? AND event_id = ?)",
         (user_id, event_id,)
@@ -49,8 +58,13 @@ def check_favorite_event(user_id, event_id) -> bool:
 
     return bool(cursor.fetchone()[0])
 
-# Função que checa os eventos favoritados pelo usuário.
 def check_favorited_events(user_id):
+    """
+    Essa função retorna uma lista de eventos que foram favoritados por um usuário específico. 
+    Ela consulta a tabela de eventos favoritados para obter os ids dos eventos,
+    depois usa a função check_event para obter os detalhes de cada evento e retorna uma lista de tuplas 
+    contendo as informações dos eventos favoritados.
+    """
     events_list = []
     cursor.execute(
         "SELECT event_id FROM favorite_events WHERE user_id = ?",

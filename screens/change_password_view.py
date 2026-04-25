@@ -84,8 +84,14 @@ Screen {
 }
 """
 
-# Tela responsável pela alteração da senha do usuário
 class ChangePasswordView(Screen):
+    """
+    Classe responsável pela tela de alteração de senha. Ela é acessada a partir da tela de perfil, e permite que o usuário 
+    altere sua senha atual para uma nova senha, seguindo os critérios de segurança definidos. A tela inclui campos para a senha 
+    atual, a nova senha e a confirmação da nova senha, além de botões para salvar as alterações ou voltar para a tela anterior. 
+    A função on_button_pressed lida com os eventos de clique nos botões, realizando as ações correspondentes e exibindo mensagens 
+    de erro ou sucesso conforme necessário.
+    """
 
     CSS = AUTH_CSS
     
@@ -139,6 +145,16 @@ class ChangePasswordView(Screen):
                 )
                 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """
+        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado, 
+        e executa a ação correspondente:
+        - Se for um botão de toggle, ela chama a função toggle_password_visibility para alternar a visibilidade da senha.
+        - Se for o botão de salvar, ela coleta os valores dos campos de senha, verifica se a nova senha e a confirmação coincidem,
+        e chama a função change_user_password para tentar alterar a senha.
+        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
+        A função também atualiza a mensagem de resposta com base no resultado da tentativa de alteração de senha, 
+        exibindo mensagens de erro específicas para cada tipo de erro, ou uma mensagem de sucesso se a alteração for bem-sucedida.
+        """
         response = self.query_one("#message", Static)
         
         if event.button.id == "toggle_current_password":
