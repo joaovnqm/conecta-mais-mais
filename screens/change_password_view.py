@@ -4,6 +4,7 @@ from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
 
 from services.users import change_user_password
+from screens.password_toggle import toggle_password_visibility
 
 AUTH_CSS = """
 Screen {
@@ -137,36 +138,19 @@ class ChangePasswordView(Screen):
                     classes="action_button"
                 )
                 
-    # Alterna a visiblidade do campo da senha e atualiza o texto do botão
-    def _toggle_visibility(self, input_id: str, button_id: str) -> None:
-        password_input = self.query_one(f"#{input_id}", Input)
-        toggle_button = self.query_one(f"#{button_id}", Button)
-
-        password_input.password = not password_input.password
-        toggle_button.label = "Mostrar" if password_input.password else "Ocultar"
-
-    """
-        Trata os cliques dos botões da tela
-        - Alternar a visibilidade dos campos da senha;
-        - Validar a confirmação da nova senha;
-        - Solicitar a alteração da senha;
-        - Retorna para a tela anterior quando necessário.    
-    """
     def on_button_pressed(self, event: Button.Pressed) -> None:
         response = self.query_one("#message", Static)
         
         if event.button.id == "toggle_current_password":
-            self._toggle_visibility(
-                "current_password", "toggle_current_password")
+            toggle_password_visibility(self, "current_password", "toggle_current_password")
             return
 
         if event.button.id == "toggle_new_password":
-            self._toggle_visibility("new_password", "toggle_new_password")
+            toggle_password_visibility(self, "new_password", "toggle_new_password")
             return
 
         if event.button.id == "toggle_confirm_password":
-            self._toggle_visibility(
-                "confirm_password", "toggle_confirm_password")
+            toggle_password_visibility(self, "confirm_password", "toggle_confirm_password")
             return
 
         if event.button.id == "button_save":

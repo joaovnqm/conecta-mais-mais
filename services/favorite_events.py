@@ -1,0 +1,65 @@
+import sqlite3
+from services.events import check_event
+
+connection = sqlite3.connect("conecta++.db")
+connection.execute("PRAGMA foreign_keys = ON")
+cursor = connection.cursor()
+
+# Criando a tabela de eventos favoritados caso não exista.
+cursor.execute("CREATE TABLE IF NOT EXISTS favorite_events (" \
+    "user_id INTEGER NOT NULL, " \
+    "event_id INTEGER NOT NULL, " \
+    "PRIMARY KEY(user_id, event_id), " \
+    "FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE, " \
+    "FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE)"
+    )
+
+# Função que favorita um evento e salva na lista de eventos favoritos.
+def favorite_event(user_id, event_id):
+    if check_favorite_event(user_id, event_id):
+        return False, "Você já favoritou esse evento."
+    
+    cursor.execute(
+        "INSERT INTO favorite_events VALUES (?, ?)",
+        (user_id, event_id,)
+    )
+
+    connection.commit()
+    return True, "Evento favoritado com sucesso."
+
+# Função que remove o status de favorito de um evento, removendo-o da lista de favoritos.
+def remove_from_favorite_event(user_id, event_id):
+    if check_favorite_event(user_id, event_id) == False:
+        return False, "Você já desfavoritou esse evento."
+    
+    cursor.execute(
+        "DELETE FROM favorite_events WHERE user_id = ? AND event_id = ?",
+        (user_id, event_id,)
+    )
+
+    connection.commit()
+    return True, "Evento desfavoritado com sucesso."
+
+# Função que checa se o evento já foi favoritado.
+def check_favorite_event(user_id, event_id) -> bool:
+    cursor.execute(
+        "SELECT EXISTS(SELECT 1 FROM favorite_events WHERE user_id = ? AND event_id = ?)",
+        (user_id, event_id,)
+    )
+
+    return bool(cursor.fetchone()[0])
+
+# Função que checa os eventos favoritados pelo usuário.
+def check_favorited_events(user_id):
+    events_list = []
+    cursor.execute(
+        "SELECT event_id FROM favorite_events WHERE user_id = ?",
+        (user_id,)
+    )
+
+    events = cursor.fetchall()
+    for event in events:
+        event = check_event(event[0])
+        events_list.append(event)
+
+    return events_list
