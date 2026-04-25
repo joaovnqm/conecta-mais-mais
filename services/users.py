@@ -61,7 +61,7 @@ def register(name, email, password):
     email = email.strip().lower()
 
     if not valid_name_users(name):
-        return False, "O nome precisa ter pelo menos 2 caracteres e não pode conter números.", None
+        return False, "O nome precisa ter pelo menos 2 caracteres, no máximo 50 caracteres e não pode conter números.", None
 
     if not valid_email(email):
         return False, "Esse e-mail é inválido!", None
@@ -120,7 +120,7 @@ def update_user_name(user_id: int, new_name: str):
     new_name = normalize_name(new_name)
 
     if not valid_name_users(new_name):
-        return False, "O nome precisa ter pelo menos 2 caracteres e não pode conter números."
+        return False, "O nome precisa ter pelo menos 2 caracteres, no máximo 50 caracteres e não pode conter números."
 
     cursor.execute(
         "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)",

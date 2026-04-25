@@ -16,8 +16,8 @@ def valid_name_users(name: str) -> bool:
     e False caso contrário.
     """
     normalized_name = normalize_name(name)
-    pattern = r'^[A-Za-zÀ-ÿ ]{2,}$'
-    return re.fullmatch(pattern, name.strip()) is not None
+    pattern = r'^[A-Za-zÀ-ÿ ]{2,50}$'
+    return re.fullmatch(pattern, normalized_name) is not None
 
 def valid_name_events(name: str) -> bool:
     """
@@ -25,8 +25,9 @@ def valid_name_events(name: str) -> bool:
     (incluindo acentos), números, espaços e alguns caracteres especiais comuns em nomes de eventos. A função retorna True 
     se o nome for válido, e False caso contrário.
     """
-    pattern = r'^[A-Za-zÀ-ÿ0-9 \-_.,()\'"&@!]{2,}$'
-    return re.fullmatch(pattern, name.strip()) is not None
+    normalized_name = normalize_name(name)
+    pattern = r'^[A-Za-zÀ-ÿ0-9 \-_.,()\'"&@!]{2,50}$'
+    return re.fullmatch(pattern, normalized_name) is not None
 
 def valid_email(email: str) -> bool:
     """
@@ -51,6 +52,8 @@ def password_error_message(password: str) -> str | None:
         return "A senha precisa conter pelo menos uma letra minúscula."
     if not any(char.isdigit() for char in password):
         return "A senha precisa conter pelo menos um número."
+    if not any(char in "!@#$%^&*()-_=+[]{}|;:'\",.<>?/" for char in password):
+        return "A senha precisa conter pelo menos um caractere especial."
     return None
 
 def valid_password(password: str) -> bool:
