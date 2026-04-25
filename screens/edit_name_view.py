@@ -109,5 +109,4 @@ class EditNameView(Screen):
                     current_screen.reload_profile()
 
         elif event.button.id == "button_back":
-            self.app.pop_screen()
-                    
+            self.app.pop_screen() 
