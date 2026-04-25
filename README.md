@@ -76,6 +76,6 @@ O código está organizado para facilitar a manutenção e escalabilidade:
 
 Este projeto integra as atividades da disciplina **PISI I (Projeto Interdisciplinar para Sistemas de Informação I)** na **UFRPE**. O desenvolvimento focou na aplicação de conceitos de Engenharia de Software, persistência de dados e segurança da informação.
 
-**Desenvolvedor:** João Victor Macêdo  
+**Desenvolvedores:** João Victor Macêdo e Wellison Cavalcante  
 **Instituição:** Universidade Federal Rural de Pernambuco (UFRPE)  
 **Curso:** Bacharelado em Sistemas de Informação  
