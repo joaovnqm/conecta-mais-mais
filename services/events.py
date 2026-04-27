@@ -95,7 +95,6 @@ def check_events_with_interests(user_id: int) -> list:
                 (event_id,)
             )
             result = cursor.fetchone()
-
             if result:
                 seen_ids.add(event_id)
                 events.append([event_id, result[0]])
