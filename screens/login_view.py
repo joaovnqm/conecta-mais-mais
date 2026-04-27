@@ -112,6 +112,7 @@ class LoginView(Screen):
                 yield Button("Entrar", id="button_login", variant="primary")
                 yield Button("Esqueci minha senha", id="button_forgot_password")
                 yield Button("Cadastrar", id="button_register_view")
+                yield Button("Sair", id="button_exit", variant="error")
 
     def reset_form(self) -> None:
         """
@@ -197,7 +198,7 @@ class LoginView(Screen):
             toggle_password_visibility(self, "password", "toggle_password")
             return
 
-        if event.button.id == "button_login":
+        elif event.button.id == "button_login":
             email = self.query_one("#email", Input).value
             password = self.query_one("#password", Input).value
 
@@ -213,3 +214,6 @@ class LoginView(Screen):
 
         elif event.button.id == "button_register_view":
             self.app.push_screen(RegisterView())
+        
+        elif event.button.id == "button_exit":
+            self.app.exit()
