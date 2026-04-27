@@ -108,7 +108,6 @@ class LoginView(Screen):
                     yield Button("Mostrar", id="toggle_password")
 
                 yield Label("", id="message")
-
                 yield Button("Entrar", id="button_login", variant="primary")
                 yield Button("Esqueci minha senha", id="button_forgot_password")
                 yield Button("Cadastrar", id="button_register_view")
