@@ -6,6 +6,7 @@ from screens.events_view import EventsView
 from screens.profile_view import ProfileView
 from screens.favorite_events_list_view import FavoriteEventsList
 from services.validations import normalize_name
+from services.users import get_user_profile
 
 MAIN_PAGE_CSS = """
 Screen {
@@ -57,15 +58,19 @@ class MainPageView(Screen):
         with Center():
             with Vertical(id="main_box"):
                 yield Static("Main Page", id="main_title")
-                yield Static(
-                    f"Bem-vindo(a), {self.user_name}!",
-                    classes="main_subtitle"
-                )
+                yield Static(f"Bem-vindo(a), {self.user_name}!", classes="main_subtitle", id="name")
 
                 yield Button("Meu perfil", id="button_profile")
                 yield Button("Eventos", id="button_events")
                 yield Button("Eventos Favoritados", id="button_favorite_events")
                 yield Button("Logout", id="button_logout", variant="error")
+
+    def on_screen_resume(self) -> None:
+            user_data = get_user_profile(self.user_id)
+            name = user_data.get("name", self.user_name) 
+            self.user_name = normalize_name(name)
+            welcome_message = self.query_one("#name", Static)
+            welcome_message.update(f"Bem-vindo(a), {self.user_name}!")
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """
