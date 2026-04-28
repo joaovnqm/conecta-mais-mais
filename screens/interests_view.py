@@ -85,12 +85,14 @@ class InterestsView(Screen):
             """
             if event.button.id == "button_register_interests":
                 checkboxes = self.query(".interests")
-                for checkbox in checkboxes:
-                    if checkbox.value == True:
+                selected_checkboxes = [cb for cb in checkboxes if cb.value]
+                if not selected_checkboxes:
+                    self.notify("Você precisa adicionar pelo menos um interesse.")
+                    return
+                    
+                else:
+                    for checkbox in selected_checkboxes:
                         add_interests(self.user_id, str(checkbox.label))
 
-                    else:
-                        continue
-
-                self.notify("Interesse(s) adicionado(s) com sucesso!")
-                self.app.push_screen(MainPageView(self.user_id, self.user_name))
+                    self.notify("Interesse(s) adicionado(s) com sucesso!")
+                    self.app.push_screen(MainPageView(self.user_id, self.user_name))
