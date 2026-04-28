@@ -32,6 +32,14 @@ Screen {
     margin-bottom: 1;
 }
 
+.interests.-on {
+    color: limegreen 90%;
+}
+
+.interests.-on > .toggle--button {
+    color: limegreen 90%;
+}
+
 Button {
     width: 100%;
     margin-top: 1;
@@ -65,7 +73,7 @@ class InterestsView(Screen):
         with Center():
             with Vertical(id="interest_box"):
                 yield Static("Conecta++", id="title")
-                yield Static("Selecione os seus interesses abaixo", classes="subtitle")
+                yield Static("Selecione todos os seus interesses abaixo. Pode ser mais de um.", classes="subtitle")
                 if interests:
                     for interest in interests:
                         interest_id = interest[0].replace(" ", "_").lower().strip()
