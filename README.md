@@ -2,6 +2,44 @@
 
 O **Conecta++** é uma aplicação de interface de terminal (TUI) desenvolvida como projeto prático para o curso de **Sistemas de Informação** da **UFRPE**. A plataforma visa conectar a comunidade acadêmica a eventos, permitindo a gestão de perfis e a personalização de experiências com base em interesses específicos.
 
+## 🖼️ Visualização da Tela de Eventos
+
+Abaixo estão algumas capturas da tela responsável por listar os eventos disponíveis no sistema.  
+Nessa interface, o usuário pode filtrar os eventos por interesse, visualizar a lista de eventos cadastrados e acessar mais detalhes clicando em uma opção.
+
+<div align="center">
+
+<table>
+  <tr>
+    <td align="center">
+      <img src=".idea/assets/tela-eventos-1.png" alt="Tela de eventos com filtro por interesse" width="350"/>
+      <br>
+      <strong>Filtro de eventos por interesse</strong>
+    </td>
+    <td align="center">
+      <img src=".idea/assets/tela-eventos-2.png" alt="Tela de eventos com lista completa e botão voltar" width="350"/>
+      <br>
+      <strong>Lista de eventos disponíveis</strong>
+    </td>
+  </tr>
+</table>
+
+</div>
+
+### 📌 Funcionalidade exibida
+
+A tela apresenta uma vitrine de eventos cadastrados no sistema, permitindo que o usuário visualize conferências, simpósios e encontros relacionados aos seus interesses.
+
+Entre os elementos exibidos estão:
+
+- Filtro por área de interesse;
+- Lista de eventos disponíveis;
+- Cards individuais para cada evento;
+- Barra de rolagem para navegação;
+- Botão de retorno para a tela anterior.
+
+Essa funcionalidade faz parte da proposta principal do projeto, que é facilitar a descoberta de eventos acadêmicos e tecnológicos de forma simples, organizada e interativa.
+
 ---
 
 ## Bibliotecas usadas
