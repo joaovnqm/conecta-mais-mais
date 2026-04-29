@@ -145,3 +145,10 @@ Este projeto integra as atividades da disciplina **PISI I (Projeto Interdiscipli
 **Desenvolvedores:** João Victor Macêdo e Wellison Cavalcante  
 **Instituição:** Universidade Federal Rural de Pernambuco (UFRPE)  
 **Curso:** Bacharelado em Sistemas de Informação  
+
+## 📊 Planilha de Features
+
+A documentação das funcionalidades do projeto também está organizada em uma planilha, contendo as features planejadas, fluxos principais, fluxos alternativos, fluxos de erro e status de desenvolvimento.
+
+🔗 **Acesse a planilha de features aqui:**  
+[Planilha de Features do Projeto](https://docs.google.com/spreadsheets/d/19YSUOH3TCYiOljYli4W6_OuNz7OMyL29pgIxmgoxNoU/edit?gid=0#gid=0)
