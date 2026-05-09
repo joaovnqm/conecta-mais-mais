@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Checkbox, Label
 from textual.containers import Center, Vertical
 from screens.main.main_page_view import MainPageView
-from models.interests import add_interests, check_all_interests
+from models.interests import interest_services
 from unidecode import unidecode
 
 AUTH_CSS = """
@@ -69,7 +69,7 @@ class InterestsView(Screen):
         
     # Monta a interface com a lista de interesses disponíveis
     def compose(self) -> ComposeResult:
-        interests = check_all_interests()
+        interests = interest_services.check_all_interests()
         with Center():
             with Vertical(id="interest_box"):
                 yield Static("Conecta++", id="title")
@@ -100,7 +100,7 @@ class InterestsView(Screen):
                     
                 else:
                     for checkbox in selected_checkboxes:
-                        add_interests(self.user_id, str(checkbox.label))
+                        interest_services.add_interests(self.user_id, str(checkbox.label))
 
                     self.notify("Interesse(s) adicionado(s) com sucesso!")
                     self.app.push_screen(MainPageView(self.user_id, self.user_name))

@@ -1,7 +1,7 @@
 import sqlite3
 from dataclasses import dataclass
 from typing import Optional, List
-from models.interests import check_interests_id, index_interest
+from models.interests import interest_services
 from utils.validations import valid_name_events, valid_date, valid_hour
 
 @dataclass
@@ -111,7 +111,7 @@ class EventServices:
         event_id = self.cursor.lastrowid
 
         for interest in interests:
-            interest_id = index_interest(interest)
+            interest_id = interest_services.index_interest(interest)
             self.cursor.execute(
                 "INSERT INTO events_interests VALUES(?, ?)",
                 (event_id, interest_id)
@@ -124,7 +124,7 @@ class EventServices:
         depois busca os eventos relacionados a esses interesses e retorna uma lista de objetos "Event" com (event_id, name, description). 
         A função também garante que não haja eventos duplicados na lista final.
         """
-        interests = check_interests_id(user_id)
+        interests = interest_services.check_interests_id(user_id)
         events = []
         seen_ids = set()
 
@@ -156,7 +156,7 @@ class EventServices:
         depois busca os eventos relacionados a esse interesse e retorna uma lista de objetos "Event" com (event_id, name, description).
         """
         events = []
-        interest_id = index_interest(selected_interest)
+        interest_id = interest_services.index_interest(selected_interest)
         self.cursor.execute(
             "SELECT event_id FROM events_interests WHERE interest_id = ?",
             (interest_id,)

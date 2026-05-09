@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Select
 from textual.containers import Center, VerticalScroll
 from models.events import event_services
-from models.interests import check_interests_name
+from models.interests import interest_services
 from screens.events.event_details_view import EventDetailsView
 
 MAIN_PAGE_CSS = """
@@ -62,7 +62,7 @@ class EventsView(Screen):
     # Monta a interface com filtros por interesse e listagem de eventos
     def compose(self) -> ComposeResult:
         events = event_services.check_events_with_interests(self.user_id)
-        interests = check_interests_name(self.user_id)
+        interests = interest_services.check_interests_name(self.user_id)
         select_options = [("Todos os Eventos", "all_events")] + [(interest, interest) for interest in interests]
         with Center():
             with VerticalScroll(id="main_box"):
