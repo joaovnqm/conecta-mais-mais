@@ -2,11 +2,11 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
-from screens.events_view import EventsView
-from screens.profile_view import ProfileView
-from screens.favorite_events_list_view import FavoriteEventsList
-from services.validations import normalize_name
-from services.users import user_services
+from screens.events.events_view import EventsView
+from screens.profile.profile_view import ProfileView
+from screens.events.favorite_events_list_view import FavoriteEventsList
+from utils.validations import normalize_name
+from models.users import user_services
 
 MAIN_PAGE_CSS = """
 Screen {
@@ -82,7 +82,7 @@ class MainPageView(Screen):
         - Se for o botão de logout, ela navega para a tela de login e reseta os campos do formulário de login para 
         facilitar uma nova tentativa de login.
         """
-        from screens.login_view import LoginView
+        from screens.auth.login_view import LoginView
         
         if event.button.id == "button_profile":
             self.app.push_screen(ProfileView(self.user_id))

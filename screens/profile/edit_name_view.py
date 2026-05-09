@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical
 
-from services.users import user_services
+from models.users import user_services
 
 AUTH_CSS = """
 Screen {

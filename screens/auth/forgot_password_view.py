@@ -4,7 +4,7 @@ from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical
 
 from services.password_reset import request_password_reset
-from screens.code_verification_view import CodeVerificationView
+from screens.auth.code_verification_view import CodeVerificationView
 
 
 AUTH_CSS = """

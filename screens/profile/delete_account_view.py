@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
 
-from services.users import user_services
+from models.users import user_services
 
 AUTH_CSS = """
 Screen {
@@ -75,7 +75,7 @@ class DeleteAccountView(Screen):
             if success:
                 self.notify(message)
                 
-                from screens.login_view import LoginView
+                from screens.auth.login_view import LoginView
                 self.app.push_screen(LoginView())
                 
                 current_screen = self.app.screen

@@ -2,8 +2,8 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
-from services.users import user_services
-from services.password_toggle import toggle_password_visibility
+from models.users import user_services
+from utils.password_toggle import toggle_password_visibility
 
 AUTH_CSS = """
 Screen {

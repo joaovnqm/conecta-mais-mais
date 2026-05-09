@@ -4,7 +4,7 @@ from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical, Horizontal
 
 from services.password_reset import reset_password
-from services.password_toggle import toggle_password_visibility
+from utils.password_toggle import toggle_password_visibility
 
 
 AUTH_CSS = """

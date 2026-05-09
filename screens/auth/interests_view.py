@@ -2,8 +2,8 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Checkbox, Label
 from textual.containers import Center, Vertical
-from screens.main_page_view import MainPageView
-from services.interests import add_interests, check_all_interests
+from screens.main.main_page_view import MainPageView
+from models.interests import add_interests, check_all_interests
 from unidecode import unidecode
 
 AUTH_CSS = """

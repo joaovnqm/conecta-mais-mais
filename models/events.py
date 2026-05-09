@@ -1,8 +1,8 @@
 import sqlite3
 from dataclasses import dataclass
 from typing import Optional, List
-from services.interests import check_interests_id, index_interest
-from services.validations import valid_name_events, valid_date, valid_hour
+from models.interests import check_interests_id, index_interest
+from utils.validations import valid_name_events, valid_date, valid_hour
 
 @dataclass
 class Event:

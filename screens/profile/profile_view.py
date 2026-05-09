@@ -3,10 +3,10 @@ from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
 
-from services.users import user_services
-from screens.edit_name_view import EditNameView
-from screens.change_password_view import ChangePasswordView
-from screens.delete_account_view import DeleteAccountView
+from models.users import user_services
+from screens.profile.edit_name_view import EditNameView
+from screens.profile.change_password_view import ChangePasswordView
+from screens.profile.delete_account_view import DeleteAccountView
 
 PROFILE_CSS = """
 Screen {

@@ -2,9 +2,9 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Select
 from textual.containers import Center, VerticalScroll
-from services.events import event_services
-from services.interests import check_interests_name
-from screens.event_details_view import EventDetailsView
+from models.events import event_services
+from models.interests import check_interests_name
+from screens.events.event_details_view import EventDetailsView
 
 MAIN_PAGE_CSS = """
 Screen {

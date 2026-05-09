@@ -2,9 +2,9 @@ import sqlite3
 from datetime import datetime, timedelta
 from random import randint
 
-from services.security import hash_value, verify_value
+from utils.security import hash_value, verify_value
 from services.send_email import send_verification_email
-from services.validations import password_error_message
+from utils.validations import password_error_message
 
 # Cria conexão com o banco de dados
 connection = sqlite3.connect("conecta++.db")

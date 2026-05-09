@@ -1,5 +1,5 @@
 import sqlite3
-from services.events import event_services
+from models.events import event_services
 
 connection = sqlite3.connect("conecta++.db")
 connection.execute("PRAGMA foreign_keys = ON")

@@ -2,8 +2,8 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll
-from services.events import event_services
-from services.users import user_services
+from models.events import event_services
+from models.users import user_services
 from services.favorite_events import check_favorite_event, favorite_event, remove_from_favorite_event
 
 EVENT_DETAILS_VIEW = """

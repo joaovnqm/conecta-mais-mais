@@ -9,9 +9,9 @@ from services.password_reset import (
     verify_code,
     finalize_password_reset,
 )
-from services.users import user_services
-from screens.interests_view import InterestsView
-from services.password_toggle import toggle_password_visibility
+from models.users import user_services
+from screens.auth.interests_view import InterestsView
+from utils.password_toggle import toggle_password_visibility
 
 AUTH_CSS = """
 Screen {

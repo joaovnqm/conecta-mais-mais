@@ -3,9 +3,9 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
 from services.password_reset import request_registration_code
-from services.validations import (valid_name_users, valid_email, password_error_message)
-from screens.code_verification_view import CodeVerificationView
-from services.password_toggle import toggle_password_visibility
+from utils.validations import (valid_name_users, valid_email, password_error_message)
+from screens.auth.code_verification_view import CodeVerificationView
+from utils.password_toggle import toggle_password_visibility
 
 AUTH_CSS = """
 Screen {

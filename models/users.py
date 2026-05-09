@@ -1,8 +1,8 @@
 import sqlite3
 from dataclasses import dataclass
 from typing import Optional
-from services.validations import normalize_name, valid_name_users, valid_email, password_error_message
-from services.security import hash_value, verify_value
+from utils.validations import normalize_name, valid_name_users, valid_email, password_error_message
+from utils.security import hash_value, verify_value
 
 @dataclass
 class User:

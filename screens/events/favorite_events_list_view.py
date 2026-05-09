@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll
-from screens.event_details_view import EventDetailsView
+from screens.events.event_details_view import EventDetailsView
 from services.favorite_events import check_favorited_events
 
 FAVORITE_EVENTS_CSS = """
