@@ -6,7 +6,7 @@ from services.security import hash_value, verify_value
 
 @dataclass
 class User:
-    """Representa um usuário do sistema.
+    """Representa um usuário do sistema. O decorador dataclass já constroi o __init__ de forma automática dentro do programa.
 
     Atributos:
     - user_id: Identificador único (None para usuários ainda não persistidos).

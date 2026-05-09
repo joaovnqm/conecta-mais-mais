@@ -67,7 +67,7 @@ class MainPageView(Screen):
 
     def on_screen_resume(self) -> None:
             user_data = user_services.get_user_profile(self.user_id)
-            name = user_data.get("name", self.user_name) 
+            name = user_data.name
             self.user_name = normalize_name(name)
             welcome_message = self.query_one("#name", Static)
             welcome_message.update(f"Bem-vindo(a), {self.user_name}!")

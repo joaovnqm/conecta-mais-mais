@@ -66,7 +66,6 @@ class EditNameView(Screen):
     # Monta a interface de edição de nome com valor atual preenchido, quando disponível
     def compose(self) -> ComposeResult:
         profile = user_services.get_user_profile(self.user_id)
-        current_name = profile["name"] if profile else ""
         
         with Center():
             with Vertical(id="auth_box"):
@@ -76,7 +75,7 @@ class EditNameView(Screen):
                 yield Input (
                     placeholder="Digite o seu novo nome...",
                     id="new_name",
-                    value=current_name
+                    value=profile.name
                 )
                 
                 yield Static("", id="message")

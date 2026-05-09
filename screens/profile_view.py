@@ -78,14 +78,14 @@ class ProfileView(Screen):
                     yield Static("Usuário não encontrado.", id="name_value", classes="profile_value")
                 else:
                     yield Static("Nome:", classes="profile_label")
-                    yield Static(profile["name"], id="name_value", classes="profile_value")
+                    yield Static(profile.name, id="name_value", classes="profile_value")
                     yield Button("Atualizar nome", id="button_edit_name", classes="profile_action")
 
                     yield Static("Senha:", classes="profile_label")
                     yield Button("Atualizar senha", id="button_change_password", classes="profile_action")
 
                     yield Static("E-mail:", classes="profile_label")
-                    yield Static(profile["email"], id="email_value", classes="profile_value")
+                    yield Static(profile.email, id="email_value", classes="profile_value")
 
                     yield Button(
                         "Deletar conta",
