@@ -12,6 +12,12 @@ cursor.execute("CREATE TABLE IF NOT EXISTS users_interests(user_id INTEGER, inte
     "FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE, FOREIGN KEY (interest_id) REFERENCES interests(interest_id) " \
     "ON DELETE CASCADE)")
 
+# Criando tabela de áreas de interesse dos eventos caso ela não exista.
+cursor.execute("CREATE TABLE IF NOT EXISTS events_interests(event_id INTEGER, interest_id INTEGER, PRIMARY KEY(event_id, interest_id), " \
+    "FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE, FOREIGN KEY (interest_id) REFERENCES interests(interest_id) " \
+    "ON DELETE CASCADE)"
+    )
+
 def index_interest(interest: str) -> int:
     """
     Essa função retorna o id de um interesse. Se o interesse não existir, ele é criado e o id é retornado.
