@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Select
 from textual.containers import Center, VerticalScroll
-from services.events import check_events_with_interests, check_events_by_interest
+from services.events import event_services
 from services.interests import check_interests_name
 from screens.event_details_view import EventDetailsView
 
@@ -61,7 +61,7 @@ class EventsView(Screen):
 
     # Monta a interface com filtros por interesse e listagem de eventos
     def compose(self) -> ComposeResult:
-        events = check_events_with_interests(self.user_id)
+        events = event_services.check_events_with_interests(self.user_id)
         interests = check_interests_name(self.user_id)
         select_options = [("Todos os Eventos", "all_events")] + [(interest, interest) for interest in interests]
         with Center():
@@ -72,7 +72,7 @@ class EventsView(Screen):
                 with VerticalScroll(id="events_container"):
                     if events:
                         for event in events:
-                            yield Button(event[1], id=f"event_{event[0]}", classes="event_buttons")
+                            yield Button(event.name, id=f"event_{event.event_id}", classes="event_buttons")
 
                     else:
                         yield Static("Nenhum evento encontrado.", classes="main_subtitle")
@@ -103,10 +103,10 @@ class EventsView(Screen):
         """
         selected_value = event.value
         if selected_value is "all_events":
-            result = check_events_with_interests(self.user_id)
+            result = event_services.check_events_with_interests(self.user_id)
 
         else:
-            result = check_events_by_interest(selected_value)
+            result = event_services.check_events_by_interest(selected_value)
 
         await self.update_events_on_screen(result)
 
@@ -121,7 +121,7 @@ class EventsView(Screen):
         if result:
             for event in result:
                 container.mount(
-                    Button(event[1], id=f"event_{event[0]}", classes="event_buttons")
+                    Button(event.name, id=f"event_{event.event_id}", classes="event_buttons")
                 )
         
         else:

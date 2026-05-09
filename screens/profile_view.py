@@ -104,8 +104,8 @@ class ProfileView(Screen):
         if profile is None:
             return
 
-        self.query_one("#name_value", Static).update(profile["name"])
-        self.query_one("#email_value", Static).update(profile["email"])
+        self.query_one("#name_value", Static).update(profile.name)
+        self.query_one("#email_value", Static).update(profile.email)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """

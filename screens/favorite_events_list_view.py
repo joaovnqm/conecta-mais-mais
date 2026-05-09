@@ -76,7 +76,7 @@ class FavoriteEventsList(Screen):
         if events:
             for event in events:
                 await container.mount(
-                    Button(event[1], id=f"event_{event[0]}", classes="event_buttons")
+                    Button(event.name, id=f"event_{event.event_id}", classes="event_buttons")
                 )
         else:
             await container.mount(

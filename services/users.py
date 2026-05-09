@@ -6,7 +6,7 @@ from services.security import hash_value, verify_value
 
 @dataclass
 class User:
-    """Representa um usuário do sistema. O decorador dataclass já constroi o __init__ de forma automática dentro do programa.
+    """Representa um usuário no sistema. O decorador dataclass já constroi o __init__ de forma automática dentro do programa.
 
     Atributos:
     - user_id: Identificador único (None para usuários ainda não persistidos).
@@ -43,7 +43,7 @@ class UserServices:
                 email TEXT NOT NULL UNIQUE,
                 password TEXT NOT NULL
             )
-            """)
+        """)
         self.connection.commit()
 
     def login(self, email, password):

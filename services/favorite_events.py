@@ -1,5 +1,5 @@
 import sqlite3
-from services.events import check_event
+from services.events import event_services
 
 connection = sqlite3.connect("conecta++.db")
 connection.execute("PRAGMA foreign_keys = ON")
@@ -73,7 +73,7 @@ def check_favorited_events(user_id):
 
     events = cursor.fetchall()
     for event in events:
-        event = check_event(event[0])
+        event = event_services.check_event(event[0])
         events_list.append(event)
 
     return events_list
