@@ -19,7 +19,7 @@ class User:
     email: str
 
 class UserServices:
-    """Serviço responsável por operações relacionadas a usuários e pela conexão com o DB."""
+    """Classe responsável por operações relacionadas a usuários e pela conexão com o DB."""
 
     def __init__(self, database_path: str = "conecta++.db"):
         self.database_path = database_path
