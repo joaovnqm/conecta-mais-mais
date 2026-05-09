@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll
 from services.events import check_event
-from services.users import check_user_name
+from services.users import user_services
 from services.favorite_events import check_favorite_event, favorite_event, remove_from_favorite_event
 
 EVENT_DETAILS_VIEW = """
@@ -59,7 +59,7 @@ class EventDetailsView(Screen):
     # Monta a interface com as informações do evento e do criador
     def compose(self) -> ComposeResult:
         event = check_event(self.event_id)
-        creator_name = check_user_name(event[6])
+        creator_name = user_services.check_user_name(event[6])
         with Center():
             with VerticalScroll(id="main_box"):
                 yield Static(f"Evento: {event[1]}", id="main_title")

@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
 
-from services.users import get_user_profile
+from services.users import user_services
 from screens.edit_name_view import EditNameView
 from screens.change_password_view import ChangePasswordView
 from screens.delete_account_view import DeleteAccountView
@@ -68,7 +68,7 @@ class ProfileView(Screen):
 
     # Monta a interface com os dados do perfil e as ações disponíveis
     def compose(self) -> ComposeResult:
-        profile = get_user_profile(self.user_id)
+        profile = user_services.get_user_profile(self.user_id)
 
         with Center():
             with Vertical(id="profile_box"):
@@ -100,7 +100,7 @@ class ProfileView(Screen):
         Função para recarregar os dados do perfil na interface. Ela é chamada após ações que podem alterar as informações do perfil, como
         atualizar o nome ou a senha, para garantir que as informações exibidas estejam sempre atualizadas.
         """
-        profile = get_user_profile(self.user_id)
+        profile = user_services.get_user_profile(self.user_id)
         if profile is None:
             return
 

@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical
 
-from services.users import get_user_profile, update_user_name
+from services.users import user_services
 
 AUTH_CSS = """
 Screen {
@@ -65,7 +65,7 @@ class EditNameView(Screen):
         
     # Monta a interface de edição de nome com valor atual preenchido, quando disponível
     def compose(self) -> ComposeResult:
-        profile = get_user_profile(self.user_id)
+        profile = user_services.get_user_profile(self.user_id)
         current_name = profile["name"] if profile else ""
         
         with Center():
@@ -97,7 +97,7 @@ class EditNameView(Screen):
         if event.button.id == "button_save":
             new_name = self.query_one("#new_name", Input).value
             
-            sucess, message = update_user_name(self.user_id, new_name)
+            sucess, message = user_services.update_user_name(self.user_id, new_name)
             response.update(message)
             
             if sucess:

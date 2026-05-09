@@ -6,7 +6,7 @@ from screens.events_view import EventsView
 from screens.profile_view import ProfileView
 from screens.favorite_events_list_view import FavoriteEventsList
 from services.validations import normalize_name
-from services.users import get_user_profile
+from services.users import user_services
 
 MAIN_PAGE_CSS = """
 Screen {
@@ -66,7 +66,7 @@ class MainPageView(Screen):
                 yield Button("Logout", id="button_logout", variant="error")
 
     def on_screen_resume(self) -> None:
-            user_data = get_user_profile(self.user_id)
+            user_data = user_services.get_user_profile(self.user_id)
             name = user_data.get("name", self.user_name) 
             self.user_name = normalize_name(name)
             welcome_message = self.query_one("#name", Static)

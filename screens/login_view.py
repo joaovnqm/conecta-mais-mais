@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical, Horizontal
 
-from services.users import login
+from services.users import user_services
 from services.validations import valid_email, password_error_message
 from screens.register_view import RegisterView
 from screens.main_page_view import MainPageView
@@ -201,7 +201,7 @@ class LoginView(Screen):
             email = self.query_one("#email", Input).value
             password = self.query_one("#password", Input).value
 
-            success, message, name, user_id = login(email, password)
+            success, message, name, user_id = user_services.login(email, password)
 
             if success:
                 self.app.push_screen(MainPageView(user_id, name))

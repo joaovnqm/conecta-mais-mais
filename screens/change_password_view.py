@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
-from services.users import change_user_password
+from services.users import user_services
 from services.password_toggle import toggle_password_visibility
 
 AUTH_CSS = """
@@ -155,7 +155,7 @@ class ChangePasswordView(Screen):
                 response.update("As senhas não coincidem.")
                 return
 
-            success, message = change_user_password(
+            success, message = user_services.change_user_password(
                 self.user_id,
                 current_password,
                 new_password
