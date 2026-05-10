@@ -94,13 +94,13 @@ class InterestServices:
             (user_id,)
             )
         user_interests_id = self.cursor.fetchall()
-        for interest in user_interests_id:
+        for interest_id in user_interests_id:
             self.cursor.execute(
                 "SELECT name FROM interests WHERE interest_id = ?",
-                (interest[0],)
+                (interest_id[0],)
             )
             user_interests_name = self.cursor.fetchone()
-            user_interests.append(Interest(user_interests_id[0], user_interests_name[0]))
+            user_interests.append(Interest(interest_id[0], user_interests_name[0]))
 
         return user_interests
 
