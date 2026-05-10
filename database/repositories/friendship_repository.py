@@ -186,3 +186,44 @@ class FriendshipServices:
                 }
                 for row in requests
             ]
+
+        def accept_friend_request(self, current_user_id: int, requester_id: int):
+            user_low_id, user_high_id = self.make_user_pair(
+                current_user_id, requester_id)
+
+            self.cursor.execute(
+                """
+                SELECT friendship_id, requester_id, status
+                FROM friendships
+                WHERE user_low_id = ?
+                AND user_high_id = ?
+                """,
+                (user_low_id, user_high_id)
+            )
+
+            friendship = self.cursor.fetchone()
+
+            if friendship is None:
+                return False, "Solicitação não encontrada"
+
+            friendship_id, original_requester_id, status = friendship
+
+            if status != "pending":
+                return False, "Essa solicitação não está pendente"
+
+            if original_requester_id == current_user_id:
+                return False, "Você não pode aceitar uma solicitação enviada por você mesmo"
+
+            self.cursor.execute(
+                """
+                UPDATE friendships
+                SET status = 'accepted',
+                update_at = CURRENT_TIMESTAMP
+                WHERE friendship_id = ?
+                """,
+                (friendship_id,)
+            )
+
+            self.connection.commit()
+
+            return True, "Solicitação aceita. Vocês agora são amigos"
