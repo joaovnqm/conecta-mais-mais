@@ -21,6 +21,8 @@ class FriendshipServices:
         self._create_table()
 
     def create_table(self):
+        """
+        """
         self.cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS friendships (
@@ -154,3 +156,33 @@ class FriendshipServices:
             self.connection.commit()
 
             return True, "Solicitação de amizade enviada com sucesso"
+
+        def list_pending_request(self, user_id: int) -> List[dict]:
+            self.cursor.execute(
+                """
+                SELECT
+                    f.friendship_id,
+                    u.user_id,
+                    u.name,
+                    u.email
+                FROM friendship f
+                JOIN users u
+                ON u.user_id = f.requester_id
+                WHERE f.status = 'pending'
+                AND f.requester_id != ?
+                ORDER BY f.created_at DESC
+                """,
+                (user_id, user_id)
+            )
+
+            requests = self.cursor.fetchall()
+
+            return [
+                {
+                    "friendship_id": row[0],
+                    "user_id": row[1],
+                    "name": row[2],
+                    "email": row[3]
+                }
+                for row in requests
+            ]
