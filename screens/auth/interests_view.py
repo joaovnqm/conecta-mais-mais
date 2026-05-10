@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Checkbox, Label
 from textual.containers import Center, Vertical
 from screens.main.main_page_view import MainPageView
-from models.interests import interest_services
+from database.interest_repository import interest_services
 from unidecode import unidecode
 
 AUTH_CSS = """

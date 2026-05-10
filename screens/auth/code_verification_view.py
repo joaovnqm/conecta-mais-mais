@@ -9,7 +9,7 @@ from services.password_reset import (
     verify_code,
     finalize_password_reset,
 )
-from models.users import user_services
+from database.user_repository import user_services
 from screens.auth.interests_view import InterestsView
 from utils.password_toggle import toggle_password_visibility
 

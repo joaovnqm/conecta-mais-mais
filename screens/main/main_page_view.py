@@ -6,7 +6,7 @@ from screens.events.events_view import EventsView
 from screens.profile.profile_view import ProfileView
 from screens.events.favorite_events_list_view import FavoriteEventsList
 from utils.validations import normalize_name
-from models.users import user_services
+from database.user_repository import user_services
 
 MAIN_PAGE_CSS = """
 Screen {

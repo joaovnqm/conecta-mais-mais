@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical, Horizontal
 
-from models.users import user_services
+from database.user_repository import user_services
 from utils.validations import valid_email, password_error_message
 from screens.auth.register_view import RegisterView
 from screens.main.main_page_view import MainPageView
