@@ -105,21 +105,24 @@ class ChangeInterestView(Screen):
             """
             if event.button.id == "button_change_interests":
                 checkboxes = self.query(".interests")
-                selected_checkboxes = [cb for cb in checkboxes if cb.value]
-                unselected_checkboxes = [cb for cb in checkboxes if not cb.value]
-                if not selected_checkboxes:
-                    self.notify("Você precisa ter pelo menos um interesse.")
+                selected_interests = {str(cb.label) for cb in checkboxes if cb.value}
+
+                if not selected_interests:
+                    self.app.notify("Você precisa adicionar pelo menos um interesse.", severity="warning")
                     return
-                    
-                else:
-                    for checkbox in selected_checkboxes:
-                        interest_services.add_interests(self.user_id, str(checkbox.label))
 
-                    for checkbox in unselected_checkboxes:
-                        interest_services.delete_interests(self.user_id, str(checkbox.label))
+                current_interests = {interest.name for interest in interest_services.check_user_interests(self.user_id)}
+                interests_to_add = selected_interests - current_interests
+                interests_to_remove = current_interests - selected_interests
 
-                    self.notify("Interesse(s) atualizado(s) com sucesso!")
-                    self.app.pop_screen()
+                for interest in interests_to_add:
+                    interest_services.add_interests(self.user_id, interest)
+                
+                for interest in interests_to_remove:
+                    interest_services.remove_interests(self.user_id, interest)
+
+                self.app.notify("Interesses atualizados com sucesso!")
+                self.app.pop_screen()
 
             elif event.button.id == "button_back":
                 self.app.pop_screen()

@@ -86,7 +86,7 @@ class InterestServices:
 
         return "Interesse(s) adicionado(s) com sucesso!", True
     
-    def delete_interests(self, user_id, interest):
+    def remove_interests(self, user_id, interest):
         """
         Essa função remove um interesse da lista de interesses do usuário. Ela verifica se o interesse já foi removido e, se não,
         remove o interesse da lista de interesses do usuário.

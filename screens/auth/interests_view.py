@@ -95,7 +95,7 @@ class InterestsView(Screen):
                 checkboxes = self.query(".interests")
                 selected_checkboxes = [cb for cb in checkboxes if cb.value]
                 if not selected_checkboxes:
-                    self.notify("Você precisa adicionar pelo menos um interesse.")
+                    self.notify("Você precisa adicionar pelo menos um interesse.", severity="warning")
                     return
                     
                 else:
