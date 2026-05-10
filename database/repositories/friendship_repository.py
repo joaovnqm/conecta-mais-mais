@@ -157,151 +157,152 @@ class FriendshipServices:
 
             return True, "Solicitação de amizade enviada com sucesso"
 
-        def list_pending_request(self, user_id: int) -> List[dict]:
-            self.cursor.execute(
-                """
-                SELECT
-                    f.friendship_id,
-                    u.user_id,
-                    u.name,
-                    u.email
-                FROM friendship f
-                JOIN users u
-                ON u.user_id = f.requester_id
-                WHERE f.status = 'pending'
-                AND f.requester_id != ?
-                ORDER BY f.created_at DESC
-                """,
-                (user_id, user_id)
-            )
+    def list_pending_request(self, user_id: int) -> List[dict]:
+        self.cursor.execute(
+            """
+            SELECT
+                f.friendship_id,
+                u.user_id,
+                u.name,
+                u.email
+            FROM friendship f
+            JOIN users u
+            ON u.user_id = f.requester_id
+            WHERE f.status = 'pending'
+            AND f.requester_id != ?
+            ORDER BY f.created_at DESC
+            """,
+            (user_id, user_id)
+        )
 
-            requests = self.cursor.fetchall()
+        requests = self.cursor.fetchall()
 
-            return [
-                {
-                    "friendship_id": row[0],
-                    "user_id": row[1],
-                    "name": row[2],
-                    "email": row[3]
-                }
-                for row in requests
-            ]
+        return [
+            {
+                "friendship_id": row[0],
+                "user_id": row[1],
+                "name": row[2],
+                "email": row[3]
+            }
+            for row in requests
+        ]
 
-        def accept_friend_request(self, current_user_id: int, requester_id: int):
-            user_low_id, user_high_id = self.make_user_pair(
-                current_user_id, requester_id)
+    def accept_friend_request(self, current_user_id: int, requester_id: int):
+        user_low_id, user_high_id = self.make_user_pair(
+            current_user_id, requester_id)
 
-            self.cursor.execute(
-                """
-                SELECT friendship_id, requester_id, status
-                FROM friendships
-                WHERE user_low_id = ?
-                AND user_high_id = ?
-                """,
-                (user_low_id, user_high_id)
-            )
+        self.cursor.execute(
+            """
+            SELECT friendship_id, requester_id, status
+            FROM friendships
+            WHERE user_low_id = ?
+            AND user_high_id = ?
+            """,
+            (user_low_id, user_high_id)
+        )
 
-            friendship = self.cursor.fetchone()
+        friendship = self.cursor.fetchone()
 
-            if friendship is None:
-                return False, "Solicitação não encontrada"
+        if friendship is None:
+            return False, "Solicitação não encontrada"
 
-            friendship_id, original_requester_id, status = friendship
+        friendship_id, original_requester_id, status = friendship
 
-            if status != "pending":
-                return False, "Essa solicitação não está pendente"
+        if status != "pending":
+            return False, "Essa solicitação não está pendente"
 
-            if original_requester_id == current_user_id:
-                return False, "Você não pode aceitar uma solicitação enviada por você mesmo"
+        if original_requester_id == current_user_id:
+            return False, "Você não pode aceitar uma solicitação enviada por você mesmo"
 
-            self.cursor.execute(
-                """
-                UPDATE friendships
-                SET status = 'accepted',
-                update_at = CURRENT_TIMESTAMP
-                WHERE friendship_id = ?
-                """,
-                (friendship_id,)
-            )
+        self.cursor.execute(
+            """
+            UPDATE friendships
+            SET status = 'accepted',
+            update_at = CURRENT_TIMESTAMP
+            WHERE friendship_id = ?
+            """,
+            (friendship_id,)
+        )
 
-            self.connection.commit()
+        self.connection.commit()
 
-            return True, "Solicitação aceita. Vocês agora são amigos"
+        return True, "Solicitação aceita. Vocês agora são amigos"
 
-        def reject_friend_request(self, current_user_id: int, requester_id: int):
-            user_low_id, user_high_id = self.make_user_pair(
-                current_user_id, requester_id)
+    def reject_friend_request(self, current_user_id: int, requester_id: int):
+        user_low_id, user_high_id = self.make_user_pair(
+            current_user_id, requester_id)
 
-            self.cursor.execute(
-                """
-                UPDATE friendship
-                SET status = 'rejected'
-                updated_at = CURRENT_TIMESTAMP
-                WHERE user_low_id = ?
-                AND user_high_id = ?
-                AND requester_id = ?
-                AND status = 'pending'
-                """,
-                (user_low_id, user_high_id, requester_id)
-            )
+        self.cursor.execute(
+            """
+            UPDATE friendship
+            SET status = 'rejected'
+            updated_at = CURRENT_TIMESTAMP
+            WHERE user_low_id = ?
+            AND user_high_id = ?
+            AND requester_id = ?
+            AND status = 'pending'
+            """,
+            (user_low_id, user_high_id, requester_id)
+        )
 
-            if self.cursor.rowcount == 0:
-                return False, "Solicitação pendente não encontrada"
+        if self.cursor.rowcount == 0:
+            return False, "Solicitação pendente não encontrada"
 
-            self.connection.commit()
+        self.connection.commit()
 
-            return True, "Solicitação recusada"
+        return True, "Solicitação recusada"
 
-        def list_friends(self, user_id: int) -> List[dict]:
-            self.cursor.execute(
-                """
-                SELECT
-                    u.ser_id,
-                    u.name,
-                    u.email
-                FROM friendship f
-                JOIN users u
-                ON u.user_id = CASE
-                    WHEN f.user_low_id = ? THEN f.user_high_id
-                    ELSE f.user_low_id
-                    END
-                WHERE f.status = 'accepted'
-                AND ? IN (f.user_low_id, f_user_high_id)
-                ORDER BY u.name ASC
-                """,
-                (user_id, user_id)
-            )
+    def list_friends(self, user_id: int) -> List[dict]:
+        self.cursor.execute(
+            """
+            SELECT
+                u.ser_id,
+                u.name,
+                u.email
+            FROM friendship f
+            JOIN users u
+            ON u.user_id = CASE
+                WHEN f.user_low_id = ? THEN f.user_high_id
+                ELSE f.user_low_id
+                END
+            WHERE f.status = 'accepted'
+            AND ? IN (f.user_low_id, f_user_high_id)
+            ORDER BY u.name ASC
+            """,
+            (user_id, user_id)
+        )
 
-            friends = self.cursor.fetchall()
+        friends = self.cursor.fetchall()
 
-            return [
-                {
-                    "user_id": row[0],
-                    "name": row[1],
-                    "email": row[2]
-                }
-                for row in friends
-            ]
+        return [
+            {
+                "user_id": row[0],
+                "name": row[1],
+                "email": row[2]
+            }
+            for row in friends
+        ]
 
-        def remove_friend(self, current_user_id: int, friend_id: int):
-            user_low_id, user_high_id = self.make_user_pair(
-                current_user_id, friend_id)
+    def remove_friend(self, current_user_id: int, friend_id: int):
+        user_low_id, user_high_id = self.make_user_pair(
+            current_user_id, friend_id)
 
-            self.cursor.execute(
-                """
-                DELETE FROM friendships
-                WHERE user_low_id = ?
-                AND user_high_id = ?
-                AND status = 'accepted'
-                """,
-                (user_low_id, user_high_id)
-            )
+        self.cursor.execute(
+            """
+            DELETE FROM friendships
+            WHERE user_low_id = ?
+            AND user_high_id = ?
+            AND status = 'accepted'
+            """,
+            (user_low_id, user_high_id)
+        )
 
-            if self.cursor.rowcount == 0:
-                return False, "Amizade não encontrada"
+        if self.cursor.rowcount == 0:
+            return False, "Amizade não encontrada"
 
-            self.connection.commit()
+        self.connection.commit()
 
-            return True, "Amizade removida com sucesso"
+        return True, "Amizade removida com sucesso"
 
-        friendship_services = FriendshipServices()
+
+friendship_services = FriendshipServices()
