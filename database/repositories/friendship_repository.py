@@ -227,3 +227,27 @@ class FriendshipServices:
             self.connection.commit()
 
             return True, "Solicitação aceita. Vocês agora são amigos"
+
+        def reject_friend_request(self, current_user_id: int, requester_id: int):
+            user_low_id, user_high_id = self.make_user_pair(
+                current_user_id, requester_id)
+
+            self.cursor.execute(
+                """
+                UPDATE friendship
+                SET status = 'rejected'
+                updated_at = CURRENT_TIMESTAMP
+                WHERE user_low_id = ?
+                AND user_high_id = ?
+                AND requester_id = ?
+                AND status = 'pending'
+                """,
+                (user_low_id, user_high_id, requester_id)
+            )
+
+            if self.cursor.rowcount == 0:
+                return False, "Solicitação pendente não encontrada"
+
+            self.connection.commit()
+
+            return True, "Solicitação recusada"
