@@ -1,12 +1,12 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Static, Button, Checkbox, Label
+from textual.widgets import Static, Button, Checkbox
 from textual.containers import Center, Vertical
 from screens.main.main_page_view import MainPageView
 from database.repositories.interest_repository import interest_services
 from unidecode import unidecode
 
-AUTH_CSS = """
+INTEREST_CSS = """
 Screen {
     align: center middle;
     background: $surface;
@@ -59,7 +59,7 @@ class InterestsView(Screen):
     associados ao perfil do usuário, para que possam ser utilizados posteriormente para personalizar a experiência do usuário 
     na plataforma, como por exemplo, exibir eventos relacionados aos interesses selecionados.
     """
-    CSS = AUTH_CSS
+    CSS = INTEREST_CSS
     
     # Inicializa a tela com os dados do usuário recém cadastrado
     def __init__(self, user_id: int, user_name: str):

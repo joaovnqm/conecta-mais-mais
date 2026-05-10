@@ -1,4 +1,5 @@
 import sqlite3
+from models.interest import Interest
 
 class InterestServices:
     """Classe responsável por operações relacionadas aos interesses e pela conexão com o DB."""
@@ -84,39 +85,24 @@ class InterestServices:
         self.connection.commit()
 
         return "Interesse(s) adicionado(s) com sucesso!", True
-
-    def check_interests_id(self, user_id) -> tuple:
-        """
-        Essa função retorna uma tupla de interesses com base no id do usuário. Ela consulta a tabela de interesses dos 
-        usuários para obter os ids dos interesses, e retorna uma tupla contendo os ids dos interesses do usuário.
-        """
+    
+    def check_user_interests(self, user_id):
         user_id = str(user_id)
+        user_interests = []
         self.cursor.execute(
             "SELECT interest_id FROM users_interests WHERE user_id = ?",
             (user_id,)
             )
-        user = self.cursor.fetchall()
-        user_interests = user
-
-        return user_interests
-
-    def check_interests_name(self, user_id) -> tuple:
-        """
-        Essa função retorna uma tupla de interesses com base no id do usuário. Ela consulta a tabela de interesses dos 
-        usuários para obter os ids dos interesses, depois consulta a tabela de interesses para obter os nomes
-        dos interesses, e retorna uma tupla contendo os nomes dos interesses do usuário.
-        """
-        interests_id = self.check_interests_id(user_id)
-        interests_names = []
-        for interest in interests_id:
+        user_interests_id = self.cursor.fetchall()
+        for interest in user_interests_id:
             self.cursor.execute(
                 "SELECT name FROM interests WHERE interest_id = ?",
                 (interest[0],)
-                )
-            interest_result = self.cursor.fetchone()
-            interests_names.append(interest_result[0])
+            )
+            user_interests_name = self.cursor.fetchone()
+            user_interests.append(Interest(user_interests_id[0], user_interests_name[0]))
 
-        return interests_names
+        return user_interests
 
     def check_all_interests(self) -> tuple:
         """

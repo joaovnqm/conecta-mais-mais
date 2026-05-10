@@ -103,14 +103,14 @@ class EventServices:
         depois busca os eventos relacionados a esses interesses e retorna uma lista de objetos "Event" com (event_id, name, description). 
         A função também garante que não haja eventos duplicados na lista final.
         """
-        interests = interest_services.check_interests_id(user_id)
+        interests = interest_services.check_user_interests(user_id)
         events = []
         seen_ids = set()
 
         for interest in interests:
             self.cursor.execute(
                 "SELECT event_id FROM events_interests WHERE interest_id = ?",
-                (interest[0],)
+                (interest.interest_id,)
             )
 
             for row in self.cursor.fetchall():
