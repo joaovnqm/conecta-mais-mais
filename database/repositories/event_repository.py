@@ -1,6 +1,6 @@
 import sqlite3
 from typing import Optional, List
-from database.interest_repository import interest_services
+from database.repositories.interest_repository import interest_services
 from models.event import Event
 from utils.validations import valid_name_events, valid_date, valid_hour
 
