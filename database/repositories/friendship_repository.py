@@ -251,3 +251,34 @@ class FriendshipServices:
             self.connection.commit()
 
             return True, "Solicitação recusada"
+
+        def list_friends(self, user_id: int) -> List[dict]:
+            self.cursor.execute(
+                """
+                SELECT
+                    u.ser_id,
+                    u.name,
+                    u.email
+                FROM friendship f
+                JOIN users u
+                ON u.user_id = CASE
+                    WHEN f.user_low_id = ? THEN f.user_high_id
+                    ELSE f.user_low_id
+                    END
+                WHERE f.status = 'accepted'
+                AND ? IN (f.user_low_id, f_user_high_id)
+                ORDER BY u.name ASC
+                """,
+                (user_id, user_id)
+            )
+
+            friends = self.cursor.fetchall()
+
+            return [
+                {
+                    "user_id": row[0],
+                    "name": row[1],
+                    "email": row[2]
+                }
+                for row in friends
+            ]
