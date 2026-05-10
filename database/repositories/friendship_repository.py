@@ -56,3 +56,9 @@ class FriendshipServices:
             )
             """)
         self.connection.commit()
+
+    def make_user_pair(self, user_id_1: int, user_id_2: int) -> tuple[int, int]:
+        if user_id_1 == user_id_2:
+            raise ValueError("Usuário não pode adicionar a si mesmo")
+
+        return min(user_id_1, user_id_2), max(user_id_1, user_id_2)
