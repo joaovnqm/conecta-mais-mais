@@ -19,3 +19,40 @@ class FriendshipServices:
         self.connection.execute("PRAGMA foreign_keys = ON")
         self.cursor = self.connection.cursor()
         self._create_table()
+
+    def create_table(self):
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS friendships (
+                friendship_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                
+                user_low_id INTEGER NOT NULL,
+                user_high_id INTEGER NOT NULL,  
+                
+                    
+                
+                status TEXT NOT NULL CHECK (
+                    status IN ('pending', 'accepted', 'rejected', 'blocked')
+                ),
+                
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                update_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                
+                UNIQUE(user_low_id, user_high_id),
+                
+                FOREIGN KEY (user_low_id)
+                    REFERENCES users(user_id)
+                    ON DELETE CASCADE,
+                
+                FOREIGN KEY (user_high_id)
+                    REFERENCES users(user_id)
+                    ON DELETE CASCADE,
+                    
+                FOREIGN KEY (requester_id)
+                    REFERENCES users(user_id)
+                    ON DELETE  CASCADE,
+                
+                CHECK(user_low_id < user_high_id)
+            )
+            """)
+        self.connection.commit()
