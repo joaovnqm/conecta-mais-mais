@@ -85,3 +85,72 @@ class FriendshipServices:
             "name": user[1],
             "email": user[2]
         }
+
+    def send_friend_request(self, requester_id: int, target_email: str):
+        target_user = self.find_user_by_email(target_email)
+
+        if target_user is None:
+            return False, "Usuário não encontrado"
+
+        target_id = target_user["user_id"]
+
+        if requester_id == target_id:
+            return False, "Você não pode enviar solicitação para si mesmo"
+
+        user_low_id, user_high_id = self.make_user_pair(
+            requester_id, target_id)
+
+        self.cursor.execute(
+            """
+            SELECT friendship_id, status
+            FROM friendships
+            WHERE user_low_id = ?
+                AND user_high_id = ?
+            """,
+            (user_low_id, user_high_id)
+        )
+
+        friendship = self.cursor.fetchone()
+
+        if friendship is not None:
+            friendship_id, status = friendship
+
+            if status == "pending":
+                return False, "Já existe uma solicitação pendente entre vocês"
+
+            if status == "accepted":
+                return False, "Vocês já são amigos"
+
+            if status == "blocked":
+                return False, "Não é possível enviar solicitação para este usuário"
+
+            if status == "rejected":
+                self.cursor.execute(
+                    """
+                    UPDATE friendship
+                    SET status = 'pending'
+                        requester_id = ?
+                        update_at = CURRENT_TIMESTAMP
+                    WHERE friendship_id = ?
+                    """,
+                    (requester_id, friendship_id)
+                )
+
+                self.connection.commit()
+                return True, "Solicitação reenviada com sucesso"
+
+            self.cursor.execute(
+                """
+                INSERT INTO friendships (
+                    user_low_id,
+                    user_high_id,
+                    requester_id,
+                    status
+                )
+                VALUES (?, ?, ?, 'pending')
+                """,
+                (user_low_id, user_high_id, requester_id)
+            )
+            self.connection.commit()
+
+            return True, "Solicitação de amizade enviada com sucesso"
