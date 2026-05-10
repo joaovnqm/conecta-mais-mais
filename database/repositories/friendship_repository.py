@@ -282,3 +282,26 @@ class FriendshipServices:
                 }
                 for row in friends
             ]
+
+        def remove_friend(self, current_user_id: int, friend_id: int):
+            user_low_id, user_high_id = self.make_user_pair(
+                current_user_id, friend_id)
+
+            self.cursor.execute(
+                """
+                DELETE FROM friendships
+                WHERE user_low_id = ?
+                AND user_high_id = ?
+                AND status = 'accepted'
+                """,
+                (user_low_id, user_high_id)
+            )
+
+            if self.cursor.rowcount == 0:
+                return False, "Amizade não encontrada"
+
+            self.connection.commit()
+
+            return True, "Amizade removida com sucesso"
+
+        friendship_services = FriendshipServices()
