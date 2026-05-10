@@ -7,6 +7,7 @@ from database.repositories.user_repository import user_services
 from screens.profile.edit_name_view import EditNameView
 from screens.profile.change_password_view import ChangePasswordView
 from screens.profile.delete_account_view import DeleteAccountView
+from screens.profile.change_interests_view import ChangeInterestView
 
 PROFILE_CSS = """
 Screen {
@@ -73,25 +74,19 @@ class ProfileView(Screen):
         with Center():
             with Vertical(id="profile_box"):
                 yield Static("Meu perfil", id="profile_title")
-
                 if profile is None:
                     yield Static("Usuário não encontrado.", id="name_value", classes="profile_value")
                 else:
                     yield Static("Nome:", classes="profile_label")
                     yield Static(profile.name, id="name_value", classes="profile_value")
                     yield Button("Atualizar nome", id="button_edit_name", classes="profile_action")
-
                     yield Static("Senha:", classes="profile_label")
                     yield Button("Atualizar senha", id="button_change_password", classes="profile_action")
-
                     yield Static("E-mail:", classes="profile_label")
                     yield Static(profile.email, id="email_value", classes="profile_value")
-
-                    yield Button(
-                        "Deletar conta",
-                        id="button_delete_account",
-                        variant="error"
-                    )
+                    yield Static("Interesses:", classes="profile_label")
+                    yield Button("Alterar interesses", id="button_change_interests", classes="profile_action")
+                    yield Button("Deletar conta", id="button_delete_account", variant="error")
 
                 yield Button("Voltar", id="button_back", variant="primary")
 
@@ -121,6 +116,9 @@ class ProfileView(Screen):
 
         elif event.button.id == "button_change_password":
             self.app.push_screen(ChangePasswordView(self.user_id))
+
+        elif event.button.id == "button_change_interests":
+            self.app.push_screen(ChangeInterestView(self.user_id))
 
         elif event.button.id == "button_delete_account":
             self.app.push_screen(DeleteAccountView(self.user_id))

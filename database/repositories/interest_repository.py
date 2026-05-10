@@ -86,7 +86,33 @@ class InterestServices:
 
         return "Interesse(s) adicionado(s) com sucesso!", True
     
+    def delete_interests(self, user_id, interest):
+        """
+        Essa função remove um interesse da lista de interesses do usuário. Ela verifica se o interesse já foi removido e, se não,
+        remove o interesse da lista de interesses do usuário.
+        """
+        interest_id = self.index_interest(interest)
+        self.cursor.execute(
+            "SELECT EXISTS(SELECT 1 FROM users_interests WHERE user_id = ? AND interest_id = ?)",
+            (user_id, interest_id,)
+        )
+        interest_registered = bool(self.cursor.fetchone()[0])
+
+        if not interest_registered:
+            return "Algum desses interesses já foi deletado.", False
+        
+        self.cursor.execute(
+            "DELETE FROM users_interests WHERE user_id = ? AND interest_id = ?", (user_id, interest_id,)
+        )
+        self.connection.commit()
+
+        return "Interesse(s) deletado(s) com sucesso!", True
+    
     def check_user_interests(self, user_id):
+        """
+        Essa função consulta a tabela de users_interests para obter os ids dos interesses
+        e os nomes dos interesses correspondentes, e retorna uma lista de objetos de interesses do usuário.
+        """
         user_id = str(user_id)
         user_interests = []
         self.cursor.execute(
@@ -109,10 +135,13 @@ class InterestServices:
         Essa função retorna uma tupla de todos os interesses cadastrados. Ela consulta a tabela de interesses e retorna 
         uma tupla contendo os nomes de todos os interesses cadastrados.
         """
+        interests = []
         self.cursor.execute(
-            "SELECT name FROM interests"
+            "SELECT interest_id, name FROM interests"
         )
-        interests = self.cursor.fetchall()
+        interests_tuples = self.cursor.fetchall()
+        for interest in interests_tuples:
+            interests.append(Interest(interest[0], interest[1]))
 
         return interests
     
