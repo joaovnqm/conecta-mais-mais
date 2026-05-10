@@ -2,7 +2,6 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Checkbox
 from textual.containers import Center, Vertical
-from screens.main.main_page_view import MainPageView
 from database.repositories.interest_repository import interest_services
 from unidecode import unidecode
 
@@ -52,23 +51,24 @@ Button {
 }
 """
 
-class InterestsView(Screen):
+class ChangeInterestView(Screen):
     """
-    Classe responsável pela tela de seleção de interesses. Ela é exibida após o cadastro do usuário, e permite que ele selecione 
-    os seus interesses a partir de uma lista de opções disponíveis. Os interesses selecionados são salvos no banco de dados e 
-    associados ao perfil do usuário, para que possam ser utilizados posteriormente para personalizar a experiência do usuário 
-    na plataforma, como por exemplo, exibir eventos relacionados aos interesses selecionados.
+    Classe responsável pela tela de alteração dos interesses. Ela é exibida após o clique na página de perfil,
+    e permite que ele selecione e altere os seus interesses a partir de uma lista de opções disponíveis. 
+    Os interesses selecionados são salvos no banco de dados e associados ao perfil do usuário, para que possam 
+    ser utilizados posteriormente para personalizar a experiência do usuário na plataforma, como por exemplo,
+    exibir eventos relacionados aos interesses selecionados.
     """
     CSS = INTEREST_CSS
-    
+
     # Inicializa a tela com os dados do usuário recém cadastrado
-    def __init__(self, user_id: int, user_name: str):
+    def __init__(self, user_id: int):
         super().__init__()
         self.user_id = user_id
-        self.user_name = user_name
-        
+
     # Monta a interface com a lista de interesses disponíveis
     def compose(self) -> ComposeResult:
+        user_interests = interest_services.check_user_interests(self.user_id)
         interests = interest_services.check_all_interests()
         with Center():
             with Vertical(id="interest_box"):
@@ -78,29 +78,48 @@ class InterestsView(Screen):
                     for interest in interests:
                         interest_id = interest.name.replace(" ", "_").lower().strip()
                         interest_id = unidecode(interest_id)
-                        yield Checkbox(interest.name, id=f"interesse_{interest_id}", classes="interests")
+
+                        checked = False
+
+                        for user_interest in user_interests:
+                            if user_interest.interest_id == interest.interest_id:
+                                checked = True
+                                break
+
+                        yield Checkbox(interest.name, id=f"interesse_{interest_id}", classes="interests", value=checked)
 
                 else:
                     yield Static("Nenhum interesse encontrado.", classes="main_subtitle")
-                yield Button("Definir interesses", id="button_register_interests", variant="primary")
+                    
+                yield Button("Atualizar interesses", id="button_change_interests")
+                yield Button("Voltar", id="button_back", variant="primary")
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
             """
             Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado,
             e executa a ação correspondente:
-            - Se for o botão de definir interesses, ela coleta os interesses marcados, chama a função de adição de interesses,
-              e exibe a mensagem de resposta. Se a operação for bem-sucedida, ela navega para a tela principal.
+            - Se o botão de atualizar interesses for clicado, ela coleta os interesses selecionados e não selecionados, 
+            e chama as funções de adição e remoção de interesses, respectivamente, para atualizar os interesses do usuário
+            no banco de dados. Após a atualização, ela exibe uma notificação de sucesso e volta para a tela anterior.
+            - Se o botão de voltar for clicado, ela simplesmente volta para a tela anterior sem fazer nenhuma alteração.
             """
-            if event.button.id == "button_register_interests":
+            if event.button.id == "button_change_interests":
                 checkboxes = self.query(".interests")
                 selected_checkboxes = [cb for cb in checkboxes if cb.value]
+                unselected_checkboxes = [cb for cb in checkboxes if not cb.value]
                 if not selected_checkboxes:
-                    self.notify("Você precisa adicionar pelo menos um interesse.")
+                    self.notify("Você precisa ter pelo menos um interesse.")
                     return
                     
                 else:
                     for checkbox in selected_checkboxes:
                         interest_services.add_interests(self.user_id, str(checkbox.label))
 
-                    self.notify("Interesse(s) adicionado(s) com sucesso!")
-                    self.app.push_screen(MainPageView(self.user_id, self.user_name))
+                    for checkbox in unselected_checkboxes:
+                        interest_services.delete_interests(self.user_id, str(checkbox.label))
+
+                    self.notify("Interesse(s) atualizado(s) com sucesso!")
+                    self.app.pop_screen()
+
+            elif event.button.id == "button_back":
+                self.app.pop_screen()
