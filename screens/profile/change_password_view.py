@@ -12,7 +12,7 @@ Screen {
 }
 
 #auth_box {
-    width: 58;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;

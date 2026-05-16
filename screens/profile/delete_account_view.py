@@ -12,7 +12,7 @@ Screen {
 }
 
 #confirm_box {
-    width: 56;
+    width: 86;
     height: auto;
     border: round $error;
     padding: 1 2;

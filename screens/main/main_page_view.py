@@ -16,7 +16,7 @@ Screen {
 }
 
 #main_box { 
-    width: 60;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;
