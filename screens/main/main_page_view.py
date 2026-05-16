@@ -4,6 +4,7 @@ from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
 from screens.events.events_view import EventsView
 from screens.profile.profile_view import ProfileView
+from screens.social.friends_view import FriendsView
 from screens.events.favorite_events_list_view import FavoriteEventsList
 from utils.validations import normalize_name
 from database.repositories.user_repository import user_services
@@ -63,6 +64,7 @@ class MainPageView(Screen):
                 yield Button("Meu perfil", id="button_profile")
                 yield Button("Eventos", id="button_events")
                 yield Button("Eventos Favoritados", id="button_favorite_events")
+                yield Button("Amigos", id="button_friends")
                 yield Button("Logout", id="button_logout", variant="error")
 
     def on_screen_resume(self) -> None:
@@ -92,6 +94,9 @@ class MainPageView(Screen):
 
         elif event.button.id == "button_favorite_events":
             self.app.push_screen(FavoriteEventsList(self.user_id))
+            
+        elif event.button.id == "button_friends":
+            self.app.push_screen(FriendsView(self.user_id))
 
         elif event.button.id == "button_logout":
             self.app.push_screen(LoginView())
