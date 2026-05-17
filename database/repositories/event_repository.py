@@ -194,6 +194,22 @@ class EventServices:
                 events.append(Event(event[0], event[1], event[2]))
 
         return events
+    
+    def check_events_by_user(self, user_id: int):
+        """
+        Essa função retorna uma lista de eventos criados pelo usuário. Ela busca os eventos criados por esse usuário e retorna uma lista de objetos "Event" com (event_id, name, description).
+        """
+        events = []
+        self.cursor.execute(
+            "SELECT event_id, name, description FROM events WHERE creator_id = ?",
+            (user_id,)
+        )
+
+        result = self.cursor.fetchall()
+        for event in result:
+            events.append(Event(event[0], event[1], event[2]))
+
+        return events
 
     def check_event(self, event_id) -> object:
         """
