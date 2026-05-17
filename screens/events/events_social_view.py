@@ -1,12 +1,11 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Static, Button, Select, Input
+from textual.widgets import Static, Button, Input
 from textual.containers import Center, VerticalScroll
 from database.repositories.event_repository import event_services
-from database.repositories.interest_repository import interest_services
 from screens.events.event_details_view import EventDetailsView
 
-EVENTS_PAGE_CSS = """
+SOCIAL_EVENTS_PAGE_CSS = """
 Screen {
     align: center middle;
     background: $surface;
@@ -52,12 +51,12 @@ Button {
 }
 """
 
-class EventsView(Screen):
+class EventsSocialView(Screen):
     """
-    Classe responsável pela tela de listagem de eventos. Ela exibe uma lista de eventos disponíveis, com a opção de filtrar 
-    por interesse e buscar por nome.
+    Classe responsável pela tela de listagem de eventos sociais. Ela exibe uma lista de eventos criados por amigos e que estão disponíveis, com a opção
+    de buscar por nome.
     """
-    CSS = EVENTS_PAGE_CSS
+    CSS = SOCIAL_EVENTS_PAGE_CSS
 
     # Inicializa a tela com os dados básicos do usuário autenticado
     def __init__(self, user_id: int):
@@ -66,20 +65,16 @@ class EventsView(Screen):
 
     # Monta a interface com filtros por interesse e listagem de eventos
     def compose(self) -> ComposeResult:
-        events = event_services.check_events_with_interests(self.user_id)
-        interests = interest_services.check_user_interests(self.user_id)
-        select_options = [("Todos os Eventos", "all_events")] + [(interest.name, interest.name) for interest in interests if interest.name != "Social"]
+        events = event_services.check_events_by_interest("Social")
         with Center():
             with VerticalScroll(id="main_box"):
-                yield Static("Eventos", id="main_title")
+                yield Static("Eventos Sociais", id="main_title")
                 yield Static("Buscar evento:")
                 yield Input(
                     placeholder="Insira o nome do evento...",
                     id="search_event"
                 )
-                yield Static("Filtrar por interesse:")
-                yield Select(select_options, value="all_events", allow_blank=False)
-                yield Static("Clique em algum evento abaixo para saber mais.", classes="main_subtitle")
+                yield Static("Clique em algum evento abaixo para saber mais.")
                 with VerticalScroll(id="events_container"):
                     if events:
                         for event in events:
@@ -111,28 +106,13 @@ class EventsView(Screen):
         """
         if event.input.id == "search_event":
             await self._apply_filters()
-            
-    async def on_select_changed(self, event: Select.Changed) -> None:
-        """
-        Função que lida com os eventos de mudança na seleção do filtro por interesse.
-        """
-        await self._apply_filters()
 
     async def _apply_filters(self) -> None:
         """
-        Função centralizadora que lê o estado do Select e do Input, aplica ambas as filtragens e chama a atualização da tela.
+        Função que lê o estado do Input, aplica a filtragem e chama a atualização da tela.
         """
-        select_widget = self.query_one(Select)
         input_widget = self.query_one("#search_event", Input)
-        
-        selected_interest = select_widget.value
         search_term = input_widget.value.lower().strip()
-        if selected_interest == "all_events":
-            result = event_services.check_events_with_interests(self.user_id)
-
-        else:
-            result = event_services.check_events_by_interest(selected_interest)
-
         if search_term and result:
             result = [event for event in result if search_term in event.name.lower()]
 
@@ -140,9 +120,8 @@ class EventsView(Screen):
 
     async def update_events_on_screen(self, result):
         """
-        Função auxiliar para atualizar a listagem de eventos exibida na tela, com base no resultado da aplicação do filtro 
-        por interesse. Ela remove os eventos atualmente exibidos e monta novos botões para os eventos filtrados, 
-        ou exibe uma mensagem caso nenhum evento esteja disponível para os filtros selecionados.
+        Função auxiliar para atualizar a listagem de eventos exibida na tela, com base na lista de eventos filtrada. Ela limpa os eventos atuais e monta
+        os novos resultados. Se a lista de resultados estiver vazia, ela exibe uma mensagem indicando que nenhum evento foi encontrado com aquele nome.
         """
         container = self.query_one("#events_container")
         await container.remove_children()
@@ -151,4 +130,4 @@ class EventsView(Screen):
             for event in result:
                 container.mount(Button(event.name, id=f"event_{event.event_id}", classes="event_buttons"))
         else:
-            container.mount(Static("Eventos com filtros selecionados não disponíveis no momento.", classes="main_subtitle"))
+            container.mount(Static("Eventos com esse nome não encontrados.", classes="main_subtitle"))

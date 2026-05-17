@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
 from services.password_reset import request_registration_code
-from utils.validations import (valid_name_users, valid_email, password_error_message)
+from utils.validations import validation_services
 from screens.auth.code_verification_view import CodeVerificationView
 from utils.password_toggle import toggle_password_visibility
 
@@ -14,7 +14,7 @@ Screen {
 }
 
 #auth_box {
-    width: 52;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;
@@ -135,7 +135,7 @@ class RegisterView(Screen):
             name_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(name_input, not valid_name_users(value))
+        self._set_invalid_if_needed(name_input, not validation_services.valid_name_users(value))
     
     def _validate_email_field(self) -> None:
         """
@@ -150,7 +150,7 @@ class RegisterView(Screen):
             email_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(email_input, not valid_email(value))
+        self._set_invalid_if_needed(email_input, not validation_services.valid_email(value))
     
     def _validate_password_field(self) -> None:
         """
@@ -166,7 +166,7 @@ class RegisterView(Screen):
             password_input.remove_class("invalid")
             return
 
-        error_message = password_error_message(value)
+        error_message = validation_services.password_error_message(value)
         self._set_invalid_if_needed(password_input, error_message is not None)
     
     def _validate_re_password_field(self) -> None:
@@ -234,17 +234,17 @@ class RegisterView(Screen):
             password = self.query_one("#password", Input).value
             re_password = self.query_one("#re_password", Input).value
 
-            if not valid_name_users(name):
+            if not validation_services.valid_name_users(name):
                 response.update("O nome precisa ter pelo menos 2 caracteres e não pode conter números.")
                 self.query_one("#name", Input).add_class("invalid")
                 return
 
-            if not valid_email(email):
+            if not validation_services.valid_email(email):
                 response.update("Esse e-mail é inválido!")
                 self.query_one("#email", Input).add_class("invalid")
                 return
 
-            password_message = password_error_message(password)
+            password_message = validation_services.password_error_message(password)
             if password_message is not None:
                 response.update(password_message)
                 self.query_one("#password", Input).add_class("invalid")

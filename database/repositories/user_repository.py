@@ -1,5 +1,5 @@
 import sqlite3
-from utils.validations import normalize_name, valid_name_users, valid_email, password_error_message
+from utils.validations import validation_services
 from utils.security import hash_value, verify_value
 from models.user import User
 
@@ -54,7 +54,7 @@ class UserServices:
         if not verify_value(password, saved_password):
             return False, "Senha incorreta.", None, None
 
-        name = normalize_name(name)
+        name = validation_services.normalize_name(name)
 
         return True, "Login realizado com sucesso!", name, user_id
 
@@ -68,13 +68,13 @@ class UserServices:
         name = name.strip()
         email = email.strip().lower()
 
-        if not valid_name_users(name):
+        if not validation_services.valid_name_users(name):
             return False, "O nome precisa ter pelo menos 2 caracteres, no máximo 50 caracteres e não pode conter números.", None
 
-        if not valid_email(email):
+        if not validation_services.valid_email(email):
             return False, "Esse e-mail é inválido!", None
 
-        password_message = password_error_message(password)
+        password_message = validation_services.password_error_message(password)
         if password_message is not None:
             return False, password_message, None
 
@@ -122,9 +122,9 @@ class UserServices:
         específicas caso haja algum problema. Se a atualização for bem-sucedida, a função retorna True e uma mensagem de sucesso. 
         O nome do usuário é normalizado para remover espaços extras.
         """
-        new_name = normalize_name(new_name)
+        new_name = validation_services.normalize_name(new_name)
 
-        if not valid_name_users(new_name):
+        if not validation_services.valid_name_users(new_name):
             return False, "O nome precisa ter pelo menos 2 caracteres, no máximo 50 caracteres e não pode conter números."
 
         self.cursor.execute(
@@ -165,7 +165,7 @@ class UserServices:
         if not verify_value(current_password, saved_password):
             return False, "A senha atual está incorreta"
 
-        password_message = password_error_message(new_password)
+        password_message = validation_services.password_error_message(new_password)
         if password_message is not None:
             return False, password_message
 
@@ -221,6 +221,6 @@ class UserServices:
         if user is None:
             return None
 
-        return normalize_name(user[0])
+        return validation_services.normalize_name(user[0])
     
 user_services = UserServices()

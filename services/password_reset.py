@@ -1,10 +1,9 @@
 import sqlite3
 from datetime import datetime, timedelta
 from random import randint
-
 from utils.security import hash_value, verify_value
 from services.send_email import send_verification_email
-from utils.validations import password_error_message
+from utils.validations import validation_services
 
 # Cria conexão com o banco de dados
 connection = sqlite3.connect("conecta++.db")
@@ -153,7 +152,7 @@ def finalize_password_reset(email: str, new_password: str):
     """
     email = email.strip().lower()
 
-    password_message = password_error_message(new_password)
+    password_message = validation_services.password_error_message(new_password)
     if password_message is not None:
         return False, password_message
 

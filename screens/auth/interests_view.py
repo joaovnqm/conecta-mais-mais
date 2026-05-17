@@ -13,7 +13,7 @@ Screen {
 }
 
 #interest_box {
-    width: 52;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;

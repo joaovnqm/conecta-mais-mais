@@ -2,7 +2,6 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical, Horizontal
-
 from services.password_reset import reset_password
 from utils.password_toggle import toggle_password_visibility
 
@@ -14,7 +13,7 @@ Screen {
 }
 
 #auth_box {
-    width: 52;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;

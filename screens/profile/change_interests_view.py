@@ -12,7 +12,7 @@ Screen {
 }
 
 #interest_box {
-    width: 52;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;
@@ -72,10 +72,10 @@ class ChangeInterestView(Screen):
         interests = interest_services.check_all_interests()
         with Center():
             with Vertical(id="interest_box"):
-                yield Static("Conecta++", id="title")
+                yield Static("Atualizar Interesses", id="title")
                 yield Static("Selecione todos os seus interesses abaixo. Pode ser mais de um.", classes="subtitle")
                 if interests:
-                    for interest in interests:
+                    for interest in [i for i in interests if i.name != "Social"]:
                         interest_id = interest.name.replace(" ", "_").lower().strip()
                         interest_id = unidecode(interest_id)
 

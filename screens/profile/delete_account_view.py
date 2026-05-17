@@ -2,7 +2,6 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
-
 from database.repositories.user_repository import user_services
 
 AUTH_CSS = """
@@ -12,7 +11,7 @@ Screen {
 }
 
 #confirm_box {
-    width: 56;
+    width: 86;
     height: auto;
     border: round $error;
     padding: 1 2;
