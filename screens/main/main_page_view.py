@@ -6,7 +6,7 @@ from screens.profile.profile_view import ProfileView
 from screens.social.friends_view import FriendsView
 from screens.events.favorite_events_list_view import FavoriteEventsList
 from screens.events.events_general_view import EventsGeneralView
-from utils.validations import normalize_name
+from utils.validations import validation_services
 from database.repositories.user_repository import user_services
 
 MAIN_PAGE_CSS = """
@@ -51,7 +51,7 @@ class MainPageView(Screen):
     # Inicializa a tela principal com os dados do usuário autenticado
     def __init__(self, user_id: int, user_name: str):
         super().__init__()
-        self.user_name = normalize_name(user_name)
+        self.user_name = validation_services.normalize_name(user_name)
         self.user_id = user_id
     
     # Monta a tela principal após o login
@@ -69,7 +69,7 @@ class MainPageView(Screen):
     def on_screen_resume(self) -> None:
             user_data = user_services.get_user_profile(self.user_id)
             name = user_data.name
-            self.user_name = normalize_name(name)
+            self.user_name = validation_services.normalize_name(name)
             welcome_message = self.query_one("#name", Static)
             welcome_message.update(f"Bem-vindo(a), {self.user_name}!")
     

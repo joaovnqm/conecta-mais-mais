@@ -2,7 +2,6 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
-
 from database.repositories.user_repository import user_services
 from screens.profile.edit_name_view import EditNameView
 from screens.profile.change_password_view import ChangePasswordView

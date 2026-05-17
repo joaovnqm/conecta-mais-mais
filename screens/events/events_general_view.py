@@ -26,12 +26,6 @@ Screen {
     margin-bottom: 1;
 }
 
-.main_subtitle{
-    content-align: center middle;
-    color: $text-muted;
-    margin-bottom: 1;
-}
-
 Button {
     width: 100%;
     margin-top: 1;

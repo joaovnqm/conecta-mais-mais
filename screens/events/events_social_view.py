@@ -38,6 +38,7 @@ Screen {
     content-align: center middle;
     color: $text-muted;
     margin-bottom: 1;
+    margin-top: 1;
 }
 
 .event_buttons{

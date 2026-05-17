@@ -2,7 +2,6 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical
-
 from database.repositories.user_repository import user_services
 
 AUTH_CSS = """

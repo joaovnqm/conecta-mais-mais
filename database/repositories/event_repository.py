@@ -2,7 +2,7 @@ import sqlite3
 from typing import Optional, List
 from database.repositories.interest_repository import interest_services
 from models.event import Event
-from utils.validations import valid_name_events, valid_date, valid_hour
+from utils.validations import validation_services
 
 class EventServices:
     """Classe responsável por operações relacionadas aos eventos e pela conexão com o banco de dados.
@@ -52,7 +52,7 @@ class EventServices:
         """
         name = name.strip()
         description = description.strip()
-        if not valid_name_events(name):
+        if not validation_services.valid_name_events(name):
             return False, "O nome precisa ter pelo menos 2 caracteres."
         
         if description == None:
@@ -63,12 +63,12 @@ class EventServices:
 
         if date:
             date = date.strip()
-            if not valid_date(date):
+            if not validation_services.valid_date(date):
                 return False, "O formato da data está errado. Por favor, siga o padrão dd-mm-aaaa."
 
         if hour:
             hour = hour.strip()
-            if not valid_hour(hour):
+            if not validation_services.valid_hour(hour):
                 return False, "O formato da hora está errado. Por favor, siga o padrão hh:mm."
         
         self.cursor.execute(

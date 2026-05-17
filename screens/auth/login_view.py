@@ -4,7 +4,7 @@ from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical, Horizontal
 
 from database.repositories.user_repository import user_services
-from utils.validations import valid_email, password_error_message
+from utils.validations import validation_services
 from screens.auth.register_view import RegisterView
 from screens.main.main_page_view import MainPageView
 from screens.auth.forgot_password_view import ForgotPasswordView
@@ -155,7 +155,7 @@ class LoginView(Screen):
             email_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(email_input, not valid_email(value))
+        self._set_invalid_if_needed(email_input, not validation_services.valid_email(value))
 
     def _validate_password_field(self) -> None:
         """
@@ -169,7 +169,7 @@ class LoginView(Screen):
             password_input.remove_class("invalid")
             return
 
-        error_message = password_error_message(value)
+        error_message = validation_services.password_error_message(value)
         self._set_invalid_if_needed(password_input, error_message is not None)
 
     def on_input_changed(self, event: Input.Changed) -> None:
