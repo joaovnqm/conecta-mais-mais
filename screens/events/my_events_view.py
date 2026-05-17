@@ -66,6 +66,7 @@ class MyEventsView(Screen):
         with Center():
             with VerticalScroll(id="main_box"):
                 yield Static("Meus Eventos", id="main_title")
+                yield Static("Clique no evento para ver os detalhes.", classes="main_subtitle")
                 if events:
                     for event in events:
                         yield Button(event.name, id=f"event_{event.event_id}", classes="event_buttons")
@@ -81,3 +82,6 @@ class MyEventsView(Screen):
             button_id = event.button.id
             event_id = int(button_id.split("_")[1])
             self.app.push_screen(MyEventDetailsView(self.user_id, event_id))
+        
+        elif event.button.id == "button_return":
+            self.app.pop_screen() 
