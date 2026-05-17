@@ -1,5 +1,6 @@
 import sqlite3
 from typing import List, Optional
+from models.friendship import Friend, FriendRequest
 
 
 class FriendshipServices:
@@ -245,26 +246,10 @@ class FriendshipServices:
 
         return True, "Solicitação de amizade enviada com sucesso"
 
-    def list_pending_request(self, user_id: int) -> List[dict]:
+    def list_pending_requests(self, user_id: int) -> List[FriendRequest]:
         """
-        Lista as solicitações de amizade pendente recebidas por um usuário.
-
-        Parâmetro:
-            user_id (int): ID do usuário logado
-
-        Retorno:
-            List[dict]:
-            Lista de dicionário contendo:
-            - friendship_id;
-            - user_id do solicitante;
-            - name do solicitante
-            - email do solicitante
-
-        Regra de negócio:
-            A função retorna apenas solicitações em que:
-            - o status está como pending;
-            - o usuário logado faz parte da relação
-            - o usuário logado não foi quem enviou a solicitação            
+        Lista as solicitações de amizade pendentes recebidas por um usuário.
+        Retorna objetos FriendRequest.
         """
         self.cursor.execute(
             """
@@ -287,14 +272,17 @@ class FriendshipServices:
         requests = self.cursor.fetchall()
 
         return [
-            {
-                "friendship_id": row[0],
-                "user_id": row[1],
-                "name": row[2],
-                "email": row[3]
-            }
+            FriendRequest(
+                friendship_id=row[0],
+                requester_id=row[1],
+                requester_name=row[2],
+                requester_email=row[3]
+            )
             for row in requests
         ]
+
+    def list_pending_request(self, user_id: int) -> List[FriendRequest]:
+        return self.list_pending_requests(user_id)
 
     def accept_friend_request(self, current_user_id: int, requester_id: int) -> tuple[bool, str]:
         """
@@ -395,19 +383,10 @@ class FriendshipServices:
 
         return True, "Solicitação recusada"
 
-    def list_friends(self, user_id: int) -> List[dict]:
+    def list_friends(self, user_id: int) -> List[Friend]:
         """
-        Lista todos os amigos aceitos de um usuário
-
-        Parâmetros:
-            user_id (int): ID do usuário logado
-
-        Retorno:
-            List[dict]:
-                Lista  de dicionário contendo:
-                - user_id do amigo
-                - name do amigo;
-                - email do amigo
+        Lista todos os amigos aceitos de um usuário.
+        Retorna objetos Friend.
         """
         self.cursor.execute(
             """
@@ -431,11 +410,11 @@ class FriendshipServices:
         friends = self.cursor.fetchall()
 
         return [
-            {
-                "user_id": row[0],
-                "name": row[1],
-                "email": row[2]
-            }
+            Friend(
+                user_id=row[0],
+                name=row[1],
+                email=row[2]
+            )
             for row in friends
         ]
 

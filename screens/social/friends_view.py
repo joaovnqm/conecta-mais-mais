@@ -85,11 +85,6 @@ Input {
     margin-top: 1;
 }
 
-.person_text {
-    width: 1fr;
-    content-align: left middle;
-}
-
 .empty_state {
     color: $text-muted;
     margin-top: 1;
@@ -184,7 +179,7 @@ Input {
         container = self.query_one("#requests_container")
         await container.remove_children()
 
-        requests = friendship_services.list_pending_request(self.user_id)
+        requests = friendship_services.list_pending_requests(self.user_id)
 
         if not requests:
             await container.mount(
@@ -193,9 +188,9 @@ Input {
             return
 
         for request in requests:
-            requester_id = request["user_id"]
-            name = request["name"]
-            email = request["email"]
+            requester_id = request.requester_id
+            name = request.requester_name
+            email = request.requester_email
 
             request_card = Vertical(classes="request_card")
             await container.mount(request_card)
@@ -222,35 +217,41 @@ Input {
                     variant="error"
                 )
             )
-        
+ 
+
     async def reload_friends(self) -> None:
-        container = self.query_one('#friends_container')
+        container = self.query_one("#friends_container")
         await container.remove_children()
-        
+
         friends = friendship_services.list_friends(self.user_id)
-        
+
         if not friends:
             await container.mount(
-                Static ('Você ainda não possui amigos adicionados')
+                Static("Você ainda não possui amigos adicionados.", classes="empty_state")
             )
             return
-        
+
         for friend in friends:
-            friend_id = friend['user_id']
-            name = friend['name']
-            email = friend['email']
-            
-            row = Horizontal(classes='friend_row')
+            friend_id = friend.user_id
+            name = friend.name
+            email = friend.email
+
+            row = Horizontal(classes="friend_row")
             await container.mount(row)
-            
+
             await row.mount(
-                Static(f'{name} - {email}')
+                Static(f"{name} - {email}", classes="person_text")
             )
+
             await row.mount(
                 Button(
-                    'Remover', id=f'remove_{friend_id}', variant='error', classes='small_button'
-                    )
+                    "Remover",
+                    id=f"remove_{friend_id}",
+                    variant="error",
+                    classes="small_button"
+                )
             )
+    
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         message = self.query_one('#message', Static)
         
@@ -293,13 +294,14 @@ Input {
             await self.reload_social_data()
             return
         
-        if event.button.id and event.button.id.startswith('remove_'):
-            friend_id = int(event.button.id.split('_')[1])
-            
-            sucess, response_message = friendship_services.remove_friend(
-                self.user_id, friend_id
+        if event.button.id and event.button.id.startswith("remove_"):
+            friend_id = int(event.button.id.split("_")[1])
+
+            success, response_message = friendship_services.remove_friend(
+                self.user_id,
+                friend_id
             )
-            
+
             message.update(response_message)
             await self.reload_social_data()
             return
