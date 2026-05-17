@@ -73,6 +73,8 @@ class MyEventsView(Screen):
 
                 else:
                     yield Static("Você ainda não criou nenhum evento.", id="main_title")
+                
+                yield Button("Voltar", id="button_return", variant="primary")
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """
