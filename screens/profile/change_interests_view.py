@@ -72,7 +72,7 @@ class ChangeInterestView(Screen):
         interests = interest_services.check_all_interests()
         with Center():
             with Vertical(id="interest_box"):
-                yield Static("Conecta++", id="title")
+                yield Static("Atualizar Interesses", id="title")
                 yield Static("Selecione todos os seus interesses abaixo. Pode ser mais de um.", classes="subtitle")
                 if interests:
                     for interest in interests:
