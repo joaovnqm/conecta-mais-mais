@@ -55,8 +55,8 @@ class EventServices:
         if not validation_services.valid_name_events(name):
             return False, "O nome precisa ter pelo menos 2 caracteres."
         
-        if description == None:
-            return False, "Por favor, insira uma descrição para o evento."
+        if not validation_services.valid_description(description):
+            return False, "A descrição precisa ter entre 30 e 500 caracteres."
         
         if event_location:
             event_location = event_location.strip()

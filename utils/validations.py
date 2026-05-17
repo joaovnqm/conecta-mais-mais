@@ -66,6 +66,15 @@ class ValidationService:
         é válida.
         """
         return self.password_error_message(password) is None
+    
+    def valid_description(self, description: str) -> bool:
+        """
+        Função que valida a descrição do evento. Ela verifica se a descrição não está vazia e tem no máximo 500 caracteres. 
+        A função retorna True se a descrição for válida, e False caso contrário.
+        """
+        normalized_description = description.strip()
+        pattern = r'^[A-Za-zÀ-ÿ0-9 \-_.,()\'"&@!]{30,500}$'
+        return re.fullmatch(pattern, normalized_description) is not None
 
     def valid_date(self, date: str) -> bool:
         """
