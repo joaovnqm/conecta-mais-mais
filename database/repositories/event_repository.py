@@ -45,7 +45,7 @@ class EventServices:
 
         self.connection.commit()
 
-    def create_event(self, name: str, description: str, event_location: Optional[str], date: Optional[str], hour: Optional[str], creator_id: int, *interests: list):
+    def create_event(self, name: str, description: str, event_location: Optional[str], date: Optional[str], hour: Optional[str], creator_id: int, interest = "Social"):
         """
         Função que cria um evento. Ela valida os dados e retorna mensagens de erro específicas caso haja algum problema. 
         Se tudo estiver correto, o evento é criado. Se houver algum erro, a função retorna False, mensagem de erro, None.
@@ -88,14 +88,15 @@ class EventServices:
         self.connection.commit()
 
         event_id = self.cursor.lastrowid
+        
+        interest_id = interest_services.index_interest(interest)
+        self.cursor.execute(
+            "INSERT INTO events_interests VALUES(?, ?)",
+            (event_id, interest_id)
+        )
+        self.connection.commit()
 
-        for interest in interests:
-            interest_id = interest_services.index_interest(interest)
-            self.cursor.execute(
-                "INSERT INTO events_interests VALUES(?, ?)",
-                (event_id, interest_id)
-            )
-            self.connection.commit()
+        return True, "Evento criado com sucesso!", event_id
 
     def check_events_with_interests(self, user_id: int) -> List[Event]:
         """
