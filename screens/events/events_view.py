@@ -66,7 +66,7 @@ class EventsView(Screen):
 
     # Monta a interface com filtros por interesse e listagem de eventos
     def compose(self) -> ComposeResult:
-        events = event_services.check_events_with_interests(self.user_id)
+        events = event_services.check_events_by_interests(self.user_id)
         interests = interest_services.check_user_interests(self.user_id)
         select_options = [("Todos os Eventos", "all_events")] + [(interest.name, interest.name) for interest in interests if interest.name != "Social"]
         with Center():
@@ -128,7 +128,7 @@ class EventsView(Screen):
         selected_interest = select_widget.value
         search_term = input_widget.value.lower().strip()
         if selected_interest == "all_events":
-            result = event_services.check_events_with_interests(self.user_id)
+            result = event_services.check_events_by_interests(self.user_id)
 
         else:
             result = event_services.check_events_by_interest(selected_interest)

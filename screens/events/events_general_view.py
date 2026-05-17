@@ -5,6 +5,7 @@ from textual.containers import Center, Vertical
 from screens.events.events_view import EventsView
 from screens.events.events_social_view import EventsSocialView
 from screens.events.create_social_event_view import CreateSocialEventView
+from screens.events.my_events_view import MyEventsView
 
 EVENTS_GENERAL_CSS = """
 Screen {
@@ -53,6 +54,7 @@ class EventsGeneralView(Screen):
                 yield Button("Eventos de T.I.", id="button_ti")
                 yield Button("Eventos Sociais", id="button_social")
                 yield Button("Criar Evento Social", id="button_create_social_event")
+                yield Button("Meus Eventos", id="button_my_events")
                 yield Button("Voltar", id="button_return", variant="primary")
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -74,6 +76,9 @@ class EventsGeneralView(Screen):
 
         elif event.button.id == "button_create_social_event":
             self.app.push_screen(CreateSocialEventView(self.user_id))
+
+        elif event.button.id == "button_my_events":
+            self.app.push_screen(MyEventsView(self.user_id))
 
         elif event.button.id == "button_return":
             self.app.pop_screen()

@@ -66,16 +66,19 @@ class EventDetailsView(Screen):
                 yield Static(f"Descrição: {event.description}")
                 if event.event_location == None:
                     yield Static("O local do evento ainda não está disponível")
+
                 else:
                     yield Static(f"Local: {event.event_location}.")
                 
                 if event.date == None:
                     yield Static("A data do evento ainda não está disponível")
+
                 else: 
                     yield Static(f"Data: {event.date}.")
 
                 if event.hour == None:
                     yield Static("A hora do evento ainda não foi divulgada")
+                    
                 else:
                     yield Static(f"Hora: {event.hour}")
 
