@@ -72,7 +72,7 @@ class MyEventsView(Screen):
                         yield Button(event.name, id=f"event_{event.event_id}", classes="event_buttons")
 
                 else:
-                    yield Static("Você ainda não criou nenhum evento.", id="main_title")
+                    yield Static("Você ainda não criou nenhum evento.", id="main_subtitle")
                 
                 yield Button("Voltar", id="button_return", variant="primary")
     
@@ -83,7 +83,7 @@ class MyEventsView(Screen):
         if event.button.has_class("event_buttons"):
             button_id = event.button.id
             event_id = int(button_id.split("_")[1])
-            self.app.push_screen(MyEventDetailsView(self.user_id, event_id))
+            self.app.push_screen(MyEventDetailsView(event_id))
         
         elif event.button.id == "button_return":
             self.app.pop_screen() 

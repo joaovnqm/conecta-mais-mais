@@ -2,6 +2,8 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll
+from screens.events.delete_social_event_view import DeleteSocialEventView
+from screens.events.edit_social_event_view import EditSocialEventView
 from database.repositories.event_repository import event_services
 
 MY_EVENT_DETAILS_VIEW = """
@@ -43,9 +45,8 @@ class MyEventDetailsView(Screen):
     CSS = MY_EVENT_DETAILS_VIEW
 
     # Inicializa a tela com o evento que será exibido
-    def __init__(self, user_id: int, event_id: int):
+    def __init__(self, event_id: int):
         super().__init__()
-        self.user_id = user_id
         self.event_id = event_id
 
     # Monta a interface com as informações do evento e do criador
@@ -79,12 +80,10 @@ class MyEventDetailsView(Screen):
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "button_edit_event":
-            # Lógica para editar o evento (a ser implementada)
-            pass
+            self.app.push_screen(EditSocialEventView(self.event_id))
         
         elif event.button.id == "button_delete_event":
-            # Lógica para excluir o evento (a ser implementada)
-            pass
+            self.app.push_screen(DeleteSocialEventView(self.event_id))
 
         elif event.button.id == "button_return":
             self.app.pop_screen()

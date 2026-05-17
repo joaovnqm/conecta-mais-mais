@@ -225,4 +225,56 @@ class EventServices:
 
         return Event(event[0], event[1], event[2], event[3], event[4], event[5], event[6])
     
+    def edit_event(self, event_id: int, name: str, description: str, event_location: Optional[str], date: Optional[str], hour: Optional[str]):
+        """
+        Essa função edita um evento específico com base no id do evento. Ela valida os dados e retorna mensagens de erro específicas caso haja algum problema. 
+        Se tudo estiver correto, o evento é editado. Se houver algum erro, a função retorna False, mensagem de erro.
+        """
+        name = name.strip()
+        description = description.strip()
+        if not validation_services.valid_name_events(name):
+            return False, "O nome precisa ter pelo menos 2 caracteres."
+        
+        if not validation_services.valid_description(description):
+            return False, "A descrição precisa ter entre 30 e 500 caracteres."
+        
+        if event_location:
+            event_location = event_location.strip()
+
+        if date:
+            date = date.strip()
+            if not validation_services.valid_date(date):
+                return False, "O formato da data está errado. Por favor, siga o padrão dd-mm-aaaa e tenha certeza que a data ainda não passou."
+
+        if hour:
+            if date == "":
+                return False, "Você precisa adicionar uma data para que a hora seja válida."
+            
+            date = date.strip()
+            hour = hour.strip()
+            if not validation_services.valid_hour(date, hour):
+                return False, "O formato da hora está errado. Por favor, siga o padrão hh:mm e tenha certeza que colocou uma data e uma hora que ainda não passaram."
+        
+        self.cursor.execute(
+            "UPDATE events SET name = ?, description = ?, event_location = ?, date = ?, hour = ? WHERE event_id = ?",
+            (name, description, event_location, date, hour, event_id,)
+        )
+        
+        self.connection.commit()
+
+        return True, "Evento editado com sucesso!"
+    
+    def delete_event(self, event_id: int):
+        """
+        Essa função deleta um evento específico com base no id do evento. Ela deleta o evento do banco de dados e retorna uma mensagem de sucesso.
+        """
+        self.cursor.execute(
+            "DELETE FROM events WHERE event_id = ?",
+            (event_id,)
+        )
+
+        self.connection.commit()
+
+        return True, "Evento deletado com sucesso!"
+    
 event_services = EventServices()
