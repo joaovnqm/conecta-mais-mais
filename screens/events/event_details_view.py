@@ -2,8 +2,8 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll
-from services.events import check_event
-from services.users import check_user_name
+from database.repositories.event_repository import event_services
+from database.repositories.user_repository import user_services
 from services.favorite_events import check_favorite_event, favorite_event, remove_from_favorite_event
 
 EVENT_DETAILS_VIEW = """
@@ -13,7 +13,7 @@ Screen {
 }
 
 #main_box { 
-    width: 60;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;
@@ -58,26 +58,29 @@ class EventDetailsView(Screen):
 
     # Monta a interface com as informações do evento e do criador
     def compose(self) -> ComposeResult:
-        event = check_event(self.event_id)
-        creator_name = check_user_name(event[6])
+        event = event_services.check_event(self.event_id)
+        creator_name = user_services.check_user_name(event.creator_id)
         with Center():
             with VerticalScroll(id="main_box"):
-                yield Static(f"Evento: {event[1]}", id="main_title")
-                yield Static(f"Descrição: {event[2]}")
-                if event[3] == None:
+                yield Static(f"Evento: {event.name}", id="main_title")
+                yield Static(f"Descrição: {event.description}")
+                if event.event_location == None:
                     yield Static("O local do evento ainda não está disponível")
-                else:
-                    yield Static(f"Local: {event[3]}.")
-                
-                if event[4] == None:
-                    yield Static("A data do evento ainda não está disponível")
-                else: 
-                    yield Static(f"Data: {event[4]}.")
 
-                if event[5] == None:
-                    yield Static("A hora do evento ainda não foi divulgada")
                 else:
-                    yield Static(f"Hora: {event[5]}")
+                    yield Static(f"Local: {event.event_location}.")
+                
+                if event.date == None:
+                    yield Static("A data do evento ainda não está disponível")
+
+                else: 
+                    yield Static(f"Data: {event.date}.")
+
+                if event.hour == None:
+                    yield Static("A hora do evento ainda não foi divulgada")
+                    
+                else:
+                    yield Static(f"Hora: {event.hour}")
 
                 yield Static(f"Criador do evento: {creator_name}")
                 with Center(id="button_favorite_event_container"):

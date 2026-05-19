@@ -1,19 +1,19 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Static, Button, Select
+from textual.widgets import Static, Button, Select, Input
 from textual.containers import Center, VerticalScroll
-from services.events import check_events_with_interests, check_events_by_interest
-from services.interests import check_interests_name
-from screens.event_details_view import EventDetailsView
+from database.repositories.event_repository import event_services
+from database.repositories.interest_repository import interest_services
+from screens.events.event_details_view import EventDetailsView
 
-MAIN_PAGE_CSS = """
+EVENTS_PAGE_CSS = """
 Screen {
     align: center middle;
     background: $surface;
 }
 
 #main_box { 
-    width: 60;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;
@@ -30,10 +30,16 @@ Screen {
     content-align: center middle;
 }
 
+#search_event {
+    width: 1fr;
+    margin-bottom: 1;
+}
+
 .main_subtitle{
     content-align: center middle;
     color: $text-muted;
     margin-bottom: 1;
+    margin-top: 1;
 }
 
 .event_buttons{
@@ -49,30 +55,35 @@ Button {
 class EventsView(Screen):
     """
     Classe responsável pela tela de listagem de eventos. Ela exibe uma lista de eventos disponíveis, com a opção de filtrar 
-    por interesse.
+    por interesse e buscar por nome.
     """
-    CSS = MAIN_PAGE_CSS
+    CSS = EVENTS_PAGE_CSS
 
     # Inicializa a tela com os dados básicos do usuário autenticado
-    def __init__(self, user_id: int, user_name: str):
+    def __init__(self, user_id: int):
         super().__init__()
-        self.user_name = user_name
         self.user_id = user_id
 
     # Monta a interface com filtros por interesse e listagem de eventos
     def compose(self) -> ComposeResult:
-        events = check_events_with_interests(self.user_id)
-        interests = check_interests_name(self.user_id)
-        select_options = [("Todos os Eventos", "all_events")] + [(interest, interest) for interest in interests]
+        events = event_services.check_events_by_interests(self.user_id)
+        interests = interest_services.check_user_interests(self.user_id)
+        select_options = [("Todos os Eventos", "all_events")] + [(interest.name, interest.name) for interest in interests if interest.name != "Social"]
         with Center():
             with VerticalScroll(id="main_box"):
+                yield Static("Eventos", id="main_title")
+                yield Static("Buscar evento:")
+                yield Input(
+                    placeholder="Insira o nome do evento...",
+                    id="search_event"
+                )
                 yield Static("Filtrar por interesse:")
                 yield Select(select_options, value="all_events", allow_blank=False)
-                yield Static("Clique em algum evento abaixo para saber mais.", id="main_title")
+                yield Static("Clique em algum evento abaixo para saber mais.", classes="main_subtitle")
                 with VerticalScroll(id="events_container"):
                     if events:
                         for event in events:
-                            yield Button(event[1], id=f"event_{event[0]}", classes="event_buttons")
+                            yield Button(event.name, id=f"event_{event.event_id}", classes="event_buttons")
 
                     else:
                         yield Static("Nenhum evento encontrado.", classes="main_subtitle")
@@ -93,20 +104,37 @@ class EventsView(Screen):
 
         elif event.button.id == "button_return":
             self.app.pop_screen()
+
+    async def on_input_changed(self, event: Input.Changed) -> None:
+        """
+        Função que lida com a digitação no campo de busca. Sempre que o texto muda, ela aciona a reavaliação dos filtros.
+        """
+        if event.input.id == "search_event":
+            await self._apply_filters()
             
     async def on_select_changed(self, event: Select.Changed) -> None:
         """
-        Função que lida com os eventos de mudança na seleção do filtro por interesse. Ela verifica o valor selecionado,
-        e chama a função correspondente para obter os eventos filtrados, e então atualiza a listagem de eventos exibida na 
-        tela com base no resultado do filtro aplicado. Se "Todos os Eventos" for selecionado, ela chama check_events_with_interests 
-        para obter todos os eventos relacionados aos interesses do usuário.
+        Função que lida com os eventos de mudança na seleção do filtro por interesse.
         """
-        selected_value = event.value
-        if selected_value is "all_events":
-            result = check_events_with_interests(self.user_id)
+        await self._apply_filters()
+
+    async def _apply_filters(self) -> None:
+        """
+        Função centralizadora que lê o estado do Select e do Input, aplica ambas as filtragens e chama a atualização da tela.
+        """
+        select_widget = self.query_one(Select)
+        input_widget = self.query_one("#search_event", Input)
+        
+        selected_interest = select_widget.value
+        search_term = input_widget.value.lower().strip()
+        if selected_interest == "all_events":
+            result = event_services.check_events_by_interests(self.user_id)
 
         else:
-            result = check_events_by_interest(selected_value)
+            result = event_services.check_events_by_interest(selected_interest)
+
+        if search_term and result:
+            result = [event for event in result if search_term in event.name.lower()]
 
         await self.update_events_on_screen(result)
 
@@ -118,13 +146,9 @@ class EventsView(Screen):
         """
         container = self.query_one("#events_container")
         await container.remove_children()
+        
         if result:
             for event in result:
-                container.mount(
-                    Button(event[1], id=f"event_{event[0]}", classes="event_buttons")
-                )
-        
+                container.mount(Button(event.name, id=f"event_{event.event_id}", classes="event_buttons"))
         else:
-            container.mount(
-                Static("Eventos com filtros selecionados não disponíveis no momento.")
-            )
+            container.mount(Static("Eventos com filtros selecionados não disponíveis no momento.", classes="main_subtitle"))

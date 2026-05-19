@@ -9,9 +9,9 @@ from services.password_reset import (
     verify_code,
     finalize_password_reset,
 )
-from services.users import register
-from screens.interests_view import InterestsView
-from services.password_toggle import toggle_password_visibility
+from database.repositories.user_repository import user_services
+from screens.auth.interests_view import InterestsView
+from utils.password_toggle import toggle_password_visibility
 
 AUTH_CSS = """
 Screen {
@@ -20,7 +20,7 @@ Screen {
 }
 
 #auth_box {
-    width: 52;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;
@@ -183,7 +183,7 @@ class CodeVerificationView(Screen):
 
             if success:
                 if self.mode == "register":
-                    success_register, register_message, user_id = register(
+                    success_register, register_message, user_id = user_services.register(
                         self.pending_name or "",
                         self.email,
                         self.pending_password or ""

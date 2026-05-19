@@ -1,19 +1,19 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Static, Button, Checkbox, Label
+from textual.widgets import Static, Button, Checkbox
 from textual.containers import Center, Vertical
-from screens.main_page_view import MainPageView
-from services.interests import add_interests, check_all_interests
+from screens.main.main_page_view import MainPageView
+from database.repositories.interest_repository import interest_services
 from unidecode import unidecode
 
-AUTH_CSS = """
+INTEREST_CSS = """
 Screen {
     align: center middle;
     background: $surface;
 }
 
 #interest_box {
-    width: 52;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;
@@ -59,7 +59,7 @@ class InterestsView(Screen):
     associados ao perfil do usuário, para que possam ser utilizados posteriormente para personalizar a experiência do usuário 
     na plataforma, como por exemplo, exibir eventos relacionados aos interesses selecionados.
     """
-    CSS = AUTH_CSS
+    CSS = INTEREST_CSS
     
     # Inicializa a tela com os dados do usuário recém cadastrado
     def __init__(self, user_id: int, user_name: str):
@@ -69,16 +69,16 @@ class InterestsView(Screen):
         
     # Monta a interface com a lista de interesses disponíveis
     def compose(self) -> ComposeResult:
-        interests = check_all_interests()
+        interests = interest_services.check_all_interests()
         with Center():
             with Vertical(id="interest_box"):
                 yield Static("Conecta++", id="title")
                 yield Static("Selecione todos os seus interesses abaixo. Pode ser mais de um.", classes="subtitle")
                 if interests:
                     for interest in interests:
-                        interest_id = interest[0].replace(" ", "_").lower().strip()
+                        interest_id = interest.name.replace(" ", "_").lower().strip()
                         interest_id = unidecode(interest_id)
-                        yield Checkbox(interest[0], id=f"interesse_{interest_id}", classes="interests")
+                        yield Checkbox(interest.name, id=f"interesse_{interest_id}", classes="interests")
 
                 else:
                     yield Static("Nenhum interesse encontrado.", classes="main_subtitle")
@@ -95,12 +95,12 @@ class InterestsView(Screen):
                 checkboxes = self.query(".interests")
                 selected_checkboxes = [cb for cb in checkboxes if cb.value]
                 if not selected_checkboxes:
-                    self.notify("Você precisa adicionar pelo menos um interesse.")
+                    self.notify("Você precisa adicionar pelo menos um interesse.", severity="warning")
                     return
                     
                 else:
                     for checkbox in selected_checkboxes:
-                        add_interests(self.user_id, str(checkbox.label))
+                        interest_services.add_interests(self.user_id, str(checkbox.label))
 
                     self.notify("Interesse(s) adicionado(s) com sucesso!")
                     self.app.push_screen(MainPageView(self.user_id, self.user_name))

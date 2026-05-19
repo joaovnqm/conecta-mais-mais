@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll
-from screens.event_details_view import EventDetailsView
+from screens.events.event_details_view import EventDetailsView
 from services.favorite_events import check_favorited_events
 
 FAVORITE_EVENTS_CSS = """
@@ -12,7 +12,7 @@ Screen {
 }
 
 #main_box { 
-    width: 60;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;
@@ -76,7 +76,7 @@ class FavoriteEventsList(Screen):
         if events:
             for event in events:
                 await container.mount(
-                    Button(event[1], id=f"event_{event[0]}", classes="event_buttons")
+                    Button(event.name, id=f"event_{event.event_id}", classes="event_buttons")
                 )
         else:
             await container.mount(

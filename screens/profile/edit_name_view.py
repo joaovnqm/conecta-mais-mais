@@ -2,8 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical
-
-from services.users import get_user_profile, update_user_name
+from database.repositories.user_repository import user_services
 
 AUTH_CSS = """
 Screen {
@@ -12,7 +11,7 @@ Screen {
 }
 
 #auth_box {
-    width: 56;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;
@@ -65,8 +64,7 @@ class EditNameView(Screen):
         
     # Monta a interface de edição de nome com valor atual preenchido, quando disponível
     def compose(self) -> ComposeResult:
-        profile = get_user_profile(self.user_id)
-        current_name = profile["name"] if profile else ""
+        profile = user_services.get_user_profile(self.user_id)
         
         with Center():
             with Vertical(id="auth_box"):
@@ -76,7 +74,7 @@ class EditNameView(Screen):
                 yield Input (
                     placeholder="Digite o seu novo nome...",
                     id="new_name",
-                    value=current_name
+                    value=profile.name
                 )
                 
                 yield Static("", id="message")
@@ -97,7 +95,7 @@ class EditNameView(Screen):
         if event.button.id == "button_save":
             new_name = self.query_one("#new_name", Input).value
             
-            sucess, message = update_user_name(self.user_id, new_name)
+            sucess, message = user_services.update_user_name(self.user_id, new_name)
             response.update(message)
             
             if sucess:

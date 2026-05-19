@@ -2,8 +2,8 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
-from services.users import change_user_password
-from services.password_toggle import toggle_password_visibility
+from database.repositories.user_repository import user_services
+from utils.password_toggle import toggle_password_visibility
 
 AUTH_CSS = """
 Screen {
@@ -12,7 +12,7 @@ Screen {
 }
 
 #auth_box {
-    width: 58;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;
@@ -155,7 +155,7 @@ class ChangePasswordView(Screen):
                 response.update("As senhas não coincidem.")
                 return
 
-            success, message = change_user_password(
+            success, message = user_services.change_user_password(
                 self.user_id,
                 current_password,
                 new_password

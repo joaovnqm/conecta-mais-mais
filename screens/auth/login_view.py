@@ -3,12 +3,12 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical, Horizontal
 
-from services.users import login
-from services.validations import valid_email, password_error_message
-from screens.register_view import RegisterView
-from screens.main_page_view import MainPageView
-from screens.forgot_password_view import ForgotPasswordView
-from services.password_toggle import toggle_password_visibility
+from database.repositories.user_repository import user_services
+from utils.validations import validation_services
+from screens.auth.register_view import RegisterView
+from screens.main.main_page_view import MainPageView
+from screens.auth.forgot_password_view import ForgotPasswordView
+from utils.password_toggle import toggle_password_visibility
 
 
 AUTH_CSS = """
@@ -18,7 +18,7 @@ Screen {
 }
 
 #auth-box {
-    width: 52;
+    width: 86;
     height: auto;
     border: round $primary;
     padding: 1 2;
@@ -155,7 +155,7 @@ class LoginView(Screen):
             email_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(email_input, not valid_email(value))
+        self._set_invalid_if_needed(email_input, not validation_services.valid_email(value))
 
     def _validate_password_field(self) -> None:
         """
@@ -169,7 +169,7 @@ class LoginView(Screen):
             password_input.remove_class("invalid")
             return
 
-        error_message = password_error_message(value)
+        error_message = validation_services.password_error_message(value)
         self._set_invalid_if_needed(password_input, error_message is not None)
 
     def on_input_changed(self, event: Input.Changed) -> None:
@@ -201,7 +201,7 @@ class LoginView(Screen):
             email = self.query_one("#email", Input).value
             password = self.query_one("#password", Input).value
 
-            success, message, name, user_id = login(email, password)
+            success, message, name, user_id = user_services.login(email, password)
 
             if success:
                 self.app.push_screen(MainPageView(user_id, name))

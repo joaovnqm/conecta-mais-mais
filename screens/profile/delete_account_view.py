@@ -2,8 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
-
-from services.users import delete_user_account
+from database.repositories.user_repository import user_services
 
 AUTH_CSS = """
 Screen {
@@ -12,7 +11,7 @@ Screen {
 }
 
 #confirm_box {
-    width: 56;
+    width: 86;
     height: auto;
     border: round $error;
     padding: 1 2;
@@ -70,12 +69,12 @@ class DeleteAccountView(Screen):
         - Se for o botão de cancelar exclusão, ela simplesmente retorna para a tela anterior.
         """
         if event.button.id == "button_confirm_delete":
-            success, message = delete_user_account(self.user_id)
+            success, message = user_services.delete_user_account(self.user_id)
 
             if success:
                 self.notify(message)
                 
-                from screens.login_view import LoginView
+                from screens.auth.login_view import LoginView
                 self.app.push_screen(LoginView())
                 
                 current_screen = self.app.screen
