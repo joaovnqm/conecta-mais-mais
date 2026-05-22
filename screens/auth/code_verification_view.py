@@ -2,16 +2,10 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
-
-from services.password_reset import (
-    request_registration_code,
-    request_password_reset,
-    verify_code,
-    finalize_password_reset,
-)
-from database.repositories.user_repository import user_services
 from screens.auth.interests_view import InterestsView
-from utils.password_toggle import toggle_password_visibility
+from services.password_reset import password_reset_service
+from database.repositories.user_repository import user_services
+from utils.password_toggle import password_toggle_service
 
 AUTH_CSS = """
 Screen {
@@ -154,18 +148,18 @@ class CodeVerificationView(Screen):
         response = self.query_one("#message", Static)
 
         if event.button.id == "toggle_password":
-            toggle_password_visibility(self, "new_password", "toggle_password")
+            password_toggle_service.toggle_password_visibility(self, "new_password", "toggle_password")
             return
 
         if event.button.id == "toggle_confirm_password":
-            toggle_password_visibility(self, "confirm_password", "toggle_confirm_password")
+            password_toggle_service.toggle_password_visibility(self, "confirm_password", "toggle_confirm_password")
             return
 
         if event.button.id == "button_resend_code":
             if self.mode == "register":
-                success, message = request_registration_code(self.email)
+                success, message = password_reset_service.request_registration_code(self.email)
             else:
-                success, message = request_password_reset(self.email)
+                success, message = password_reset_service.request_password_reset(self.email)
             response.update(message)
             return
 
@@ -178,7 +172,7 @@ class CodeVerificationView(Screen):
 
             purpose = "register" if self.mode == "register" else "reset_password"
 
-            success, message = verify_code(self.email, code, purpose)
+            success, message = password_reset_service.verify_code(self.email, code, purpose)
             response.update(message)
 
             if success:
@@ -213,7 +207,7 @@ class CodeVerificationView(Screen):
                 response.update("As senhas não coincidem.")
                 return
 
-            success, message = finalize_password_reset(
+            success, message = password_reset_service.finalize_password_reset(
                 self.email, new_password)
             response.update(message)
 

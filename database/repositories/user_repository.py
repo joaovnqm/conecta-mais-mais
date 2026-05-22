@@ -1,6 +1,6 @@
 import sqlite3
 from utils.validations import validation_services
-from utils.security import hash_value, verify_value
+from utils.security import security_utils_service
 from models.user import User
 
 class UserServices:
@@ -51,7 +51,7 @@ class UserServices:
 
         name, saved_password, user_id = user
 
-        if not verify_value(password, saved_password):
+        if not security_utils_service.verify_value(password, saved_password):
             return False, "Senha incorreta.", None, None
 
         name = validation_services.normalize_name(name)
@@ -87,7 +87,7 @@ class UserServices:
         if email_registered:
             return False, "Esse e-mail já foi cadastrado. Prossiga para o login.", None
 
-        password_hash = hash_value(password)
+        password_hash = security_utils_service.hash_value(password)
 
         self.cursor.execute(
             "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
@@ -162,17 +162,17 @@ class UserServices:
 
         saved_password = user[0]
 
-        if not verify_value(current_password, saved_password):
+        if not security_utils_service.verify_value(current_password, saved_password):
             return False, "A senha atual está incorreta"
 
         password_message = validation_services.password_error_message(new_password)
         if password_message is not None:
             return False, password_message
 
-        if verify_value(new_password, saved_password):
+        if security_utils_service.verify_value(new_password, saved_password):
             return False, "A nova senha deve ser diferente da senha atual"
 
-        new_password_hash = hash_value(new_password)
+        new_password_hash = security_utils_service.hash_value(new_password)
 
         self.cursor.execute(
             "UPDATE users SET password = ? WHERE user_id = ?",

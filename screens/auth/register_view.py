@@ -5,7 +5,7 @@ from textual.containers import Center, Vertical, Horizontal
 from services.password_reset import request_registration_code
 from utils.validations import validation_services
 from screens.auth.code_verification_view import CodeVerificationView
-from utils.password_toggle import toggle_password_visibility
+from utils.password_toggle import password_toggle_service
 
 AUTH_CSS = """
 Screen {
@@ -221,11 +221,11 @@ class RegisterView(Screen):
         response = self.query_one("#message", Static)
 
         if event.button.id == "toggle_password":
-            toggle_password_visibility(self, "password", "toggle_password")
+            password_toggle_service.toggle_password_visibility(self, "password", "toggle_password")
             return
 
         if event.button.id == "toggle_re_password":
-            toggle_password_visibility(self, "re_password", "toggle_re_password")
+            password_toggle_service.toggle_password_visibility(self, "re_password", "toggle_re_password")
             return
 
         if event.button.id == "button_register":

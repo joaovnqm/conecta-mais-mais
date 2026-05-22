@@ -2,14 +2,12 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical, Horizontal
-
 from database.repositories.user_repository import user_services
 from utils.validations import validation_services
+from utils.password_toggle import password_toggle_service
 from screens.auth.register_view import RegisterView
 from screens.main.main_page_view import MainPageView
 from screens.auth.forgot_password_view import ForgotPasswordView
-from utils.password_toggle import toggle_password_visibility
-
 
 AUTH_CSS = """
 Screen {
@@ -194,7 +192,7 @@ class LoginView(Screen):
         response = self.query_one("#message", Label)
 
         if event.button.id == "toggle_password":
-            toggle_password_visibility(self, "password", "toggle_password")
+            password_toggle_service.toggle_password_visibility(self, "password", "toggle_password")
             return
 
         elif event.button.id == "button_login":

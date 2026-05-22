@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical
-from services.password_reset import request_password_reset
+from services.password_reset import password_reset_service
 from screens.auth.code_verification_view import CodeVerificationView
 
 
@@ -88,7 +88,7 @@ class ForgotPasswordView(Screen):
         if event.button.id == "button_send_code":
             email = self.query_one("#email", Input).value
 
-            success, message = request_password_reset(email)
+            success, message = password_reset_service.request_password_reset(email)
             response.update(message)
 
             if success:
