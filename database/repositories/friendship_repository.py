@@ -453,5 +453,124 @@ class FriendshipServices:
 
         return True, "Amizade removida com sucesso"
 
+    
+    def block_user(self, current_user_id: int, target_id: int) -> tuple[bool, str]:
+        """
+        Bloqueia o usuário
+        """
+        if current_user_id == target_id:
+            return False, 'Você não pode bloquear a si mesmo'
+        
+        user_low_id, user_high_id = self.make_user_pair(current_user_id, target_id)
+        
+        self.cursor.execute(
+            """
+            SELECT friendship_id, status
+            FROM friendships
+            WHERE user_low_id = ?
+            AND user_high_id = ?
+            """,
+            (user_low_id, user_high_id)
+        )
+        
+        friendship = self.cursor.fetchone()
+        
+        if friendship is not None:
+            friendship_id, status = friendship
 
+            if status == 'blocked':
+                return False, 'Este usuário já está bloqueado'
+            
+            self.cursor.execute(
+                """
+                UPDATE friendships
+                SET status = 'blocked',
+                    requester_id = ?,
+                    update_at = CURRENT_TIMESTAMP
+                WHERE friendship_id = ?
+                """,
+                (current_user_id, friendship_id)
+            )
+            
+            self.connection.commit()
+            return True, 'Usuário bloqueado com sucesso'
+        
+        self.cursor.execute(
+            """
+            INSERT INTO friendships (
+                user_low_id,
+                user_high_id,
+                requester_id,
+                status
+            )
+            VALUES (?, ?, ?, ?, 'blocked')
+            """,
+            (user_low_id, user_high_id, current_user_id)
+        )
+        
+        self.connection.commit()
+        
+        return True, 'Usuário bloqueado com sucesso'
+    
+    
+    def unblock_user(self, current_user_id: int, target_id: int) -> tuple[bool, str]:
+        """
+        Desbloqueia um usuário bloqueado pelo usuário logado
+        Só quem bloqueiou pode desbloquear
+        Ao desbloquear, a relação é removida da tabela.
+        """
+        user_low_id, user_high_id = self.make_user_pair(current_user_id, target_id)
+        
+        self.cursor.execute(
+            """
+            DELETE FROM friendships
+            WHERE user_low_id = ?
+            AND user_high_id = ?
+            AND requester_id = ?
+            AND status = 'blocked'
+            """,
+        )
+        
+        if self.cursor.rowcount == 0:
+            return False, 'Bloqueio não encontrado para este usuário'
+        
+        self.connection.commit()
+        
+        return True, 'Usuário desbloqueado com sucesso'
+    
+    def list_blocked_users(self, user_id: int) -> List[Friend]:
+        """
+        Lista usuários bloqueados pelo usuário logado
+        """
+        self.cursor.execute(
+            """
+            SELECT
+                u.ser_id,
+                u.name,
+                u.email
+            FROM friendships f
+            JOIN users u
+            ON u.user_id = CASE
+                WHEN f.user_low_id = ? THEN f.user_high_id
+                ELSE f.user_low_id
+                END
+            WHERE f.status = 'blocked'
+            AND f.requester_id = ?
+            AND ? IN (f.user_low_id, f.user_high_id)
+            ORDER BY u.name ASC
+            """,
+            (user_id, user_id, user_id)
+        )
+        
+        blocked_users = self.cursor.fetchall()
+        
+        return [
+            Friend(
+                user_id = row[0],
+                name=row[1],
+                email=row[2]
+            )
+            for row in blocked_users
+        ]
+        
 friendship_services = FriendshipServices()
