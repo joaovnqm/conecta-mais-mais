@@ -11,7 +11,7 @@ class EmailService:
     SMTP_PORT = 465
 
     def __init__(self):
-        self.load_dotenv()
+        load_dotenv()
 
     def send_verification_email(destinatario: str, code: str, purpose: str) -> None:
         """

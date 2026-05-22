@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
-from services.password_reset import request_registration_code
+from services.password_reset import password_reset_service
 from utils.validations import validation_services
 from screens.auth.code_verification_view import CodeVerificationView
 from utils.password_toggle import password_toggle_service
@@ -255,7 +255,7 @@ class RegisterView(Screen):
                 self.query_one("#re_password", Input).add_class("invalid")
                 return
 
-            success, message = request_registration_code(email)
+            success, message = password_reset_service.request_registration_code(email)
             response.update(message)
 
             if success:

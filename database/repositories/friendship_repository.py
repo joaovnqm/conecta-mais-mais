@@ -545,7 +545,7 @@ class FriendshipServices:
         self.cursor.execute(
             """
             SELECT
-                u.ser_id,
+                u.user_id,
                 u.name,
                 u.email
             FROM friendships f

@@ -158,18 +158,27 @@ class ResetPasswordView(Screen):
             if new_password != confirm_password:
                 response.update("As senhas não coincidem.")
                 return
+        success, message = password_reset_service.verify_code(
+            email,
+            code,
+            "reset_password"
+        )
 
-            success, message = password_reset_service.reset_password(email, code, new_password)
+        if not success:
             response.update(message)
+            return
 
-            if success:
-                self.notify("Senha alterada com sucesso. Faça login.")
-                self.app.pop_screen()
-                self.app.pop_screen()
+        success, message = password_reset_service.finalize_password_reset(
+            email,
+            new_password
+        )
+        response.update(message)
 
-                current_screen = self.app.screen
-                if hasattr(current_screen, "reset_form"):
-                    current_screen.reset_form()
+        if success:
+            self.notify("Senha alterada com sucesso. Faça login.")
 
-        elif event.button.id == "button_back":
             self.app.pop_screen()
+
+            current_screen = self.app.screen
+            if hasattr(current_screen, "reset_form"):
+                current_screen.reset_form()

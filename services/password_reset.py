@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime, timedelta
 from random import randint
-from utils.security import security_utils_services
+from utils.security import security_utils_service
 from services.send_email import email_service
 from utils.validations import validation_services
 
@@ -50,7 +50,7 @@ class PasswordResetService:
         apenas um código válido exista para cada combinação de e-mail e finalidade. O código gerado tem uma validade de 10 minutos.
         """
         code = self.generate_numeric_code()
-        code_hash = security_utils_services.hash_value(code)
+        code_hash = security_utils_service.hash_value(code)
         expires_at = (datetime.now() + timedelta(minutes=10)).isoformat()
         
         self.cursor.execute(
@@ -137,7 +137,7 @@ class PasswordResetService:
             self.connection.commit()
             return False, "O código expirou."
         
-        if not security_utils_services.verify_value(code, code_hash):
+        if not security_utils_service.verify_value(code, code_hash):
             return False, "Código inválido."
 
         self.cursor.execute(
@@ -161,7 +161,7 @@ class PasswordResetService:
         if password_message is not None:
             return False, password_message
 
-        new_password_hash = security_utils_services.hash_value(new_password)
+        new_password_hash = security_utils_service.hash_value(new_password)
 
         self.cursor.execute(
             "UPDATE users SET password = ? WHERE email = ?",
