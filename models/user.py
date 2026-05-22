@@ -14,3 +14,5 @@ class User:
     user_id: Optional[int]
     name: str
     email: str
+    username: str
+    linkedin_url: Optional[str] = None
