@@ -97,6 +97,8 @@ class RegisterView(Screen):
                 yield Static("Crie sua conta", classes="subtitle")
                 yield Input(placeholder="Digite seu nome...",id="name")
                 yield Input(placeholder="Digite seu e-mail...", id="email")
+                yield Input(placeholder="Crie seu username. Ex: fulano.dev", id="username")
+                yield Input(placeholder="LinkedIn opcional. Ex: https://www.linkedin.com/in/seu-perfil", id="linkedin_url")
                 with Horizontal(id="password-row"):
                     yield Input(placeholder="Digite sua senha...", id="password", password=True)
                     yield Button("Mostrar", id="toggle_password")
@@ -151,6 +153,32 @@ class RegisterView(Screen):
             return
 
         self._set_invalid_if_needed(email_input, not validation_services.valid_email(value))
+        
+    def _validate_username_field(self) -> None:
+        username_input = self.query_one("#username", Input)
+        value = username_input.value.strip()
+        
+        if not value:
+            username_input.remove_class("invalid")
+            return
+        
+        self._set_invalid_if_needed(
+            username_input,
+            not validation_services.valid_username(value)
+        )
+        
+    def _validate_linkedin_field(self) -> None:
+        linkedin_input = self.query_one("#linkedin_url", Input)
+        value = linkedin_input.value.strip()
+        
+        if not value:
+            linkedin_input.remove_class("invalid")
+            return
+        
+        self._set_invalid_if_needed(
+            linkedin_input,
+            not validation_services.valid_linkedin_url(value)
+        )
     
     def _validate_password_field(self) -> None:
         """
@@ -200,6 +228,12 @@ class RegisterView(Screen):
 
         elif event.input.id == "email":
             self._validate_email_field()
+            
+        elif event.input.id == "username":
+            self._validate_username_field()
+            
+        elif event.input.id == "linkedin_url":
+            self._validate_linkedin_field()
 
         elif event.input.id == "password":
             self._validate_password_field()
@@ -229,44 +263,65 @@ class RegisterView(Screen):
             return
 
         if event.button.id == "button_register":
-            name = self.query_one("#name", Input).value
-            email = self.query_one("#email", Input).value
-            password = self.query_one("#password", Input).value
-            re_password = self.query_one("#re_password", Input).value
-
-            if not validation_services.valid_name_users(name):
-                response.update("O nome precisa ter pelo menos 2 caracteres e não pode conter números.")
-                self.query_one("#name", Input).add_class("invalid")
-                return
-
-            if not validation_services.valid_email(email):
-                response.update("Esse e-mail é inválido!")
-                self.query_one("#email", Input).add_class("invalid")
-                return
-
-            password_message = validation_services.password_error_message(password)
-            if password_message is not None:
-                response.update(password_message)
-                self.query_one("#password", Input).add_class("invalid")
-                return
-
-            if password != re_password:
-                response.update("As senhas não coincidem.")
-                self.query_one("#re_password", Input).add_class("invalid")
-                return
-
-            success, message = password_reset_service.request_registration_code(email)
-            response.update(message)
-
-            if success:
-                self.app.push_screen(
-                    CodeVerificationView(
-                        mode="register",
-                        email=email,
-                        pending_name=name,
-                        pending_password=password
-                    )
-                )
-
-        elif event.button.id == "button_back":
+            self._handle_register(response)
+            return
+        
+        if event.button.id == "button_back":
             self.app.pop_screen()
+            return
+        
+    def _handle_register(self, response: Static) -> None:
+        name = self.query_one("#name", Input).value
+        email = self.query_one("#email", Input).value
+        username = self.query_one("#username", Input).value
+        linkedin_url = self.query_one("#linkedin_url", Input).value
+        password = self.query_one("#password", Input).value
+        re_password = self.query_one("#re_password", Input).value
+        
+        if not validation_services.valid_name_users(name):
+            response.update(
+                'O nome precisa ter pelo menos 2 caracteres e não pode conter números'
+            )
+            self.query_one("#name", Input).add_class("invalid")
+            return
+        
+        if not validation_services.valid_email(email):
+            response.update('Esse e-mail é inválido')
+            self.query_one("#email", Input).add_class("invalid")
+            return
+        
+        if not validation_services.valid_username(username):
+            response.update(
+                'O username é obrigatório e precisa ter entre 3 e 20 caracteres. Use apenas letras, números, ponto ou underline.'
+            )
+            self.query_one('#username', Input).add_class("invalid")
+            return
+        
+        if not validation_services.valid_linkedin_url(linkedin_url):
+            response.update(
+                'O LinkedIn precisa estar no formato https://www.linkedin.com/in/seu-perfil'
+            )
+            self.query_one("#linkedin_url", Input).add_class("invalid")
+            return
+        
+        password_message = validation_services.password_error_message(password)
+        
+        if password_message is not None:
+            response.update(password_message)
+            self.query_one("#password", Input).add_class("invalid")
+            return
+        
+        success, message = password_reset_service.request_registration_code(email)
+        response.update(message)
+        
+        if success:
+            self.app.push_screen(
+                CodeVerificationView(
+                mode="register",
+                email=email,
+                pending_name=name,
+                pending_password=password,
+                pending_username=username,
+                pending_linkedin_url=linkedin_url
+                )
+            )
