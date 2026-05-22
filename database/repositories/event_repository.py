@@ -166,7 +166,7 @@ class EventServices:
         events = []
         friends = set()
         self.cursor.execute(
-            "SELECT user_low_id from friendships WHERE user_high_id = ?",
+            "SELECT user_low_id FROM friendships WHERE user_high_id = ? AND status = 'accepted'",
             (user_id,)
         )
 
@@ -175,7 +175,7 @@ class EventServices:
             friends.add(friend[0])
         
         self.cursor.execute(
-            "SELECT user_high_id from friendships WHERE user_low_id = ?",
+            "SELECT user_high_id FROM friendships WHERE user_low_id = ? AND status = 'accepted'",
             (user_id,)
         )
 
