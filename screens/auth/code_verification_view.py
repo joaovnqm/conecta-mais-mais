@@ -92,11 +92,13 @@ class CodeVerificationView(Screen):
     CSS = AUTH_CSS
 
     # Inicializa a tela de verificação.
-    def __init__(self, mode: str, email: str, pending_name: str | None = None, pending_password: str | None = None, verified: bool = False,):
+    def __init__(self, mode: str, email: str, pending_name: str | None = None, pending_username: str | None = None, pending_linkedin_url: str | None = None, pending_password: str | None = None, verified: bool = False,):
         super().__init__()
         self.mode = mode
         self.email = email.strip().lower()
         self.pending_name = pending_name
+        self.pending_username = pending_username
+        self.pending_linkedin_url = pending_linkedin_url
         self.pending_password = pending_password
         self.verified = verified
     
@@ -180,7 +182,9 @@ class CodeVerificationView(Screen):
                     success_register, register_message, user_id = user_services.register(
                         self.pending_name or "",
                         self.email,
-                        self.pending_password or ""
+                        self.pending_password or "",
+                        self.pending_username or "",
+                        self.pending_linkedin_url or ""
                     )
                     response.update(register_message)
 
