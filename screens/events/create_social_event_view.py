@@ -1,6 +1,6 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Static, Label, Button, Input
+from textual.widgets import Static, Button, Input
 from textual.containers import Center, VerticalScroll
 from database.repositories.event_repository import event_services
 
@@ -73,13 +73,13 @@ class CreateSocialEventView(Screen):
         with Center():
             with VerticalScroll(id="main_box"):
                 yield Static("Criar Evento Social", id="main_title")
-                yield Static("Preencha as informações do evento abaixo.")
+                yield Static("Preencha as informações do evento que você deseja criar:")
                 yield Input(placeholder="Insira o nome do evento...", id="event_name")
                 yield Input(placeholder="Insira a descrição do evento...", id="event_description")
                 yield Input(placeholder="Insira o local do evento (opcional)...", id="event_location")
                 yield Input(placeholder="Insira a data do evento (opcional, formato DD-MM-AAAA)...", id="event_date")
                 yield Input(placeholder="Insira a hora do evento (opcional, formato HH:MM)...", id="event_hour")
-                yield Label("", id="message")
+                yield Static("", id="message")
                 yield Button("Criar Evento", id="button_create_event", variant="primary")
                 yield Button("Voltar", id="button_return", variant="primary")
                 
@@ -97,8 +97,13 @@ class CreateSocialEventView(Screen):
             event_date = self.query_one("#event_date", Input).value
             event_hour = self.query_one("#event_hour", Input).value
 
-            message = event_services.create_event(event_name, event_description, event_location, event_date, event_hour, self.user_id)[1]
-            self.query_one("#message", Label).update(message)
+            success, message = event_services.create_event(event_name, event_description, event_location, event_date, event_hour, self.user_id)
+            if success:
+                self.app.notify(message)
+                self.app.pop_screen()
+            
+            else:
+                self.query_one("#message", Static).update(message)
 
         elif event.button.id == "button_return":
             self.app.pop_screen()

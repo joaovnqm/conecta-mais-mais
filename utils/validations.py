@@ -78,21 +78,27 @@ class ValidationService:
 
     def valid_date(self, date: str) -> bool:
         """
-        Função que valida datas no formato dd-mm-aaaa.
+        Função que valida datas no formato dd-mm-aaaa e verifica se a data já passou.
         """
         try:
-            datetime.strptime(date, "%d-%m-%Y")
-            return True
+            date = datetime.strptime(date, "%d-%m-%Y").date()
+            today = datetime.now().date()
+            return date >= today
+        
         except ValueError:
             return False
 
-    def valid_hour(self, hour: str) -> bool:
+    def valid_hour(self, date: str, hour: str) -> bool:
         """
-        Função que valida horas no formato hh:mm.
+        Função que valida horas no formato hh:mm e verifica se é uma hora que já passou.
         """
         try:
-            datetime.strptime(hour, "%H:%M")
-            return True
+            date = datetime.strptime(date, "%d-%m-%Y").date()
+            hour = datetime.strptime(hour, "%H:%M").time()
+            date_hour = datetime.combine(date, hour)
+            today = datetime.now()
+            return date_hour >= today
+        
         except ValueError:
             return False
         

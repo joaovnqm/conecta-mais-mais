@@ -65,7 +65,7 @@ class EventsSocialView(Screen):
 
     # Monta a interface com filtros por interesse e listagem de eventos
     def compose(self) -> ComposeResult:
-        events = event_services.check_events_by_interest("Social")
+        events = event_services.check_events_by_social(self.user_id)
         with Center():
             with VerticalScroll(id="main_box"):
                 yield Static("Eventos Sociais", id="main_title")

@@ -64,12 +64,16 @@ class EventServices:
         if date:
             date = date.strip()
             if not validation_services.valid_date(date):
-                return False, "O formato da data está errado. Por favor, siga o padrão dd-mm-aaaa."
+                return False, "O formato da data está errado. Por favor, siga o padrão dd-mm-aaaa e tenha certeza que a data ainda não passou."
 
         if hour:
+            if date == "":
+                return False, "Você precisa adicionar uma data para que a hora seja válida."
+            
+            date = date.strip()
             hour = hour.strip()
-            if not validation_services.valid_hour(hour):
-                return False, "O formato da hora está errado. Por favor, siga o padrão hh:mm."
+            if not validation_services.valid_hour(date, hour):
+                return False, "O formato da hora está errado. Por favor, siga o padrão hh:mm e tenha certeza que colocou uma data e uma hora que ainda não passaram."
         
         self.cursor.execute(
             "SELECT EXISTS(SELECT 1 FROM events WHERE name = ? AND creator_id = ?)",
@@ -96,9 +100,9 @@ class EventServices:
         )
         self.connection.commit()
 
-        return True, "Evento criado com sucesso!", event_id
+        return True, "Evento criado com sucesso!"
 
-    def check_events_with_interests(self, user_id: int) -> List[Event]:
+    def check_events_by_interests(self, user_id: int) -> List[Event]:
         """
         Essa função retorna uma lista de eventos com base nos interesses do usuário. Ela primeiro obtém os interesses do usuário, 
         depois busca os eventos relacionados a esses interesses e retorna uma lista de objetos "Event" com (event_id, name, description). 
@@ -148,8 +152,62 @@ class EventServices:
                 "SELECT name, description FROM events WHERE event_id = ?",
                 (event_id,)
             )
+
             result = self.cursor.fetchone()
             events.append(Event(event_id, result[0], result[1]))
+
+        return events
+    
+    def check_events_by_social(self, user_id: int):
+        """
+        Essa função retorna uma lista de eventos criados por amigos do usuário. Ela primeiro obtém a lista de amigos do usuário,
+        depois busca os eventos criados por esses amigos e retorna uma lista de objetos "Event" com (event_id, name, description).
+        """
+        events = []
+        friends = set()
+        self.cursor.execute(
+            "SELECT user_low_id from friendships WHERE user_high_id = ?",
+            (user_id,)
+        )
+
+        result_low_id = self.cursor.fetchall()
+        for friend in result_low_id:
+            friends.add(friend[0])
+        
+        self.cursor.execute(
+            "SELECT user_high_id from friendships WHERE user_low_id = ?",
+            (user_id,)
+        )
+
+        result_high_id = self.cursor.fetchall()
+        for friend in result_high_id:
+            friends.add(friend[0])
+
+        for friend in friends:
+            self.cursor.execute(
+                    "SELECT event_id, name, description FROM events WHERE creator_id = ?",
+                    (friend,)
+                )
+
+            result = self.cursor.fetchall()
+            for event in result:
+                events.append(Event(event[0], event[1], event[2]))
+
+        return events
+    
+    def check_events_by_user(self, user_id: int):
+        """
+        Essa função retorna uma lista de eventos criados pelo usuário. Ela busca os eventos criados por esse usuário e retorna uma lista de objetos "Event" com (event_id, name, description).
+        """
+        events = []
+        self.cursor.execute(
+            "SELECT event_id, name, description FROM events WHERE creator_id = ?",
+            (user_id,)
+        )
+
+        result = self.cursor.fetchall()
+        for event in result:
+            events.append(Event(event[0], event[1], event[2]))
 
         return events
 
@@ -166,5 +224,57 @@ class EventServices:
         event = self.cursor.fetchone()
 
         return Event(event[0], event[1], event[2], event[3], event[4], event[5], event[6])
+    
+    def edit_event(self, event_id: int, name: str, description: str, event_location: Optional[str], date: Optional[str], hour: Optional[str]):
+        """
+        Essa função edita um evento específico com base no id do evento. Ela valida os dados e retorna mensagens de erro específicas caso haja algum problema. 
+        Se tudo estiver correto, o evento é editado. Se houver algum erro, a função retorna False, mensagem de erro.
+        """
+        name = name.strip()
+        description = description.strip()
+        if not validation_services.valid_name_events(name):
+            return False, "O nome precisa ter pelo menos 2 caracteres."
+        
+        if not validation_services.valid_description(description):
+            return False, "A descrição precisa ter entre 30 e 500 caracteres."
+        
+        if event_location:
+            event_location = event_location.strip()
+
+        if date:
+            date = date.strip()
+            if not validation_services.valid_date(date):
+                return False, "O formato da data está errado. Por favor, siga o padrão dd-mm-aaaa e tenha certeza que a data ainda não passou."
+
+        if hour:
+            if date == "":
+                return False, "Você precisa adicionar uma data para que a hora seja válida."
+            
+            date = date.strip()
+            hour = hour.strip()
+            if not validation_services.valid_hour(date, hour):
+                return False, "O formato da hora está errado. Por favor, siga o padrão hh:mm e tenha certeza que colocou uma data e uma hora que ainda não passaram."
+        
+        self.cursor.execute(
+            "UPDATE events SET name = ?, description = ?, event_location = ?, date = ?, hour = ? WHERE event_id = ?",
+            (name, description, event_location, date, hour, event_id,)
+        )
+        
+        self.connection.commit()
+
+        return True, "Evento editado com sucesso!"
+    
+    def delete_event(self, event_id: int):
+        """
+        Essa função deleta um evento específico com base no id do evento. Ela deleta o evento do banco de dados e retorna uma mensagem de sucesso.
+        """
+        self.cursor.execute(
+            "DELETE FROM events WHERE event_id = ?",
+            (event_id,)
+        )
+
+        self.connection.commit()
+
+        return True, "Evento deletado com sucesso!"
     
 event_services = EventServices()
