@@ -73,7 +73,8 @@ Input {
 }
 
 #requests_container,
-#friends_container {
+#friends_container, 
+#blocked_container {
     width: 100%;
     height: auto;
 }
@@ -162,6 +163,10 @@ Input {
                 with Vertical(classes="section_card"):
                     yield Static("Meus amigos", classes="section_title")
                     yield Vertical(id="friends_container")
+                    
+                with Vertical(classes='section_card'):
+                    yield Static('Usuários bloqueados', classes='section_title')
+                    yield Vertical(id='blocked_container')
 
                 yield Button("Voltar", id="button_back", variant="primary")
                 
@@ -174,6 +179,7 @@ Input {
     async def reload_social_data(self) -> None:
         await self.reload_pending_requests()
         await self.reload_friends()
+        await self.reload_blocked_users()
 
     async def reload_pending_requests(self) -> None:
         container = self.query_one("#requests_container")
@@ -251,6 +257,48 @@ Input {
                     classes="small_button"
                 )
             )
+            
+            await row.mount(
+                Button(
+                    'Bloquear',
+                    id=f'block_{friend_id}',
+                    variant='error',
+                    classes='small_button'
+                )
+            )
+            
+    async def reload_blocked_users(self) -> None:
+        container = self.query_one('#blocked_container')
+        await container.remove_children()
+        
+        blocked_users = friendship_services.list_blocked_users(self.user_id)
+        
+        if not blocked_users:
+            await container.mount(
+                Static('Nenhum usuário bloqueado', classes='empty_state')
+            )
+            return
+        
+        for blocked_user in blocked_user:
+            blocked_user_id = blocked_user.user_id
+            name = blocked_user.name
+            email = blocked_user.email
+            
+            row = Horizontal(classes='friend_row')
+            await container.mount(row)
+            
+            await row.mount(
+                Static(f'{name} - {email}', classes='person_text')
+            )
+            
+            await row.mount(
+                Button(
+                    'Desbloquear',
+                    id=f'unblock_{blocked_user_id}',
+                    variant='primary',
+                    classes='small_button'
+                )
+            )
     
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         message = self.query_one('#message', Static)
@@ -305,6 +353,30 @@ Input {
             message.update(response_message)
             await self.reload_social_data()
             return
-        
-        if event.button.id == 'button_back':
+
+        if event.button.id and event.button.id.startswith("block_"):
+            target_id = int(event.button.id.split("_")[1])
+
+            success, response_message = friendship_services.block_user(
+                self.user_id,
+                target_id
+            )
+
+            message.update(response_message)
+            await self.reload_social_data()
+            return
+
+        if event.button.id and event.button.id.startswith("unblock_"):
+            target_id = int(event.button.id.split("_")[1])
+
+            success, response_message = friendship_services.unblock_user(
+                self.user_id,
+                target_id
+            )
+
+            message.update(response_message)
+            await self.reload_social_data()
+            return
+
+        if event.button.id == "button_back":
             self.app.pop_screen()
