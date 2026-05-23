@@ -19,12 +19,13 @@ Screen {
 }
 
 #main_box {
-    width: 90;
+    width: 86;
     height: auto;
-    max-height: 40;
     border: round $primary;
     padding: 1 2;
     background: $panel;
+    align: center top;
+
 }
 
 #main_title {
@@ -119,14 +120,8 @@ class EventDetailsView(Screen):
         """
         event = event_services.check_event(self.event_id)
         creator_name = user_services.check_user_name(event.creator_id)
-
-        total_presence = event_participation_service.count_confirmed_presence(
-            self.event_id
-        )
-
-        total_favorites = event_participation_service.count_favorites(
-            self.event_id
-        )
+        total_presence = event_participation_service.count_confirmed_presence(self.event_id)
+        total_favorites = event_participation_service.count_favorites(self.event_id)
 
         with Center():
             with VerticalScroll(id="main_box"):
@@ -176,7 +171,7 @@ class EventDetailsView(Screen):
                     )
 
                 with Vertical(classes="section_card"):
-                    yield Static("Ações do evento", classes="section_title")
+                    yield Static("Ações do evento:", classes="section_title")
                     yield Vertical(id="favorite_button_container")
                     yield Vertical(id="presence_button_container")
 
