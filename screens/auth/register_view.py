@@ -2,10 +2,12 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
+
 from services.password_reset import password_reset_service
 from utils.validations import validation_services
 from screens.auth.code_verification_view import CodeVerificationView
 from utils.password_toggle import password_toggle_service
+
 
 AUTH_CSS = """
 Screen {
@@ -82,29 +84,42 @@ Button {
 }
 """
 
+
 class RegisterView(Screen):
     """
-    Classe responsável pela tela de registro de novos usuários. Ela é acessada a partir da tela de login, e permite que o usuário
-    crie uma nova conta na plataforma fornecendo um nome, e-mail, senha e confirmação de senha.
+    Classe responsável pela tela de registro de novos usuários.
     """
+
     CSS = AUTH_CSS
 
-    # Monta a interface de cadastro com validação dos dados de entrada
     def compose(self) -> ComposeResult:
         with Center():
             with Vertical(id="auth_box"):
                 yield Static("Conecta++", id="title")
                 yield Static("Crie sua conta", classes="subtitle")
-                yield Input(placeholder="Digite seu nome...",id="name")
+
+                yield Input(placeholder="Digite seu nome...", id="name")
                 yield Input(placeholder="Digite seu e-mail...", id="email")
                 yield Input(placeholder="Crie seu username. Ex: fulano.dev", id="username")
-                yield Input(placeholder="LinkedIn opcional. Ex: https://www.linkedin.com/in/seu-perfil", id="linkedin_url")
+                yield Input(
+                    placeholder="LinkedIn opcional. Ex: https://www.linkedin.com/in/seu-perfil",
+                    id="linkedin_url"
+                )
+
                 with Horizontal(id="password-row"):
-                    yield Input(placeholder="Digite sua senha...", id="password", password=True)
+                    yield Input(
+                        placeholder="Digite sua senha...",
+                        id="password",
+                        password=True
+                    )
                     yield Button("Mostrar", id="toggle_password")
 
                 with Horizontal(id="re-password-row"):
-                    yield Input(placeholder="Confirme sua senha...", id="re_password", password=True)
+                    yield Input(
+                        placeholder="Confirme sua senha...",
+                        id="re_password",
+                        password=True
+                    )
                     yield Button("Mostrar", id="toggle_re_password")
 
                 yield Static("", id="message")
@@ -112,24 +127,12 @@ class RegisterView(Screen):
                 yield Button("Voltar", id="button_back", variant="primary")
 
     def _set_invalid_if_needed(self, input_widget: Input, is_invalid: bool) -> None:
-        """
-        Função auxiliar para adicionar ou remover a classe "invalid" de um widget de input com base em uma condição de validação. 
-        Ela recebe o widget de input a ser atualizado e um booleano indicando se o valor do input é inválido. Se for inválido, a 
-        função adiciona a classe "invalid" ao widget, o que pode ser usado para aplicar estilos visuais de erro. Caso contrário, 
-        ela remove a classe "invalid", indicando que o valor do input é válido.
-        """
         if is_invalid:
             input_widget.add_class("invalid")
         else:
             input_widget.remove_class("invalid")
 
     def _validate_name_field(self) -> None:
-        """
-        Função para validar o campo de nome em tempo real. Ela obtém o widget de input do nome, e verifica se o valor atual é válido
-        usando a função valid_name_users. Se o campo estiver vazio, a classe "invalid" é removida para permitir que o usuário digite
-        um valor. Caso contrário, a função _set_invalid_if_needed é chamada para adicionar ou remover a classe "invalid" com base no
-        resultado da validação.
-        """
         name_input = self.query_one("#name", Input)
         value = name_input.value.strip()
 
@@ -137,14 +140,12 @@ class RegisterView(Screen):
             name_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(name_input, not validation_services.valid_name_users(value))
-    
+        self._set_invalid_if_needed(
+            name_input,
+            not validation_services.valid_name_users(value)
+        )
+
     def _validate_email_field(self) -> None:
-        """
-        Função para validar o campo de e-mail em tempo real. Ela obtém o widget de input do e-mail, e verifica se o valor atual é válido
-        usando a função valid_email. Se o campo estiver vazio, a classe "invalid" é removida para permitir que o usuário digite um valor. 
-        Caso contrário, a função _set_invalid_if_needed é chamada para adicionar ou remover a classe "invalid" com base no resultado da validação.
-        """
         email_input = self.query_one("#email", Input)
         value = email_input.value.strip()
 
@@ -152,41 +153,38 @@ class RegisterView(Screen):
             email_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(email_input, not validation_services.valid_email(value))
-        
+        self._set_invalid_if_needed(
+            email_input,
+            not validation_services.valid_email(value)
+        )
+
     def _validate_username_field(self) -> None:
         username_input = self.query_one("#username", Input)
         value = username_input.value.strip()
-        
+
         if not value:
             username_input.remove_class("invalid")
             return
-        
+
         self._set_invalid_if_needed(
             username_input,
             not validation_services.valid_username(value)
         )
-        
+
     def _validate_linkedin_field(self) -> None:
         linkedin_input = self.query_one("#linkedin_url", Input)
         value = linkedin_input.value.strip()
-        
+
         if not value:
             linkedin_input.remove_class("invalid")
             return
-        
+
         self._set_invalid_if_needed(
             linkedin_input,
             not validation_services.valid_linkedin_url(value)
         )
-    
+
     def _validate_password_field(self) -> None:
-        """
-        Função para validar o campo de senha em tempo real. Ela obtém o widget de input da senha, e verifica se o valor atual é válido usando a
-        função password_error_message. Se o campo estiver vazio, a classe "invalid" é removida para permitir que o usuário digite um valor. 
-        Caso contrário, a função _set_invalid_if_needed é chamada para adicionar ou remover a classe "invalid" com base no resultado da validação, 
-        considerando a senha inválida se a função password_error_message retornar uma mensagem de erro.
-        """
         password_input = self.query_one("#password", Input)
         value = password_input.value
 
@@ -195,14 +193,13 @@ class RegisterView(Screen):
             return
 
         error_message = validation_services.password_error_message(value)
-        self._set_invalid_if_needed(password_input, error_message is not None)
-    
+
+        self._set_invalid_if_needed(
+            password_input,
+            error_message is not None
+        )
+
     def _validate_re_password_field(self) -> None:
-        """
-        Função para validar o campo de confirmação de senha em tempo real. Ela obtém os widgets de input da senha e da confirmação 
-        de senha, e verifica se os valores atuais coincidem. Se o campo de confirmação de senha estiver vazio, a classe "invalid" é 
-        removida para permitir que o usuário digite um valor.
-        """
         password_input = self.query_one("#password", Input)
         re_password_input = self.query_one("#re_password", Input)
 
@@ -217,21 +214,17 @@ class RegisterView(Screen):
             re_password_input,
             re_password_value != password_value
         )
-        
+
     def on_input_changed(self, event: Input.Changed) -> None:
-        """
-        Função que lida com os eventos de mudança nos campos de input. Ela verifica qual campo foi alterado, e chama a função de 
-        validação correspondente para validar o campo em tempo real e atualizar a interface de acordo com o resultado da validação. 
-        """
         if event.input.id == "name":
             self._validate_name_field()
 
         elif event.input.id == "email":
             self._validate_email_field()
-            
+
         elif event.input.id == "username":
             self._validate_username_field()
-            
+
         elif event.input.id == "linkedin_url":
             self._validate_linkedin_field()
 
@@ -243,85 +236,96 @@ class RegisterView(Screen):
             self._validate_re_password_field()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """
-        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado, e executa a ação correspondente:
-        - Se for um botão de toggle, ela chama a função toggle_password_visibility para alternar a visibilidade da senha.
-        - Se for o botão de cadastrar, ela coleta os valores dos campos de nome, e-mail, senha e confirmação de senha, 
-        valida os dados usando as funções de validação correspondentes, e se todos os dados forem válidos, ela chama a função 
-        request_registration_code para solicitar um código de verificação para o e-mail fornecido. Se a solicitação for bem-sucedida, 
-        ela navega para a tela de verificação de código, passando os dados necessários para o processo de registro.
-        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
-        """
         response = self.query_one("#message", Static)
 
         if event.button.id == "toggle_password":
-            password_toggle_service.toggle_password_visibility(self, "password", "toggle_password")
+            password_toggle_service.toggle_password_visibility(
+                self,
+                "password",
+                "toggle_password"
+            )
             return
 
         if event.button.id == "toggle_re_password":
-            password_toggle_service.toggle_password_visibility(self, "re_password", "toggle_re_password")
+            password_toggle_service.toggle_password_visibility(
+                self,
+                "re_password",
+                "toggle_re_password"
+            )
             return
 
         if event.button.id == "button_register":
             self._handle_register(response)
             return
-        
+
         if event.button.id == "button_back":
             self.app.pop_screen()
             return
-        
+
     def _handle_register(self, response: Static) -> None:
-        name = self.query_one("#name", Input).value
-        email = self.query_one("#email", Input).value
-        username = self.query_one("#username", Input).value
-        linkedin_url = self.query_one("#linkedin_url", Input).value
-        password = self.query_one("#password", Input).value
-        re_password = self.query_one("#re_password", Input).value
-        
+        name_input = self.query_one("#name", Input)
+        email_input = self.query_one("#email", Input)
+        username_input = self.query_one("#username", Input)
+        linkedin_input = self.query_one("#linkedin_url", Input)
+        password_input = self.query_one("#password", Input)
+        re_password_input = self.query_one("#re_password", Input)
+
+        name = name_input.value
+        email = email_input.value
+        username = username_input.value
+        linkedin_url = linkedin_input.value
+        password = password_input.value
+        re_password = re_password_input.value
+
         if not validation_services.valid_name_users(name):
             response.update(
-                'O nome precisa ter pelo menos 2 caracteres e não pode conter números'
+                "O nome precisa ter pelo menos 2 caracteres e não pode conter números."
             )
-            self.query_one("#name", Input).add_class("invalid")
+            name_input.add_class("invalid")
             return
-        
+
         if not validation_services.valid_email(email):
-            response.update('Esse e-mail é inválido')
-            self.query_one("#email", Input).add_class("invalid")
+            response.update("Esse e-mail é inválido.")
+            email_input.add_class("invalid")
             return
-        
+
         if not validation_services.valid_username(username):
             response.update(
-                'O username é obrigatório e precisa ter entre 3 e 20 caracteres. Use apenas letras, números, ponto ou underline.'
+                "O username é obrigatório e precisa ter entre 3 e 20 caracteres. Use apenas letras, números, ponto ou underline."
             )
-            self.query_one('#username', Input).add_class("invalid")
+            username_input.add_class("invalid")
             return
-        
+
         if not validation_services.valid_linkedin_url(linkedin_url):
             response.update(
-                'O LinkedIn precisa estar no formato https://www.linkedin.com/in/seu-perfil'
+                "O LinkedIn precisa estar no formato https://www.linkedin.com/in/seu-perfil"
             )
-            self.query_one("#linkedin_url", Input).add_class("invalid")
+            linkedin_input.add_class("invalid")
             return
-        
+
         password_message = validation_services.password_error_message(password)
-        
+
         if password_message is not None:
             response.update(password_message)
-            self.query_one("#password", Input).add_class("invalid")
+            password_input.add_class("invalid")
             return
-        
+
+        if password != re_password:
+            response.update("As senhas não coincidem.")
+            re_password_input.add_class("invalid")
+            return
+
         success, message = password_reset_service.request_registration_code(email)
         response.update(message)
-        
+
         if success:
             self.app.push_screen(
                 CodeVerificationView(
-                mode="register",
-                email=email,
-                pending_name=name,
-                pending_password=password,
-                pending_username=username,
-                pending_linkedin_url=linkedin_url
+                    mode="register",
+                    email=email,
+                    pending_name=name,
+                    pending_password=password,
+                    pending_username=username,
+                    pending_linkedin_url=linkedin_url
                 )
             )
