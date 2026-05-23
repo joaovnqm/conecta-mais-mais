@@ -58,12 +58,6 @@ class PasswordResetService:
     def _send_code(self, email: str, purpose: str) -> tuple[bool, str]:
         """
         Gera, salva e envia um código de verificação.
-
-        Regras:
-        - remove código anterior do mesmo e-mail e finalidade;
-        - salva apenas o hash do código;
-        - define expiração de 10 minutos;
-        - envia o código por e-mail.
         """
         email = email.strip().lower()
 
@@ -105,10 +99,6 @@ class PasswordResetService:
     def request_registration_code(self, email: str) -> tuple[bool, str]:
         """
         Solicita código para cadastro.
-
-        O código só é enviado se:
-        - o e-mail for válido;
-        - o e-mail ainda não estiver cadastrado.
         """
         email = email.strip().lower()
 
@@ -136,10 +126,6 @@ class PasswordResetService:
     def request_password_reset(self, email: str) -> tuple[bool, str]:
         """
         Solicita código para redefinição de senha.
-
-        O código só é enviado se:
-        - o e-mail for válido;
-        - o e-mail existir no sistema.
         """
         email = email.strip().lower()
 
@@ -167,12 +153,6 @@ class PasswordResetService:
     def verify_code(self, email: str, code: str, purpose: str) -> tuple[bool, str]:
         """
         Verifica se o código informado é válido.
-
-        Regras:
-        - precisa existir código para o e-mail e finalidade;
-        - o código não pode estar expirado;
-        - o código digitado precisa corresponder ao hash salvo;
-        - depois de validado, o código é apagado para impedir reutilização.
         """
         email = email.strip().lower()
         code = code.strip()
@@ -233,11 +213,6 @@ class PasswordResetService:
     def finalize_password_reset(self, email: str, new_password: str) -> tuple[bool, str]:
         """
         Finaliza a redefinição de senha.
-
-        Regras:
-        - valida a nova senha;
-        - gera hash seguro;
-        - atualiza a senha do usuário.
         """
         email = email.strip().lower()
 
