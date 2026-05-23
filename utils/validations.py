@@ -12,6 +12,23 @@ class ValidationService:
         forma consistente no banco de dados.
         """
         return " ".join(name.strip().split())
+    
+    def normalize_username(self, username: str) -> str:
+        return username.strip().lower().lstrip('@')
+    
+    def valid_username(self, username: str) -> bool:
+        username = self.normalize_username(username)
+        pattern = r"^[a-z0-9._]{3,20}$"
+        return re.fullmatch(pattern, username) is not None
+    
+    def valid_linkedin_url(self, linkedin_url: str) -> bool:
+        linkedin_url = linkedin_url.strip()
+        
+        if not linkedin_url:
+            return True
+        
+        pattern = r"^https://(www\.)?linkedin\.com/in/[A-Za-z0-9\-_%]+/?$"
+        return re.fullmatch(pattern, linkedin_url) is not None
 
     def valid_name_users(self, name: str) -> bool:
         """

@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
 from database.repositories.user_repository import user_services
-from utils.password_toggle import toggle_password_visibility
+from utils.password_toggle import password_toggle_service
 
 AUTH_CSS = """
 Screen {
@@ -135,15 +135,15 @@ class ChangePasswordView(Screen):
         response = self.query_one("#message", Static)
         
         if event.button.id == "toggle_current_password":
-            toggle_password_visibility(self, "current_password", "toggle_current_password")
+            password_toggle_service.toggle_password_visibility(self, "current_password", "toggle_current_password")
             return
 
         if event.button.id == "toggle_new_password":
-            toggle_password_visibility(self, "new_password", "toggle_new_password")
+            password_toggle_service.toggle_password_visibility(self, "new_password", "toggle_new_password")
             return
 
         if event.button.id == "toggle_confirm_password":
-            toggle_password_visibility(self, "confirm_password", "toggle_confirm_password")
+            password_toggle_service.toggle_password_visibility(self, "confirm_password", "toggle_confirm_password")
             return
 
         if event.button.id == "button_save":

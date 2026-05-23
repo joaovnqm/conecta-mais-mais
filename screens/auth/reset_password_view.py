@@ -2,8 +2,8 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, Vertical, Horizontal
-from services.password_reset import reset_password
-from utils.password_toggle import toggle_password_visibility
+from services.password_reset import password_reset_service
+from utils.password_toggle import password_toggle_service
 
 
 AUTH_CSS = """
@@ -142,11 +142,11 @@ class ResetPasswordView(Screen):
         response = self.query_one("#message", Label)
 
         if event.button.id == "toggle_password":
-            toggle_password_visibility(self, "new_password", "toggle_password")
+            password_toggle_service.toggle_password_visibility(self, "new_password", "toggle_password")
             return
 
         if event.button.id == "toggle_confirm_password":
-            toggle_password_visibility(self, "confirm_password", "toggle_confirm_password")
+            password_toggle_service.toggle_password_visibility(self, "confirm_password", "toggle_confirm_password")
             return
 
         if event.button.id == "button_reset_password":
@@ -159,17 +159,30 @@ class ResetPasswordView(Screen):
                 response.update("As senhas não coincidem.")
                 return
 
-            success, message = reset_password(email, code, new_password)
+            success, message = password_reset_service.verify_code(
+                email,
+                code,
+                "reset_password"
+            )
+
+            if not success:
+                response.update(message)
+                return
+
+            success, message = password_reset_service.finalize_password_reset(
+                email,
+                new_password
+            )
+
             response.update(message)
 
             if success:
                 self.notify("Senha alterada com sucesso. Faça login.")
-                self.app.pop_screen()
+
                 self.app.pop_screen()
 
                 current_screen = self.app.screen
                 if hasattr(current_screen, "reset_form"):
                     current_screen.reset_form()
 
-        elif event.button.id == "button_back":
-            self.app.pop_screen()
+            return

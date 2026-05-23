@@ -2,16 +2,10 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, Vertical, Horizontal
-
-from services.password_reset import (
-    request_registration_code,
-    request_password_reset,
-    verify_code,
-    finalize_password_reset,
-)
-from database.repositories.user_repository import user_services
 from screens.auth.interests_view import InterestsView
-from utils.password_toggle import toggle_password_visibility
+from services.password_reset import password_reset_service
+from database.repositories.user_repository import user_services
+from utils.password_toggle import password_toggle_service
 
 AUTH_CSS = """
 Screen {
@@ -98,11 +92,13 @@ class CodeVerificationView(Screen):
     CSS = AUTH_CSS
 
     # Inicializa a tela de verificação.
-    def __init__(self, mode: str, email: str, pending_name: str | None = None, pending_password: str | None = None, verified: bool = False,):
+    def __init__(self, mode: str, email: str, pending_name: str | None = None, pending_username: str | None = None, pending_linkedin_url: str | None = None, pending_password: str | None = None, verified: bool = False,):
         super().__init__()
         self.mode = mode
         self.email = email.strip().lower()
         self.pending_name = pending_name
+        self.pending_username = pending_username
+        self.pending_linkedin_url = pending_linkedin_url
         self.pending_password = pending_password
         self.verified = verified
     
@@ -154,18 +150,18 @@ class CodeVerificationView(Screen):
         response = self.query_one("#message", Static)
 
         if event.button.id == "toggle_password":
-            toggle_password_visibility(self, "new_password", "toggle_password")
+            password_toggle_service.toggle_password_visibility(self, "new_password", "toggle_password")
             return
 
         if event.button.id == "toggle_confirm_password":
-            toggle_password_visibility(self, "confirm_password", "toggle_confirm_password")
+            password_toggle_service.toggle_password_visibility(self, "confirm_password", "toggle_confirm_password")
             return
 
         if event.button.id == "button_resend_code":
             if self.mode == "register":
-                success, message = request_registration_code(self.email)
+                success, message = password_reset_service.request_registration_code(self.email)
             else:
-                success, message = request_password_reset(self.email)
+                success, message = password_reset_service.request_password_reset(self.email)
             response.update(message)
             return
 
@@ -178,7 +174,7 @@ class CodeVerificationView(Screen):
 
             purpose = "register" if self.mode == "register" else "reset_password"
 
-            success, message = verify_code(self.email, code, purpose)
+            success, message = password_reset_service.verify_code(self.email, code, purpose)
             response.update(message)
 
             if success:
@@ -186,7 +182,9 @@ class CodeVerificationView(Screen):
                     success_register, register_message, user_id = user_services.register(
                         self.pending_name or "",
                         self.email,
-                        self.pending_password or ""
+                        self.pending_password or "",
+                        self.pending_username or "",
+                        self.pending_linkedin_url or ""
                     )
                     response.update(register_message)
 
@@ -213,7 +211,7 @@ class CodeVerificationView(Screen):
                 response.update("As senhas não coincidem.")
                 return
 
-            success, message = finalize_password_reset(
+            success, message = password_reset_service.finalize_password_reset(
                 self.email, new_password)
             response.update(message)
 

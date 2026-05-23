@@ -113,6 +113,9 @@ class EventsSocialView(Screen):
         """
         input_widget = self.query_one("#search_event", Input)
         search_term = input_widget.value.lower().strip()
+        
+        result = event_services.check_events_by_social(self.user_id)
+        
         if search_term and result:
             result = [event for event in result if search_term in event.name.lower()]
 
