@@ -1,8 +1,11 @@
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, VerticalScroll, Horizontal, Vertical
+
 from database.repositories.friendship_repository import friendship_services
+
 
 class FriendsView(Screen):
     CSS = """
@@ -73,7 +76,7 @@ Input {
 }
 
 #requests_container,
-#friends_container, 
+#friends_container,
 #blocked_container {
     width: 100%;
     height: auto;
@@ -92,8 +95,8 @@ Input {
 }
 
 .small_button {
-    width: 14;
-    min-width: 14;
+    width: 16;
+    min-width: 16;
     margin-left: 1;
 }
 
@@ -118,17 +121,15 @@ Input {
 }
 
 .person_text {
-    width: 100%;
+    width: 1fr;
     content-align: left middle;
 }
-
 """
-
 
     def __init__(self, user_id: int):
         super().__init__()
         self.user_id = user_id
-        
+
     def compose(self) -> ComposeResult:
         with Center():
             with VerticalScroll(id="friends_box"):
@@ -139,14 +140,14 @@ Input {
                 )
 
                 with Vertical(classes="section_card"):
-                    yield Static("Adicionar amigo por e-mail", classes="section_title")
+                    yield Static("Adicionar amigo por username", classes="section_title")
                     yield Static(
-                        "Digite o e-mail de um usuário cadastrado para enviar uma solicitação.",
+                        "Digite o username de um usuário cadastrado para enviar uma solicitação.",
                         classes="section_hint"
                     )
                     yield Input(
-                        placeholder="Exemplo: fulano@email.com",
-                        id="friend_email"
+                        placeholder="Exemplo: wellison.dev",
+                        id="friend_username"
                     )
                     yield Button(
                         "Enviar solicitação",
@@ -163,23 +164,39 @@ Input {
                 with Vertical(classes="section_card"):
                     yield Static("Meus amigos", classes="section_title")
                     yield Vertical(id="friends_container")
-                    
-                with Vertical(classes='section_card'):
-                    yield Static('Usuários bloqueados', classes='section_title')
-                    yield Vertical(id='blocked_container')
+
+                with Vertical(classes="section_card"):
+                    yield Static("Usuários bloqueados", classes="section_title")
+                    yield Vertical(id="blocked_container")
 
                 yield Button("Voltar", id="button_back", variant="primary")
-                
+
     async def on_mount(self) -> None:
         await self.reload_social_data()
 
     async def on_screen_resume(self) -> None:
         await self.reload_social_data()
-        
+
     async def reload_social_data(self) -> None:
         await self.reload_pending_requests()
         await self.reload_friends()
         await self.reload_blocked_users()
+
+    def _build_friend_text(self, name: str, email: str, linkedin_url: str | None) -> Text:
+        """
+        Monta o texto exibido em 'Meus amigos':
+        """
+        friend_text = Text(f"{name} - {email} - ")
+
+        if linkedin_url:
+            friend_text.append(
+                "LinkedIn",
+                style=f"link {linkedin_url} underline"
+            )
+        else:
+            friend_text.append("LinkedIn não informado")
+
+        return friend_text
 
     async def reload_pending_requests(self) -> None:
         container = self.query_one("#requests_container")
@@ -223,7 +240,6 @@ Input {
                     variant="error"
                 )
             )
- 
 
     async def reload_friends(self) -> None:
         container = self.query_one("#friends_container")
@@ -241,12 +257,16 @@ Input {
             friend_id = friend.user_id
             name = friend.name
             email = friend.email
+            linkedin_url = friend.linkedin_url
 
             row = Horizontal(classes="friend_row")
             await container.mount(row)
 
             await row.mount(
-                Static(f"{name} - {email}", classes="person_text")
+                Static(
+                    self._build_friend_text(name, email, linkedin_url),
+                    classes="person_text"
+                )
             )
 
             await row.mount(
@@ -257,67 +277,68 @@ Input {
                     classes="small_button"
                 )
             )
-            
+
             await row.mount(
                 Button(
-                    'Bloquear',
-                    id=f'block_{friend_id}',
-                    variant='error',
-                    classes='small_button'
+                    "Bloquear",
+                    id=f"block_{friend_id}",
+                    variant="error",
+                    classes="small_button"
                 )
             )
-            
+
     async def reload_blocked_users(self) -> None:
-        container = self.query_one('#blocked_container')
+        container = self.query_one("#blocked_container")
         await container.remove_children()
-        
+
         blocked_users = friendship_services.list_blocked_users(self.user_id)
-        
+
         if not blocked_users:
             await container.mount(
-                Static('Nenhum usuário bloqueado', classes='empty_state')
+                Static("Nenhum usuário bloqueado.", classes="empty_state")
             )
             return
-        
-        for blocked_user in blocked_user:
+
+        for blocked_user in blocked_users:
             blocked_user_id = blocked_user.user_id
             name = blocked_user.name
             email = blocked_user.email
-            
-            row = Horizontal(classes='friend_row')
+
+            row = Horizontal(classes="friend_row")
             await container.mount(row)
-            
+
             await row.mount(
-                Static(f'{name} - {email}', classes='person_text')
+                Static(f"{name} - {email}", classes="person_text")
             )
-            
+
             await row.mount(
                 Button(
-                    'Desbloquear',
-                    id=f'unblock_{blocked_user_id}',
-                    variant='primary',
-                    classes='small_button'
+                    "Desbloquear",
+                    id=f"unblock_{blocked_user_id}",
+                    variant="primary",
+                    classes="small_button"
                 )
             )
-    
+
     async def on_button_pressed(self, event: Button.Pressed) -> None:
-        message = self.query_one('#message', Static)
-        
-        if event.button.id == 'button_send_request':
-            email = self.query_one('#friend_email', Input).value
-            
-            success, response_message = friendship_services.send_friend_request(
-                self.user_id, email
+        message = self.query_one("#message", Static)
+
+        if event.button.id == "button_send_request":
+            username = self.query_one("#friend_username", Input).value
+
+            success, response_message = friendship_services.send_friend_request_by_username(
+                self.user_id,
+                username
             )
-            
+
             message.update(response_message)
-            
+
             if success:
-                self.query_one('#friend_email', Input).value = ''
-                
+                self.query_one("#friend_username", Input).value = ""
+
             await self.reload_social_data()
             return
-        
+
         if event.button.id and event.button.id.startswith("accept_"):
             requester_id = int(event.button.id.split("_")[1])
 
@@ -329,7 +350,7 @@ Input {
             message.update(response_message)
             await self.reload_social_data()
             return
-        
+
         if event.button.id and event.button.id.startswith("reject_"):
             requester_id = int(event.button.id.split("_")[1])
 
@@ -341,7 +362,7 @@ Input {
             message.update(response_message)
             await self.reload_social_data()
             return
-        
+
         if event.button.id and event.button.id.startswith("remove_"):
             friend_id = int(event.button.id.split("_")[1])
 
