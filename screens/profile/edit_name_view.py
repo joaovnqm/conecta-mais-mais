@@ -1,18 +1,21 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
-from textual.containers import Center, Vertical
-from database.repositories.user_repository import user_services
+from textual.containers import Center, VerticalScroll, Vertical
 
-AUTH_CSS = """
+from database.repositories.user_repository import user_services
+from utils.validations import validation_services
+
+
+EDIT_PROFILE_CSS = """
 Screen {
     align: center middle;
     background: $surface;
 }
 
-#auth_box {
-    width: 86;
-    height: auto;
+#edit_box {
+    width: 90;
+    height: 40;
     border: round $primary;
     padding: 1 2;
     background: $panel;
@@ -24,10 +27,34 @@ Screen {
     margin-bottom: 1;
 }
 
-.subtitle {
+#subtitle {
     content-align: center middle;
     color: $text-muted;
     margin-bottom: 1;
+}
+
+.section_card {
+    width: 100%;
+    height: auto;
+    border: round $primary;
+    padding: 1 2;
+    margin-top: 1;
+    background: $surface;
+}
+
+.section_title {
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.section_hint {
+    color: $text-muted;
+    margin-bottom: 1;
+}
+
+.field_label {
+    margin-top: 1;
+    text-style: bold;
 }
 
 Input {
@@ -35,76 +62,233 @@ Input {
     margin-top: 1;
 }
 
+Input.invalid {
+    border: tall $error;
+}
+
 #message {
     width: 100%;
-    height: auto;
     min-height: 1;
-    margin-top: 1;
+    height: auto;
     color: $warning;
+    margin-top: 1;
+    content-align: center middle;
 }
 
 .action_button {
     width: 100%;
     margin-top: 1;
 }
+
+#button_back {
+    width: 100%;
+    margin-top: 1;
+}
 """
+
 
 class EditNameView(Screen):
     """
-    Classe responsável pela tela de edição de nome. Ela é acessada a partir da tela de perfil, e permite que o usuário 
-    altere seu nome atual para um novo nome. A tela inclui um campo para o novo nome, que é pré-preenchido com o nome 
-    atual do usuário, além de botões para salvar as alterações ou voltar para a tela anterior.
+    Tela responsável por atualizar dados básicos do perfil:
+    - nome;
+    - username;
+    - LinkedIn.
     """
-    CSS = AUTH_CSS
-    
-    # Inicializa a tela com o identificador do usuário
+
+    CSS = EDIT_PROFILE_CSS
+
     def __init__(self, user_id: int):
         super().__init__()
         self.user_id = user_id
-        
-    # Monta a interface de edição de nome com valor atual preenchido, quando disponível
+
     def compose(self) -> ComposeResult:
         profile = user_services.get_user_profile(self.user_id)
-        
-        with Center():
-            with Vertical(id="auth_box"):
-                yield Static("Atualizar nome", id="title")
-                yield Static("Digite seu novo nome", classes="subtitle")
-                
-                yield Input (
-                    placeholder="Digite o seu novo nome...",
-                    id="new_name",
-                    value=profile.name
-                )
-                
-                yield Static("", id="message")
-                
-                yield Button("Salvar", id="button_save", classes="action_button")
-                yield Button("Voltar", id="button_back", variant="primary", classes="action_button")
-                
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """
-        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado, 
-        e executa a ação correspondente:
-        - Se for o botão de salvar, ela coleta o novo nome digitado e chama a função update_user_name para tentar atualizar o nome, 
-        e atualiza a mensagem de resposta com o resultado.
-        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
-        """
-        response = self.query_one("#message", Static)
-        
-        if event.button.id == "button_save":
-            new_name = self.query_one("#new_name", Input).value
-            
-            sucess, message = user_services.update_user_name(self.user_id, new_name)
-            response.update(message)
-            
-            if sucess:
-                self.notify("Nome alterado com sucesso")
-                self.app.pop_screen()
-                
-                current_screen = self.app.screen
-                if hasattr(current_screen, "reload_profile"):
-                    current_screen.reload_profile()
 
-        elif event.button.id == "button_back":
-            self.app.pop_screen() 
+        name = ""
+        username = ""
+        linkedin_url = ""
+
+        if profile is not None:
+            name = profile.name or ""
+            username = profile.username or ""
+            linkedin_url = profile.linkedin_url or ""
+
+        with Center():
+            with VerticalScroll(id="edit_box"):
+                yield Static("Atualizar dados do perfil", id="title")
+                yield Static(
+                    "Edite seu nome, username e link do LinkedIn.",
+                    id="subtitle"
+                )
+
+                with Vertical(classes="section_card"):
+                    yield Static("Dados pessoais", classes="section_title")
+                    yield Static(
+                        "Essas informações ajudam outros usuários a reconhecerem você.",
+                        classes="section_hint"
+                    )
+
+                    yield Static("Nome:", classes="field_label")
+                    yield Input(
+                        placeholder="Digite o seu nome...",
+                        id="new_name",
+                        value=name
+                    )
+
+                with Vertical(classes="section_card"):
+                    yield Static("Dados sociais", classes="section_title")
+                    yield Static(
+                        "O username é usado para adicionar amigos no Conecta++.",
+                        classes="section_hint"
+                    )
+
+                    yield Static("Username:", classes="field_label")
+                    yield Input(
+                        placeholder="Exemplo: wellison.dev",
+                        id="username",
+                        value=username
+                    )
+
+                    yield Static("LinkedIn:", classes="field_label")
+                    yield Input(
+                        placeholder="Exemplo: https://www.linkedin.com/in/seu-perfil",
+                        id="linkedin_url",
+                        value=linkedin_url
+                    )
+
+                yield Static("", id="message")
+
+                yield Button(
+                    "Salvar alterações",
+                    id="button_save",
+                    variant="primary",
+                    classes="action_button"
+                )
+
+                yield Button(
+                    "Voltar",
+                    id="button_back",
+                    variant="primary",
+                    classes="action_button"
+                )
+
+    def _set_invalid_if_needed(self, input_widget: Input, is_invalid: bool) -> None:
+        if is_invalid:
+            input_widget.add_class("invalid")
+        else:
+            input_widget.remove_class("invalid")
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        if event.input.id == "new_name":
+            value = event.input.value.strip()
+
+            if not value:
+                event.input.remove_class("invalid")
+                return
+
+            self._set_invalid_if_needed(
+                event.input,
+                not validation_services.valid_name_users(value)
+            )
+
+        elif event.input.id == "username":
+            value = event.input.value.strip()
+
+            if not value:
+                event.input.remove_class("invalid")
+                return
+
+            self._set_invalid_if_needed(
+                event.input,
+                not validation_services.valid_username(value)
+            )
+
+        elif event.input.id == "linkedin_url":
+            value = event.input.value.strip()
+
+            if not value:
+                event.input.remove_class("invalid")
+                return
+
+            self._set_invalid_if_needed(
+                event.input,
+                not validation_services.valid_linkedin_url(value)
+            )
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        response = self.query_one("#message", Static)
+
+        if event.button.id == "button_save":
+            self._handle_save(response)
+            return
+
+        if event.button.id == "button_back":
+            self.app.pop_screen()
+            return
+
+    def _handle_save(self, response: Static) -> None:
+        name_input = self.query_one("#new_name", Input)
+        username_input = self.query_one("#username", Input)
+        linkedin_input = self.query_one("#linkedin_url", Input)
+
+        new_name = name_input.value
+        username = username_input.value
+        linkedin_url = linkedin_input.value
+
+        if not validation_services.valid_name_users(new_name):
+            name_input.add_class("invalid")
+            response.update(
+                "O nome precisa ter pelo menos 2 caracteres, no máximo 50 caracteres e não pode conter números."
+            )
+            return
+
+        if not validation_services.valid_username(username):
+            username_input.add_class("invalid")
+            response.update(
+                "O username é obrigatório e precisa ter entre 3 e 20 caracteres. Use apenas letras, números, ponto ou underline."
+            )
+            return
+
+        if not validation_services.valid_linkedin_url(linkedin_url):
+            linkedin_input.add_class("invalid")
+            response.update(
+                "O LinkedIn precisa estar no formato https://www.linkedin.com/in/seu-perfil"
+            )
+            return
+
+        success_name, message_name = user_services.update_user_name(
+            self.user_id,
+            new_name
+        )
+
+        if not success_name:
+            name_input.add_class("invalid")
+            response.update(message_name)
+            return
+
+        success_username, message_username = user_services.update_username(
+            self.user_id,
+            username
+        )
+
+        if not success_username:
+            username_input.add_class("invalid")
+            response.update(message_username)
+            return
+
+        success_linkedin, message_linkedin = user_services.update_linkedin_url(
+            self.user_id,
+            linkedin_url
+        )
+
+        if not success_linkedin:
+            linkedin_input.add_class("invalid")
+            response.update(message_linkedin)
+            return
+
+        self.notify("Dados do perfil atualizados com sucesso.")
+        self.app.pop_screen()
+
+        current_screen = self.app.screen
+        if hasattr(current_screen, "reload_profile"):
+            current_screen.reload_profile()
