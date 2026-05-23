@@ -1,10 +1,17 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
-from textual.containers import Center, VerticalScroll
+from textual.containers import Center, VerticalScroll, Vertical
+
 from database.repositories.event_repository import event_services
 from database.repositories.user_repository import user_services
-from services.favorite_events import check_favorite_event, favorite_event, remove_from_favorite_event
+from services.favorite_events import (
+    check_favorite_event,
+    favorite_event,
+    remove_from_favorite_event
+)
+from services.event_participation import event_participation_service
+
 
 EVENT_DETAILS_VIEW = """
 Screen {
@@ -12,130 +19,355 @@ Screen {
     background: $surface;
 }
 
-#main_box { 
-    width: 86;
+#main_box {
+    width: 90;
     height: auto;
+    max-height: 40;
     border: round $primary;
     padding: 1 2;
     background: $panel;
-    align: center top;
 }
 
 #main_title {
     content-align: center middle;
     text-style: bold;
-    color: black;
-    border: solid white;
-    padding: 1 2;
-    margin: 1;
+    margin-bottom: 1;
 }
 
-#button_favorite_event {
-    width: 100%;
+.subtitle {
     content-align: center middle;
-    margin: 1;
+    color: $text-muted;
+    margin-bottom: 1;
+}
+
+.section_card {
+    width: 100%;
+    height: auto;
+    border: round $primary;
+    padding: 1 2;
+    margin-top: 1;
+    background: $surface;
+}
+
+#favorite_button_container,
+#presence_button_container,
+#friends_presence_container,
+#friends_favorites_container {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+}
+
+.section_title {
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.info_label {
+    margin-top: 1;
+    text-style: bold;
+}
+
+.info_value {
+    color: $text-muted;
+    margin-bottom: 1;
+}
+
+.social_text {
+    color: $text-muted;
+    margin-top: 1;
+}
+
+.empty_state {
+    color: $text-muted;
+    margin-top: 1;
+}
+
+#button_favorite_event,
+#button_presence_event {
+    width: 100%;
+    margin-top: 1;
+    margin-bottom: 0;
 }
 
 #button_return {
     width: 100%;
-    content-align: center middle;
-    margin: 1;
+    margin-top: 1;
 }
 """
 
+
 class EventDetailsView(Screen):
     """
-    Classe responsável pela tela de detalhes do evento. Ela exibe as informações do evento selecionado, como nome, descrição, local, 
-    data, hora e criador.
+    Tela responsável por exibir detalhes do evento e permitir ações sociais:
+    - favoritar/desfavoritar;
+    - confirmar/desmarcar presença;
+    - visualizar amigos presentes;
+    - visualizar amigos que favoritaram.
     """
+
     CSS = EVENT_DETAILS_VIEW
 
-    # Inicializa a tela com o evento que será exibido
     def __init__(self, user_id: int, event_id: int):
         super().__init__()
         self.user_id = user_id
-        self.event_id = event_id
+        self.event_id = int(event_id)
 
-    # Monta a interface com as informações do evento e do criador
     def compose(self) -> ComposeResult:
         event = event_services.check_event(self.event_id)
         creator_name = user_services.check_user_name(event.creator_id)
+
+        total_presence = event_participation_service.count_confirmed_presence(
+            self.event_id
+        )
+
+        total_favorites = event_participation_service.count_favorites(
+            self.event_id
+        )
+
         with Center():
             with VerticalScroll(id="main_box"):
                 yield Static(f"Evento: {event.name}", id="main_title")
-                yield Static(f"Descrição: {event.description}")
-                if event.event_location == None:
-                    yield Static("O local do evento ainda não está disponível")
+                yield Static(
+                    "Veja os detalhes do evento e acompanhe a atividade dos seus amigos.",
+                    classes="subtitle"
+                )
 
-                else:
-                    yield Static(f"Local: {event.event_location}.")
-                
-                if event.date == None:
-                    yield Static("A data do evento ainda não está disponível")
+                with Vertical(classes="section_card"):
+                    yield Static("Informações do evento", classes="section_title")
 
-                else: 
-                    yield Static(f"Data: {event.date}.")
+                    yield Static("Descrição:", classes="info_label")
+                    yield Static(event.description, classes="info_value")
 
-                if event.hour == None:
-                    yield Static("A hora do evento ainda não foi divulgada")
-                    
-                else:
-                    yield Static(f"Hora: {event.hour}")
-
-                yield Static(f"Criador do evento: {creator_name}")
-                with Center(id="button_favorite_event_container"):
-                    if check_favorite_event(self.user_id, self.event_id):
-                        yield Button("Desfavoritar o Evento", id="button_favorite_event", variant="default")
-
+                    yield Static("Local:", classes="info_label")
+                    if event.event_location:
+                        yield Static(event.event_location, classes="info_value")
                     else:
-                        yield Button("★ Favoritar o evento ★", id="button_favorite_event", variant="warning")
+                        yield Static(
+                            "O local do evento ainda não está disponível.",
+                            classes="info_value"
+                        )
+
+                    yield Static("Data:", classes="info_label")
+                    if event.date:
+                        yield Static(event.date, classes="info_value")
+                    else:
+                        yield Static(
+                            "A data do evento ainda não está disponível.",
+                            classes="info_value"
+                        )
+
+                    yield Static("Hora:", classes="info_label")
+                    if event.hour:
+                        yield Static(event.hour, classes="info_value")
+                    else:
+                        yield Static(
+                            "A hora do evento ainda não foi divulgada.",
+                            classes="info_value"
+                        )
+
+                    yield Static("Criador:", classes="info_label")
+                    yield Static(
+                        creator_name or "Criador não encontrado.",
+                        classes="info_value"
+                    )
+
+                with Vertical(classes="section_card"):
+                    yield Static("Ações do evento", classes="section_title")
+                    yield Vertical(id="favorite_button_container")
+                    yield Vertical(id="presence_button_container")
+
+                with Vertical(classes="section_card"):
+                    yield Static("Resumo social", classes="section_title")
+                    yield Static(
+                        f"Pessoas com presença confirmada: {total_presence}",
+                        id="presence_count",
+                        classes="social_text"
+                    )
+                    yield Static(
+                        f"Pessoas que favoritaram: {total_favorites}",
+                        id="favorite_count",
+                        classes="social_text"
+                    )
+
+                with Vertical(classes="section_card"):
+                    yield Static("Amigos que vão", classes="section_title")
+                    yield Vertical(id="friends_presence_container")
+
+                with Vertical(classes="section_card"):
+                    yield Static("Amigos que favoritaram", classes="section_title")
+                    yield Vertical(id="friends_favorites_container")
 
                 yield Button("Voltar", id="button_return", variant="primary")
-    
-    async def on_button_pressed(self, event: Button.Pressed):
-        """
-        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado, 
-        e executa a ação correspondente:
-        - Se for o botão de favoritar, ela chama a função favorite_event para tentar favoritar o evento, 
-        e atualiza a mensagem de resposta com o resultado.
-        - Se for o botão de desfavoritar, ela chama a função remove_from_favorite_event para tentar remover o evento dos favoritos, 
-        e atualiza a mensagem de resposta com o resultado.
-        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
-        """
-        if event.button.id == "button_favorite_event" and event.button.variant == "warning":
-            result = favorite_event(self.user_id, self.event_id)
-            await self.update_events_on_screen(result)
-            if result == True:
-                self.app.notify(result[1])
-            
-            else:
-                self.app.notify(result[1])
-                
-        elif event.button.id == "button_favorite_event" and event.button.variant == "default":
-            result = remove_from_favorite_event(self.user_id, self.event_id)
-            await self.update_events_on_screen(result)
-            if result == True:
-                self.app.notify(result[1])
-            
-            else:
-                self.app.notify(result[1])
 
-        elif event.button.id == "button_return":
-            self.app.pop_screen()
+    async def on_mount(self) -> None:
+        await self.reload_event_social_data()
 
-    async def update_events_on_screen(self, result):
-        """
-        Função auxiliar para atualizar o estado do botão de favoritar/desfavoritar na tela de detalhes do evento,
-        de acordo com o resultado da tentativa de favoritar ou desfavoritar o evento. Ela remove o botão atual e 
-        monta um novo botão com o estado atualizado (favoritado ou não favoritado) com base no resultado da operação.
-        """
-        container = self.query_one("#button_favorite_event_container")
+    async def on_screen_resume(self) -> None:
+        await self.reload_event_social_data()
+
+    async def reload_event_social_data(self) -> None:
+        await self.reload_favorite_button()
+        await self.reload_presence_button()
+        await self.reload_social_summary()
+        await self.reload_friends_presence()
+        await self.reload_friends_favorites()
+
+    async def reload_favorite_button(self) -> None:
+        container = self.query_one("#favorite_button_container")
         await container.remove_children()
-        if result [1] == "Evento favoritado com sucesso.":
-            container.mount(
-                Button("Desfavoritar o Evento", id="button_favorite_event", variant="default")
+
+        if check_favorite_event(self.user_id, self.event_id):
+            await container.mount(
+                Button(
+                    "Desfavoritar evento",
+                    id="button_favorite_event",
+                    variant="default"
+                )
             )
         else:
-            container.mount(
-                Button("★ Favoritar o evento ★", id="button_favorite_event", variant="warning")
+            await container.mount(
+                Button(
+                    "★ Favoritar evento",
+                    id="button_favorite_event",
+                    variant="warning"
+                )
             )
+
+    async def reload_presence_button(self) -> None:
+        container = self.query_one("#presence_button_container")
+        await container.remove_children()
+
+        if event_participation_service.check_presence(self.user_id, self.event_id):
+            await container.mount(
+                Button(
+                    "Desmarcar presença",
+                    id="button_presence_event",
+                    variant="error"
+                )
+            )
+        else:
+            await container.mount(
+                Button(
+                    "Confirmar presença",
+                    id="button_presence_event",
+                    variant="success"
+                )
+            )
+
+    async def reload_social_summary(self) -> None:
+        total_presence = event_participation_service.count_confirmed_presence(
+            self.event_id
+        )
+
+        total_favorites = event_participation_service.count_favorites(
+            self.event_id
+        )
+
+        self.query_one("#presence_count", Static).update(
+            f"Pessoas com presença confirmada: {total_presence}"
+        )
+
+        self.query_one("#favorite_count", Static).update(
+            f"Pessoas que favoritaram: {total_favorites}"
+        )
+
+    async def reload_friends_presence(self) -> None:
+        container = self.query_one("#friends_presence_container")
+        await container.remove_children()
+
+        friends = event_participation_service.list_friends_confirmed_presence(
+            self.user_id,
+            self.event_id
+        )
+
+        if not friends:
+            await container.mount(
+                Static(
+                    "Nenhum amigo confirmou presença neste evento.",
+                    classes="empty_state"
+                )
+            )
+            return
+
+        for friend in friends:
+            await container.mount(
+                Static(
+                    f"{friend['name']} - @{friend['username']}",
+                    classes="social_text"
+                )
+            )
+
+    async def reload_friends_favorites(self) -> None:
+        container = self.query_one("#friends_favorites_container")
+        await container.remove_children()
+
+        friends = event_participation_service.list_friends_favorited_event(
+            self.user_id,
+            self.event_id
+        )
+
+        if not friends:
+            await container.mount(
+                Static(
+                    "Nenhum amigo favoritou este evento.",
+                    classes="empty_state"
+                )
+            )
+            return
+
+        for friend in friends:
+            await container.mount(
+                Static(
+                    f"{friend['name']} - @{friend['username']}",
+                    classes="social_text"
+                )
+            )
+
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "button_favorite_event":
+            await self.handle_favorite_button()
+            return
+
+        if event.button.id == "button_presence_event":
+            await self.handle_presence_button()
+            return
+
+        if event.button.id == "button_return":
+            self.app.pop_screen()
+            return
+
+    async def handle_favorite_button(self) -> None:
+        if check_favorite_event(self.user_id, self.event_id):
+            success, message = remove_from_favorite_event(
+                self.user_id,
+                self.event_id
+            )
+        else:
+            success, message = favorite_event(
+                self.user_id,
+                self.event_id
+            )
+
+        self.app.notify(message)
+
+        if success:
+            await self.reload_event_social_data()
+
+    async def handle_presence_button(self) -> None:
+        if event_participation_service.check_presence(self.user_id, self.event_id):
+            success, message = event_participation_service.cancel_presence(
+                self.user_id,
+                self.event_id
+            )
+        else:
+            success, message = event_participation_service.confirm_presence(
+                self.user_id,
+                self.event_id
+            )
+
+        self.app.notify(message)
+
+        if success:
+            await self.reload_event_social_data()

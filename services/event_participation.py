@@ -1,68 +1,69 @@
 import sqlite3
 
+
 class EventParticipationService:
     """
     Serviço responsável pela presença social em eventos.
     """
-    
+
     def __init__(self, database_path: str = "conecta++.db"):
         self.database_path = database_path
         self.connection = sqlite3.connect(self.database_path)
         self.connection.execute("PRAGMA foreign_keys = ON")
         self.cursor = self.connection.cursor()
         self._create_tables()
-        
+
     def _create_tables(self) -> None:
         self.cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS event_participants (
                 user_id INTEGER NOT NULL,
                 event_id INTEGER NOT NULL,
-                status TEXT NOT NULL CHECK(status IN('confirmed')),
+                status TEXT NOT NULL CHECK(status IN ('confirmed')),
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                
+
                 PRIMARY KEY(user_id, event_id),
-                
+
                 FOREIGN KEY(user_id)
                     REFERENCES users(user_id)
                     ON DELETE CASCADE,
-                    
-                FOREIGN KEY(event_id)
-                    REFERENCES events(events_id)
-                    ON DELETE CASCADE
-            )
-            """
-        )
-        
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS favorite_events (
-                user_id INTEGER NOT NULL,
-                event_id INTEGER NOT NULL,
-                
-                PRIMARY KEY(user_id, event_id),
-                
-                FOREIGN KEY(user_id)
-                    REFERENCES users(user_id)
-                    ON DELETE CASCADE,
-                    
+
                 FOREIGN KEY(event_id)
                     REFERENCES events(event_id)
                     ON DELETE CASCADE
             )
             """
         )
-        
+
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS favorite_events (
+                user_id INTEGER NOT NULL,
+                event_id INTEGER NOT NULL,
+
+                PRIMARY KEY(user_id, event_id),
+
+                FOREIGN KEY(user_id)
+                    REFERENCES users(user_id)
+                    ON DELETE CASCADE,
+
+                FOREIGN KEY(event_id)
+                    REFERENCES events(event_id)
+                    ON DELETE CASCADE
+            )
+            """
+        )
+
         self.connection.commit()
-        
+
     def confirm_presence(self, user_id: int, event_id: int) -> tuple[bool, str]:
         """
-        Confirma presença do usuário em um evento
+        Confirma presença do usuário em um evento.
         """
         if self.check_presence(user_id, event_id):
-            return False, "Você já confirmou a presença nesse evento."
-        
+            return False, "Você já confirmou presença nesse evento."
+
         self.cursor.execute(
             """
             INSERT INTO event_participants (
@@ -74,13 +75,14 @@ class EventParticipationService:
             """,
             (user_id, event_id)
         )
-        
+
         self.connection.commit()
-        return True, "Presença confirmada com sucesso"
-    
+
+        return True, "Presença confirmada com sucesso."
+
     def cancel_presence(self, user_id: int, event_id: int) -> tuple[bool, str]:
         """
-        Desmarca presença do usuário no evento
+        Desmarca presença do usuário no evento.
         """
         self.cursor.execute(
             """
@@ -91,14 +93,14 @@ class EventParticipationService:
             """,
             (user_id, event_id)
         )
-        
+
         if self.cursor.rowcount == 0:
-            return False, "Você ainda não confirmou presença neste evento"
-        
+            return False, "Você ainda não confirmou presença neste evento."
+
         self.connection.commit()
-        
-        return True, "Presença desmarcada com sucesso"
-    
+
+        return True, "Presença desmarcada com sucesso."
+
     def check_presence(self, user_id: int, event_id: int) -> bool:
         """
         Verifica se o usuário confirmou presença no evento.
@@ -115,12 +117,12 @@ class EventParticipationService:
             """,
             (user_id, event_id)
         )
-        
+
         return bool(self.cursor.fetchone()[0])
-    
+
     def count_confirmed_presence(self, event_id: int) -> int:
         """
-        Conta quantas pessoas confirmaram presença no evento
+        Conta quantas pessoas confirmaram presença no evento.
         """
         self.cursor.execute(
             """
@@ -131,12 +133,12 @@ class EventParticipationService:
             """,
             (event_id,)
         )
-        
+
         return self.cursor.fetchone()[0]
-    
+
     def count_favorites(self, event_id: int) -> int:
         """
-        Conta quantas pessoas favoritaram o evento
+        Conta quantas pessoas favoritaram o evento.
         """
         self.cursor.execute(
             """
@@ -146,12 +148,12 @@ class EventParticipationService:
             """,
             (event_id,)
         )
-        
+
         return self.cursor.fetchone()[0]
 
     def list_confirmed_users(self, event_id: int) -> list[dict]:
         """
-        Lista todos os usuários que confirmaram presença
+        Lista todos os usuários que confirmaram presença.
         """
         self.cursor.execute(
             """
@@ -170,9 +172,9 @@ class EventParticipationService:
             """,
             (event_id,)
         )
-        
+
         users = self.cursor.fetchall()
-        
+
         return [
             {
                 "user_id": row[0],
@@ -183,13 +185,14 @@ class EventParticipationService:
             }
             for row in users
         ]
-        
+
     def list_friends_confirmed_presence(
         self,
         user_id: int,
-        event_id: int) -> list[dict]:
+        event_id: int
+    ) -> list[dict]:
         """
-        Lista apenas amigos aceitos que confirmaram presença no evento
+        Lista apenas amigos aceitos que confirmaram presença no evento.
         """
         self.cursor.execute(
             """
@@ -216,9 +219,9 @@ class EventParticipationService:
             """,
             (user_id, user_id, event_id, user_id)
         )
-        
+
         users = self.cursor.fetchall()
-        
+
         return [
             {
                 "user_id": row[0],
@@ -229,10 +232,14 @@ class EventParticipationService:
             }
             for row in users
         ]
-    
-    def list_friends_favorited_event (self, user_id: int, event_id: int) -> list[dict]:
+
+    def list_friends_favorited_event(
+        self,
+        user_id: int,
+        event_id: int
+    ) -> list[dict]:
         """
-        Lista amigos aceitos que favoritaram o evento
+        Lista amigos aceitos que favoritaram o evento.
         """
         self.cursor.execute(
             """
@@ -255,12 +262,12 @@ class EventParticipationService:
             AND f.status = 'accepted'
             AND u.user_id != ?
             ORDER BY u.name ASC
-            """
+            """,
             (user_id, user_id, event_id, user_id)
         )
-        
+
         users = self.cursor.fetchall()
-        
+
         return [
             {
                 "user_id": row[0],
@@ -271,11 +278,18 @@ class EventParticipationService:
             }
             for row in users
         ]
-        
+
     def count_friends_confirmed_presence(self, user_id: int, event_id: int) -> int:
+        """
+        Conta quantos amigos confirmaram presença no evento.
+        """
         return len(self.list_friends_confirmed_presence(user_id, event_id))
-    
+
     def count_friends_favorited_event(self, user_id: int, event_id: int) -> int:
+        """
+        Conta quantos amigos favoritaram o evento.
+        """
         return len(self.list_friends_favorited_event(user_id, event_id))
-    
+
+
 event_participation_service = EventParticipationService()
