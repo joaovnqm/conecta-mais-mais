@@ -82,7 +82,7 @@ class EventServices:
         event_registered = bool(self.cursor.fetchone()[0])
 
         if event_registered:
-            return False, "Esse evento já foi cadastrado.", None
+            return False, "Esse evento já foi cadastrado."
         
         self.cursor.execute(
             "INSERT INTO events VALUES(?, ?, ?, ?, ?, ?, ?)",
