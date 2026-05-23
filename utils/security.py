@@ -50,4 +50,4 @@ class SecurityUtils:
         #Compare o hash recem gerado com o hash original salvo no banco.
         return hmac.compare_digest(new_hash, original_hash)
     
-security_utils_services = SecurityUtils()
+security_utils_service = SecurityUtils()

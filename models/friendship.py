@@ -12,6 +12,8 @@ class Friend:
     user_id: int
     name: str
     email: str
+    username: str
+    linkedin_url: Optional[str] = None
 
 @dataclass
 class FriendRequest:

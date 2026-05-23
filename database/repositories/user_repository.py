@@ -1,10 +1,14 @@
 import sqlite3
-from utils.validations import validation_services
-from utils.security import security_utils_service
+
 from models.user import User
+from utils.security import security_utils_service
+from utils.validations import validation_services
+
 
 class UserServices:
-    """Classe responsável por operações relacionadas a usuários e pela conexão com o DB."""
+    """
+    Classe responsável por operações relacionadas aos usuários e pela conexão com o banco de dados.
+    """
 
     def __init__(self, database_path: str = "conecta++.db"):
         self.database_path = database_path
@@ -13,13 +17,13 @@ class UserServices:
         self.cursor = self.connection.cursor()
         self._create_table()
 
-    def _create_table(self):
+    def _create_table(self) -> None:
         """
-        Cria a tabela "users" caso ela não exista.
-        user_id: identificador único do usuário
-        name: nome do usuário
-        email: e-mail do usuário
-        password: senha criptografada do usuário
+        Cria a tabela users caso ela ainda não exista.
+
+        Também garante, por migração, que bancos antigos recebam as colunas:
+        - username
+        - linkedin_url
         """
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -29,21 +33,55 @@ class UserServices:
                 password TEXT NOT NULL
             )
         """)
+
+        self._ensure_profile_columns()
         self.connection.commit()
 
-    def login(self, email, password):
+    def _ensure_profile_columns(self) -> None:
         """
-        Essa função é responsável por realizar o login do usuário. Ela recebe o e-mail e a senha digitados, padroniza o e-mail, 
-        busca o usuário no banco de dados, verifica se o usuário existe, confere se a senha digitada corresponde ao hash salvo no banco,
-        e retorna mensagens de erro específicas caso haja algum problema. Se o login for bem-sucedido, a função retorna True, mensagem de
-        sucesso, nome do usuário e id do usuário.
+        Garante que a tabela users tenha as colunas novas sem apagar dados antigos.
+
+        Observação:
+        - username é obrigatório para novos cadastros pela validação do register.
+        - Em bancos antigos, usuários já existentes podem ficar com username NULL até serem atualizados manualmente.
+        """
+        self.cursor.execute("PRAGMA table_info(users)")
+        columns = {column[1] for column in self.cursor.fetchall()}
+
+        if "username" not in columns:
+            self.cursor.execute("ALTER TABLE users ADD COLUMN username TEXT")
+
+        if "linkedin_url" not in columns:
+            self.cursor.execute("ALTER TABLE users ADD COLUMN linkedin_url TEXT")
+
+        self.cursor.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower
+            ON users(LOWER(username))
+            WHERE username IS NOT NULL AND username != ''
+        """)
+
+    def login(self, email: str, password: str):
+        """
+        Realiza o login do usuário.
+
+        Retorna:
+            tuple:
+                - bool indicando sucesso ou falha;
+                - mensagem;
+                - nome do usuário;
+                - id do usuário.
         """
         email = email.strip().lower()
 
         self.cursor.execute(
-            "SELECT name, password, user_id FROM users WHERE email = ?",
+            """
+            SELECT name, password, user_id
+            FROM users
+            WHERE email = ?
+            """,
             (email,)
         )
+
         user = self.cursor.fetchone()
 
         if user is None:
@@ -58,21 +96,53 @@ class UserServices:
 
         return True, "Login realizado com sucesso!", name, user_id
 
-    def register(self, name, email, password):
+    def register(
+        self,
+        name: str,
+        email: str,
+        password: str,
+        username: str,
+        linkedin_url: str | None = None
+    ):
         """
-        Essa função é responsável por realizar o cadastro do usuário. Ela recebe o nome, e-mail e senha digitados, padroniza o nome e o e-mail,
-        valida o nome, e-mail e senha, verifica se já existe um usuário com o mesmo e-mail, criptografa a senha, salva o usuário no banco
-        de dados, e retorna mensagens de erro específicas caso haja algum problema. Se o cadastro for bem-sucedido, a função retorna True, 
-        mensagem de sucesso e o id do usuário recém-criado.
+        Cadastra um novo usuário.
+
+        Regras:
+        - nome obrigatório e válido;
+        - e-mail obrigatório, válido e único;
+        - username obrigatório, válido e único;
+        - LinkedIn opcional, mas se informado precisa ter formato válido;
+        - senha obrigatória e válida;
+        - senha armazenada com hash seguro.
         """
-        name = name.strip()
+        name = validation_services.normalize_name(name)
         email = email.strip().lower()
+        username = validation_services.normalize_username(username)
+        linkedin_url = (linkedin_url or "").strip()
 
         if not validation_services.valid_name_users(name):
-            return False, "O nome precisa ter pelo menos 2 caracteres, no máximo 50 caracteres e não pode conter números.", None
+            return (
+                False,
+                "O nome precisa ter pelo menos 2 caracteres, no máximo 50 caracteres e não pode conter números.",
+                None
+            )
 
         if not validation_services.valid_email(email):
             return False, "Esse e-mail é inválido!", None
+
+        if not validation_services.valid_username(username):
+            return (
+                False,
+                "O username é obrigatório e precisa ter entre 3 e 20 caracteres. Use apenas letras, números, ponto ou underline.",
+                None
+            )
+
+        if not validation_services.valid_linkedin_url(linkedin_url):
+            return (
+                False,
+                "O LinkedIn precisa estar no formato https://www.linkedin.com/in/seu-perfil",
+                None
+            )
 
         password_message = validation_services.password_error_message(password)
         if password_message is not None:
@@ -87,12 +157,37 @@ class UserServices:
         if email_registered:
             return False, "Esse e-mail já foi cadastrado. Prossiga para o login.", None
 
+        self.cursor.execute(
+            """
+            SELECT EXISTS(
+                SELECT 1
+                FROM users
+                WHERE LOWER(username) = LOWER(?)
+            )
+            """,
+            (username,)
+        )
+        username_registered = bool(self.cursor.fetchone()[0])
+
+        if username_registered:
+            return False, "Esse username já está em uso.", None
+
         password_hash = security_utils_service.hash_value(password)
 
         self.cursor.execute(
-            "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-            (name, email, password_hash)
+            """
+            INSERT INTO users (
+                name,
+                email,
+                username,
+                linkedin_url,
+                password
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (name, email, username, linkedin_url, password_hash)
         )
+
         self.connection.commit()
 
         user_id = self.cursor.lastrowid
@@ -101,26 +196,35 @@ class UserServices:
 
     def get_user_profile(self, user_id: int) -> User | None:
         """
-        Função que busca os dados do perfil do usuário com base no id. Retorna nome e e-mail em formato de dicionário
+        Busca os dados do perfil do usuário.
         """
         self.cursor.execute(
-            "SELECT name, email FROM users WHERE user_id = ?",
+            """
+            SELECT name, email, username, linkedin_url
+            FROM users
+            WHERE user_id = ?
+            """,
             (user_id,)
         )
+
         user = self.cursor.fetchone()
+
         if user is None:
             return None
 
-        name, email = user
+        name, email, username, linkedin_url = user
 
-        return User(user_id, name, email)
+        return User(
+            user_id=user_id,
+            name=name,
+            email=email,
+            username=username or "",
+            linkedin_url=linkedin_url
+        )
 
     def update_user_name(self, user_id: int, new_name: str):
         """
-        Essa função é responsável por atualizar o nome do usuário. Ela recebe o id do usuário e o novo nome, normaliza o novo nome,
-        valida o novo nome, verifica se o usuário existe, atualiza o nome do usuário no banco de dados, e retorna mensagens de erro 
-        específicas caso haja algum problema. Se a atualização for bem-sucedida, a função retorna True e uma mensagem de sucesso. 
-        O nome do usuário é normalizado para remover espaços extras.
+        Atualiza o nome do usuário.
         """
         new_name = validation_services.normalize_name(new_name)
 
@@ -137,58 +241,151 @@ class UserServices:
             return False, "Usuário não encontrado."
 
         self.cursor.execute(
-            "UPDATE users SET name = ? WHERE user_id = ?",
+            """
+            UPDATE users
+            SET name = ?
+            WHERE user_id = ?
+            """,
             (new_name, user_id)
         )
+
         self.connection.commit()
-        
+
         return True, "Nome alterado com sucesso."
+
+    def update_username(self, user_id: int, new_username: str):
+        """
+        Atualiza o username do usuário.
+
+        O username é obrigatório, único e normalizado para minúsculas.
+        """
+        new_username = validation_services.normalize_username(new_username)
+
+        if not validation_services.valid_username(new_username):
+            return (
+                False,
+                "O username é obrigatório e precisa ter entre 3 e 20 caracteres. Use apenas letras, números, ponto ou underline."
+            )
+
+        self.cursor.execute(
+            "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)",
+            (user_id,)
+        )
+        user_exists = bool(self.cursor.fetchone()[0])
+
+        if not user_exists:
+            return False, "Usuário não encontrado."
+
+        self.cursor.execute(
+            """
+            SELECT EXISTS(
+                SELECT 1
+                FROM users
+                WHERE LOWER(username) = LOWER(?)
+                AND user_id != ?
+            )
+            """,
+            (new_username, user_id)
+        )
+        username_registered = bool(self.cursor.fetchone()[0])
+
+        if username_registered:
+            return False, "Esse username já está em uso."
+
+        self.cursor.execute(
+            """
+            UPDATE users
+            SET username = ?
+            WHERE user_id = ?
+            """,
+            (new_username, user_id)
+        )
+
+        self.connection.commit()
+
+        return True, "Username alterado com sucesso."
+
+    def update_linkedin_url(self, user_id: int, linkedin_url: str):
+        """
+        Atualiza o link do LinkedIn do usuário.
+
+        O LinkedIn é opcional, mas se informado precisa seguir o formato validado.
+        """
+        linkedin_url = linkedin_url.strip()
+
+        if not validation_services.valid_linkedin_url(linkedin_url):
+            return False, "O LinkedIn precisa estar no formato https://www.linkedin.com/in/seu-perfil"
+
+        self.cursor.execute(
+            "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)",
+            (user_id,)
+        )
+        user_exists = bool(self.cursor.fetchone()[0])
+
+        if not user_exists:
+            return False, "Usuário não encontrado."
+
+        self.cursor.execute(
+            """
+            UPDATE users
+            SET linkedin_url = ?
+            WHERE user_id = ?
+            """,
+            (linkedin_url, user_id)
+        )
+
+        self.connection.commit()
+
+        return True, "LinkedIn alterado com sucesso."
 
     def change_user_password(self, user_id: int, current_password: str, new_password: str):
         """
-        Essa função é responsável por alterar a senha do usuário. Ela recebe o id do usuário, a senha atual e a nova senha,
-        busca o usuário no banco de dados, verifica se o usuário existe, confere se a senha atual digitada corresponde ao hash salvo 
-        no banco, valida a nova senha, impede que a nova senha seja igual à senha atual, criptografa a nova senha, atualiza a senha 
-        do usuário no banco de dados, e retorna mensagens de erro específicas caso haja algum problema. Se a alteração for bem-sucedida,
-        a função retorna True e uma mensagem de sucesso.
+        Altera a senha do usuário.
         """
         self.cursor.execute(
-            "SELECT password FROM users WHERE user_id = ?",
+            """
+            SELECT password
+            FROM users
+            WHERE user_id = ?
+            """,
             (user_id,)
         )
+
         user = self.cursor.fetchone()
+
         if user is None:
-            return False, "Usuário não encontrado"
+            return False, "Usuário não encontrado."
 
         saved_password = user[0]
 
         if not security_utils_service.verify_value(current_password, saved_password):
-            return False, "A senha atual está incorreta"
+            return False, "A senha atual está incorreta."
 
         password_message = validation_services.password_error_message(new_password)
         if password_message is not None:
             return False, password_message
 
         if security_utils_service.verify_value(new_password, saved_password):
-            return False, "A nova senha deve ser diferente da senha atual"
+            return False, "A nova senha deve ser diferente da senha atual."
 
         new_password_hash = security_utils_service.hash_value(new_password)
 
         self.cursor.execute(
-            "UPDATE users SET password = ? WHERE user_id = ?",
+            """
+            UPDATE users
+            SET password = ?
+            WHERE user_id = ?
+            """,
             (new_password_hash, user_id)
         )
+
         self.connection.commit()
 
         return True, "Senha alterada com sucesso!"
 
     def delete_user_account(self, user_id: int):
         """
-        Essa função é responsável por deletar a conta do usuário. Ela recebe o id do usuário, verifica se o usuário existe, deleta o usuário
-        do banco de dados, e retorna mensagens de erro específicas caso haja algum problema. Se a exclusão for bem-sucedida, a 
-        função retorna True e uma mensagem de sucesso. A função também garante que, ao deletar o usuário, todos os dados relacionados a 
-        ele em outras tabelas (como eventos favoritados e interesses) sejam deletados automaticamente graças às chaves estrangeiras 
-        com a cláusula ON DELETE CASCADE.
+        Deleta a conta do usuário.
         """
         self.cursor.execute(
             "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)",
@@ -200,27 +397,36 @@ class UserServices:
             return False, "Usuário não encontrado."
 
         self.cursor.execute(
-            "DELETE FROM users WHERE user_id = ?",
+            """
+            DELETE FROM users
+            WHERE user_id = ?
+            """,
             (user_id,)
         )
+
         self.connection.commit()
-        
+
         return True, "Conta deletada com sucesso."
 
-    def check_user_name(self, user_id: int) -> str:
+    def check_user_name(self, user_id: int) -> str | None:
         """
-        Função auxiliar que busca o nome do usuário. É usada quando outra tela só precisa exibir o nome do usuário que criou um evento.
-        Ex: Nome do usuário no "Criado por" dos eventos. Retorna o nome do usuário ou None caso o usuário não seja encontrado.
+        Busca apenas o nome do usuário.
         """
         self.cursor.execute(
-            "SELECT name FROM users WHERE user_id = ?",
+            """
+            SELECT name
+            FROM users
+            WHERE user_id = ?
+            """,
             (user_id,)
         )
+
         user = self.cursor.fetchone()
 
         if user is None:
             return None
 
         return validation_services.normalize_name(user[0])
-    
+
+
 user_services = UserServices()
