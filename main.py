@@ -27,7 +27,7 @@ class MinhaApp(App):
 
         self.important_dates_updater = BackgroundImportantDatesUpdater(
             database_path=DATABASE_PATH,
-            interval_seconds=21600
+            interval_seconds=60
         )
 
         asyncio.create_task(self.important_dates_updater.start())

@@ -20,17 +20,19 @@ class EventImportantDatesUpdateService:
         event_id: int,
         official_url: str
     ) -> tuple[bool, str]:
-        """
-        Atualiza as datas importantes de um evento a partir de sua URL oficial.
-        """
-
         if not official_url:
             return False, "Evento sem URL oficial cadastrada."
 
         try:
+            fallback_year = self._get_event_year(event_id)
+
             page_content = self.page_service.fetch_page_content(official_url)
+
             important_dates = self.extractor.extract(
-                page_content, official_url)
+                page_content,
+                official_url,
+                fallback_year=fallback_year
+            )
 
             if not important_dates:
                 return False, "Nenhuma data importante foi encontrada na fonte oficial."
@@ -48,3 +50,34 @@ class EventImportantDatesUpdateService:
 
         except Exception as error:
             return False, f"Erro ao atualizar datas importantes: {error}"
+
+    def _get_event_year(self, event_id: int) -> int | None:
+        """
+        Retorna o ano da data principal do evento.
+
+        A data principal no banco está no formato DD-MM-AAAA.
+        """
+
+        with sqlite3.connect(self.database_path) as connection:
+            cursor = connection.cursor()
+
+            cursor.execute(
+                """
+                SELECT date
+                FROM events
+                WHERE event_id = ?
+                """,
+                (event_id,)
+            )
+
+            row = cursor.fetchone()
+
+        if not row or not row[0]:
+            return None
+
+        date_text = row[0]
+
+        try:
+            return int(date_text.split("-")[2])
+        except (IndexError, ValueError):
+            return None
