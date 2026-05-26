@@ -2,7 +2,9 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, VerticalScroll
+
 from database.repositories.event_repository import event_services
+
 
 CREATE_SOCIAL_EVENT_PAGE_CSS = """
 Screen {
@@ -21,11 +23,6 @@ Screen {
 #main_title {
     content-align: center middle;
     text-style: bold;
-    margin-bottom: 1;
-}
-
-#search_event {
-    width: 1fr;
     margin-bottom: 1;
 }
 
@@ -57,51 +54,65 @@ Button {
 }
 """
 
+
 class CreateSocialEventView(Screen):
     """
-    Classe responsável pela criação de eventos sociais. Ela exibe um formulário para o usuário preencher os dados do evento, e um botão para criar o evento.
+    Tela responsável pela criação de eventos sociais.
     """
+
     CSS = CREATE_SOCIAL_EVENT_PAGE_CSS
 
-    # Inicializa a tela com os dados básicos do usuário autenticado
     def __init__(self, user_id: int):
         super().__init__()
         self.user_id = user_id
 
-    # Monta a interface com filtros por interesse e listagem de eventos
     def compose(self) -> ComposeResult:
         with Center():
             with VerticalScroll(id="main_box"):
                 yield Static("Criar Evento Social", id="main_title")
                 yield Static("Preencha as informações do evento que você deseja criar:")
+
                 yield Input(placeholder="Insira o nome do evento...", id="event_name")
                 yield Input(placeholder="Insira a descrição do evento...", id="event_description")
                 yield Input(placeholder="Insira o local do evento (opcional)...", id="event_location")
                 yield Input(placeholder="Insira a data do evento (opcional, formato DD-MM-AAAA)...", id="event_date")
                 yield Input(placeholder="Insira a hora do evento (opcional, formato HH:MM)...", id="event_hour")
+                yield Input(
+                    placeholder="Link oficial do evento (opcional). Ex: https://site.com/evento",
+                    id="event_official_url"
+                )
+
                 yield Static("", id="message")
+
                 yield Button("Criar Evento", id="button_create_event", variant="primary")
                 yield Button("Voltar", id="button_return", variant="primary")
-                
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """
-        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado,
-        e executa a ação correspondente:
-        - Se for um botão de evento, ela extrai o ID do evento a partir do ID do botão e navega para a tela de detalhes do evento.
-        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
-        """
         if event.button.id == "button_create_event":
             event_name = self.query_one("#event_name", Input).value
-            event_description = self.query_one("#event_description", Input).value
+            event_description = self.query_one(
+                "#event_description", Input).value
             event_location = self.query_one("#event_location", Input).value
             event_date = self.query_one("#event_date", Input).value
             event_hour = self.query_one("#event_hour", Input).value
+            event_official_url = self.query_one(
+                "#event_official_url", Input).value
 
-            success, message = event_services.create_event(event_name, event_description, event_location, event_date, event_hour, self.user_id)
+            success, message = event_services.create_event(
+                name=event_name,
+                description=event_description,
+                event_location=event_location,
+                date=event_date,
+                hour=event_hour,
+                creator_id=self.user_id,
+                interest="Social",
+                official_url=event_official_url,
+                auto_update_dates=1
+            )
+
             if success:
                 self.app.notify(message)
                 self.app.pop_screen()
-            
             else:
                 self.query_one("#message", Static).update(message)
 
