@@ -4,7 +4,7 @@ from datetime import datetime
 
 class ImportantDatesExtractor:
     """
-    Serviço reesponsável por extrair datas importantes de um texto
+    Serviço responsável por extrair datas importantes de um texto.
     """
 
     DATE_PATTERNS = [
@@ -35,7 +35,7 @@ class ImportantDatesExtractor:
 
     def extract(self, text: str, source_url: str) -> list[dict]:
         """
-        Extrai datas do texto e retorna uma lista de dicionários estruturados
+        Extrai datas do texto e retorna uma lista de dicionários estruturados.
         """
 
         if not text:
@@ -52,7 +52,11 @@ class ImportantDatesExtractor:
                     continue
 
                 context = self._get_context(
-                    clean_text, match.start(), match.end())
+                    clean_text,
+                    match.start(),
+                    match.end()
+                )
+
                 title = self._infer_title(context)
                 time = self._extract_time(context)
                 confidence = self._calculate_confidence(context, title, time)
@@ -68,17 +72,27 @@ class ImportantDatesExtractor:
                     "confidence": confidence,
                 })
 
-            return self._remove_duplicates(important_dates)
+        return self._remove_duplicates(important_dates)
 
     def _clean_text(self, text: str) -> str:
         """
         Remove scripts, estilos e tags HTML para facilitar a extração.
         """
 
-        text = re.sub(r"<script.*?</script>", " ", text,
-                      flags=re.DOTALL | re.IGNORECASE)
-        text = re.sub(r"<style.*?</style>", " ", text,
-                      flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(
+            r"<script.*?</script>",
+            " ",
+            text,
+            flags=re.DOTALL | re.IGNORECASE
+        )
+
+        text = re.sub(
+            r"<style.*?</style>",
+            " ",
+            text,
+            flags=re.DOTALL | re.IGNORECASE
+        )
+
         text = re.sub(r"<[^>]+>", " ", text)
         text = re.sub(r"&nbsp;", " ", text)
         text = re.sub(r"\s+", " ", text)
@@ -87,7 +101,7 @@ class ImportantDatesExtractor:
 
     def _convert_match_to_iso_date(self, match: re.Match) -> str | None:
         """
-        Converte uma data encontrada no teexto para o formato ISO: YYYY-MM-DD.
+        Converte uma data encontrada no texto para o formato ISO: YYYY-MM-DD.
         """
 
         day, month, year = match.groups()
@@ -104,30 +118,36 @@ class ImportantDatesExtractor:
         except ValueError:
             return None
 
-    def _get_context(self, text: str, start: int, end: int, window: int = 140) -> str:
+    def _get_context(
+        self,
+        text: str,
+        start: int,
+        end: int,
+        window: int = 140
+    ) -> str:
         """
-        Captura um trecho ao redor da data encontrada para entender o seu significado.
+        Captura um trecho ao redor da data encontrada para entender seu significado.
         """
 
         context_start = max(0, start - window)
         context_end = min(len(text), end + window)
 
-        return text[context_start: context_end].lower()
+        return text[context_start:context_end].lower()
 
     def _infer_title(self, context: str) -> str:
         """
-        Infere o título da data com base em palavras próximas
+        Infere o título da data com base em palavras próximas.
         """
 
         for keyword, title in self.KEYWORDS.items():
             if keyword in context:
                 return title
 
-            return "Data importante"
+        return "Data importante"
 
     def _extract_time(self, context: str) -> str | None:
         """
-        Extrai horário do contexto, se existir
+        Extrai horário do contexto, se existir.
         """
 
         match = re.search(
@@ -148,18 +168,23 @@ class ImportantDatesExtractor:
 
         return f"{hour:02d}:{minute:02d}"
 
-    def _calculate_confidence(self, context: str, title: str, time: str | None) -> float:
+    def _calculate_confidence(
+        self,
+        context: str,
+        title: str,
+        time: str | None
+    ) -> float:
         """
-        Calcula uma pontuação simples deee confiança para a data encontrada
+        Calcula uma pontuação simples de confiança para a data encontrada.
         """
 
-        confidence = 0.5
+        confidence = 0.50
 
         if title != "Data importante":
-            confidence += 0.3
+            confidence += 0.30
 
         if time:
-            confidence += 0.1
+            confidence += 0.10
 
         if any(word in context for word in ["oficial", "programação", "cronograma", "agenda"]):
             confidence += 0.05
@@ -168,7 +193,7 @@ class ImportantDatesExtractor:
 
     def _remove_duplicates(self, dates: list[dict]) -> list[dict]:
         """
-        Remove datas duplicadas, preservando a versão com mais confiança
+        Remove datas duplicadas, preservando a versão com maior confiança.
         """
 
         unique_dates = {}
@@ -177,7 +202,7 @@ class ImportantDatesExtractor:
             key = (
                 item["title"],
                 item["date"],
-                item["time"]
+                item.get("time")
             )
 
             if key not in unique_dates:
