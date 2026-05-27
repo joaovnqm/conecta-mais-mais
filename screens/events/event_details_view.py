@@ -1,8 +1,12 @@
+import sqlite3
+from datetime import datetime
+
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll, Vertical
 
+from database.repositories.event_important_dates_repository import EventImportantDatesRepository
 from database.repositories.event_repository import event_services
 from database.repositories.user_repository import user_services
 from services.favorite_events import (
@@ -20,12 +24,12 @@ Screen {
 }
 
 #main_box {
-    width: 90;
+    width: 86;
     height: auto;
-    max-height: 40;
     border: round $primary;
     padding: 1 2;
     background: $panel;
+    align: center top;
 }
 
 #main_title {
@@ -84,6 +88,11 @@ Screen {
     margin-top: 1;
 }
 
+#important_dates_list {
+    color: $text-muted;
+    margin-top: 1;
+}
+
 #button_favorite_event,
 #button_presence_event {
     width: 100%;
@@ -100,11 +109,7 @@ Screen {
 
 class EventDetailsView(Screen):
     """
-    Tela responsável por exibir detalhes do evento e permitir ações sociais:
-    - favoritar/desfavoritar;
-    - confirmar/desmarcar presença;
-    - visualizar amigos presentes;
-    - visualizar amigos que favoritaram.
+    Tela responsável por exibir detalhes do evento e permitir ações sociais.
     """
 
     CSS = EVENT_DETAILS_VIEW
@@ -117,14 +122,10 @@ class EventDetailsView(Screen):
     def compose(self) -> ComposeResult:
         event = event_services.check_event(self.event_id)
         creator_name = user_services.check_user_name(event.creator_id)
-
         total_presence = event_participation_service.count_confirmed_presence(
-            self.event_id
-        )
-
+            self.event_id)
         total_favorites = event_participation_service.count_favorites(
-            self.event_id
-        )
+            self.event_id)
 
         with Center():
             with VerticalScroll(id="main_box"):
@@ -141,31 +142,22 @@ class EventDetailsView(Screen):
                     yield Static(event.description, classes="info_value")
 
                     yield Static("Local:", classes="info_label")
-                    if event.event_location:
-                        yield Static(event.event_location, classes="info_value")
-                    else:
-                        yield Static(
-                            "O local do evento ainda não está disponível.",
-                            classes="info_value"
-                        )
+                    yield Static(
+                        event.event_location or "O local do evento ainda não está disponível.",
+                        classes="info_value"
+                    )
 
                     yield Static("Data:", classes="info_label")
-                    if event.date:
-                        yield Static(event.date, classes="info_value")
-                    else:
-                        yield Static(
-                            "A data do evento ainda não está disponível.",
-                            classes="info_value"
-                        )
+                    yield Static(
+                        event.date or "A data do evento ainda não está disponível.",
+                        classes="info_value"
+                    )
 
                     yield Static("Hora:", classes="info_label")
-                    if event.hour:
-                        yield Static(event.hour, classes="info_value")
-                    else:
-                        yield Static(
-                            "A hora do evento ainda não foi divulgada.",
-                            classes="info_value"
-                        )
+                    yield Static(
+                        event.hour or "A hora do evento ainda não foi divulgada.",
+                        classes="info_value"
+                    )
 
                     yield Static("Criador:", classes="info_label")
                     yield Static(
@@ -173,8 +165,21 @@ class EventDetailsView(Screen):
                         classes="info_value"
                     )
 
+                    yield Static("Fonte oficial:", classes="info_label")
+                    yield Static(
+                        event.official_url or "Nenhum link oficial cadastrado.",
+                        classes="info_value"
+                    )
+
                 with Vertical(classes="section_card"):
-                    yield Static("Ações do evento", classes="section_title")
+                    yield Static("Datas importantes", classes="section_title")
+                    yield Static(
+                        "Carregando datas importantes...",
+                        id="important_dates_list"
+                    )
+
+                with Vertical(classes="section_card"):
+                    yield Static("Ações do evento:", classes="section_title")
                     yield Vertical(id="favorite_button_container")
                     yield Vertical(id="presence_button_container")
 
@@ -202,10 +207,60 @@ class EventDetailsView(Screen):
                 yield Button("Voltar", id="button_return", variant="primary")
 
     async def on_mount(self) -> None:
+        self.load_important_dates()
         await self.reload_event_social_data()
 
     async def on_screen_resume(self) -> None:
+        self.load_important_dates()
         await self.reload_event_social_data()
+
+    def load_important_dates(self) -> None:
+        """
+        Carrega as datas importantes salvas no banco e exibe na tela.
+        """
+
+        dates_widget = self.query_one("#important_dates_list", Static)
+
+        with sqlite3.connect(event_services.database_path) as connection:
+            repository = EventImportantDatesRepository(connection)
+            important_dates = repository.find_by_event_id(self.event_id)
+
+        if not important_dates:
+            dates_widget.update(
+                "Nenhuma data importante encontrada ainda. Cadastre um link oficial para permitir a busca automática."
+            )
+            return
+
+        formatted_dates = []
+
+        for item in important_dates:
+            confidence_percent = int(item["confidence"] * 100)
+            status = "confirmada" if item["is_confirmed"] else "precisa de confirmação"
+            time_text = f" às {item['time']}" if item["time"] else ""
+            checked_text = self._format_datetime(item["last_checked_at"])
+
+            formatted_dates.append(
+                f"• {item['title']}: {self._format_date(item['date'])}{time_text} "
+                f"({confidence_percent}% de confiança, {status})\n"
+                f"  Fonte: {item['source_url'] or 'não informada'}\n"
+                f"  Atualizado em: {checked_text}"
+            )
+
+        dates_widget.update("\n\n".join(formatted_dates))
+
+    def _format_date(self, iso_date: str) -> str:
+        year, month, day = iso_date.split("-")
+        return f"{day}/{month}/{year}"
+
+    def _format_datetime(self, iso_datetime: str | None) -> str:
+        if not iso_datetime:
+            return "não informado"
+
+        try:
+            parsed_datetime = datetime.fromisoformat(iso_datetime)
+            return parsed_datetime.strftime("%d/%m/%Y às %H:%M")
+        except ValueError:
+            return iso_datetime
 
     async def reload_event_social_data(self) -> None:
         await self.reload_favorite_button()

@@ -1,10 +1,17 @@
+import sqlite3
+from datetime import datetime
+
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
-from textual.containers import Center, VerticalScroll
+from textual.containers import Center, Vertical, VerticalScroll
+
+from database.repositories.event_important_dates_repository import EventImportantDatesRepository
+from database.repositories.event_repository import event_services
 from screens.events.delete_social_event_view import DeleteSocialEventView
 from screens.events.edit_social_event_view import EditSocialEventView
-from database.repositories.event_repository import event_services
+from services.event_participation import event_participation_service
+
 
 MY_EVENT_DETAILS_VIEW = """
 Screen {
@@ -24,64 +31,279 @@ Screen {
 #main_title {
     content-align: center middle;
     text-style: bold;
-    color: black;
-    border: solid white;
-    padding: 1 2;
-    margin: 1;
+    margin-bottom: 1;
 }
 
+#button_edit_event,
+#button_delete_event,
 #button_return {
     width: 100%;
     content-align: center middle;
     margin: 1;
 }
+
+#friends_presence_container,
+#friends_favorites_container {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+}
+
+.section_card {
+    width: 100%;
+    height: auto;
+    border: round $primary;
+    padding: 1 2;
+    margin-top: 1;
+    background: $surface;
+}
+
+.section_title {
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.social_text,
+.empty_state,
+.info_value {
+    color: $text-muted;
+    margin-top: 1;
+}
+
+.info_label {
+    margin-top: 1;
+    text-style: bold;
+}
+
+#important_dates_list {
+    color: $text-muted;
+    margin-top: 1;
+}
 """
+
 
 class MyEventDetailsView(Screen):
     """
-    Classe responsável pela tela de detalhes do evento criado pelo usuário. Ela exibe as informações do evento selecionado, como nome, descrição, local, 
-    data, hora e opções para editar ou excluir o evento.
+    Tela de detalhes do evento criado pelo usuário.
     """
+
     CSS = MY_EVENT_DETAILS_VIEW
 
-    # Inicializa a tela com o evento que será exibido
-    def __init__(self, event_id: int):
+    def __init__(self, event_id: int, user_id: int):
         super().__init__()
         self.event_id = event_id
+        self.user_id = user_id
 
-    # Monta a interface com as informações do evento e do criador
     def compose(self) -> ComposeResult:
         event = event_services.check_event(self.event_id)
+        total_presence = event_participation_service.count_confirmed_presence(
+            self.event_id)
+        total_favorites = event_participation_service.count_favorites(
+            self.event_id)
+
         with Center():
             with VerticalScroll(id="main_box"):
                 yield Static(f"Evento: {event.name}", id="main_title")
-                yield Static(f"Descrição: {event.description}")
-                if event.event_location == None:
-                    yield Static("O local do evento ainda não está disponível")
+                yield Static(
+                    "Veja as informações do seu evento criado. Você pode editar ou excluir o evento usando os botões abaixo."
+                )
 
-                else:
-                    yield Static(f"Local: {event.event_location}.")
-                
-                if event.date == None:
-                    yield Static("A data do evento ainda não está disponível")
+                with Vertical(classes="section_card"):
+                    yield Static("Informações do evento", classes="section_title")
 
-                else: 
-                    yield Static(f"Data: {event.date}.")
+                    yield Static("Descrição:", classes="info_label")
+                    yield Static(event.description, classes="info_value")
 
-                if event.hour == None:
-                    yield Static("A hora do evento ainda não foi divulgada")
-                    
-                else:
-                    yield Static(f"Hora: {event.hour}")
+                    yield Static("Local:", classes="info_label")
+                    yield Static(
+                        event.event_location or "O local do evento ainda não está disponível.",
+                        classes="info_value"
+                    )
 
-                yield Button("Editar Evento", id="button_edit_event")
-                yield Button("Excluir Evento", id="button_delete_event", variant="error")
+                    yield Static("Data:", classes="info_label")
+                    yield Static(
+                        event.date or "A data do evento ainda não está disponível.",
+                        classes="info_value"
+                    )
+
+                    yield Static("Hora:", classes="info_label")
+                    yield Static(
+                        event.hour or "A hora do evento ainda não foi divulgada.",
+                        classes="info_value"
+                    )
+
+                    yield Static("Fonte oficial:", classes="info_label")
+                    yield Static(
+                        event.official_url or "Nenhum link oficial cadastrado.",
+                        classes="info_value"
+                    )
+
+                with Vertical(classes="section_card"):
+                    yield Static("Datas importantes", classes="section_title")
+                    yield Static(
+                        "Carregando datas importantes...",
+                        id="important_dates_list"
+                    )
+
+                with Vertical(classes="section_card"):
+                    yield Static("Resumo social", classes="section_title")
+                    yield Static(
+                        f"Pessoas com presença confirmada: {total_presence}",
+                        id="presence_count",
+                        classes="social_text"
+                    )
+                    yield Static(
+                        f"Pessoas que favoritaram: {total_favorites}",
+                        id="favorite_count",
+                        classes="social_text"
+                    )
+
+                with Vertical(classes="section_card"):
+                    yield Static("Amigos que vão", classes="section_title")
+                    yield Vertical(id="friends_presence_container")
+
+                with Vertical(classes="section_card"):
+                    yield Static("Amigos que favoritaram", classes="section_title")
+                    yield Vertical(id="friends_favorites_container")
+
+                with Vertical(classes="section_card"):
+                    yield Static("Ações do evento:", classes="section_title")
+                    yield Button("Editar Evento", id="button_edit_event")
+                    yield Button("Excluir Evento", id="button_delete_event", variant="error")
+
                 yield Button("Voltar", id="button_return", variant="primary")
-    
+
+    async def on_mount(self) -> None:
+        self.load_important_dates()
+        await self.reload_event_social_data()
+
+    async def on_screen_resume(self) -> None:
+        self.load_important_dates()
+        await self.reload_event_social_data()
+
+    def load_important_dates(self) -> None:
+        dates_widget = self.query_one("#important_dates_list", Static)
+
+        with sqlite3.connect(event_services.database_path) as connection:
+            repository = EventImportantDatesRepository(connection)
+            important_dates = repository.find_by_event_id(self.event_id)
+
+        if not important_dates:
+            dates_widget.update(
+                "Nenhuma data importante encontrada ainda. Cadastre um link oficial para permitir a busca automática."
+            )
+            return
+
+        formatted_dates = []
+
+        for item in important_dates:
+            confidence_percent = int(item["confidence"] * 100)
+            status = "confirmada" if item["is_confirmed"] else "precisa de confirmação"
+            time_text = f" às {item['time']}" if item["time"] else ""
+            checked_text = self._format_datetime(item["last_checked_at"])
+
+            formatted_dates.append(
+                f"• {item['title']}: {self._format_date(item['date'])}{time_text} "
+                f"({confidence_percent}% de confiança, {status})\n"
+                f"  Fonte: {item['source_url'] or 'não informada'}\n"
+                f"  Atualizado em: {checked_text}"
+            )
+
+        dates_widget.update("\n\n".join(formatted_dates))
+
+    def _format_date(self, iso_date: str) -> str:
+        year, month, day = iso_date.split("-")
+        return f"{day}/{month}/{year}"
+
+    def _format_datetime(self, iso_datetime: str | None) -> str:
+        if not iso_datetime:
+            return "não informado"
+
+        try:
+            parsed_datetime = datetime.fromisoformat(iso_datetime)
+            return parsed_datetime.strftime("%d/%m/%Y às %H:%M")
+        except ValueError:
+            return iso_datetime
+
+    async def reload_event_social_data(self) -> None:
+        await self.reload_social_summary()
+        await self.reload_friends_presence()
+        await self.reload_friends_favorites()
+
+    async def reload_social_summary(self) -> None:
+        total_presence = event_participation_service.count_confirmed_presence(
+            self.event_id
+        )
+
+        total_favorites = event_participation_service.count_favorites(
+            self.event_id
+        )
+
+        self.query_one("#presence_count", Static).update(
+            f"Pessoas com presença confirmada: {total_presence}"
+        )
+
+        self.query_one("#favorite_count", Static).update(
+            f"Pessoas que favoritaram: {total_favorites}"
+        )
+
+    async def reload_friends_presence(self) -> None:
+        container = self.query_one("#friends_presence_container")
+        await container.remove_children()
+
+        friends = event_participation_service.list_friends_confirmed_presence(
+            self.user_id,
+            self.event_id
+        )
+
+        if not friends:
+            await container.mount(
+                Static(
+                    "Nenhum amigo confirmou presença neste evento.",
+                    classes="empty_state"
+                )
+            )
+            return
+
+        for friend in friends:
+            await container.mount(
+                Static(
+                    f"{friend['name']} - @{friend['username']}",
+                    classes="social_text"
+                )
+            )
+
+    async def reload_friends_favorites(self) -> None:
+        container = self.query_one("#friends_favorites_container")
+        await container.remove_children()
+
+        friends = event_participation_service.list_friends_favorited_event(
+            self.user_id,
+            self.event_id
+        )
+
+        if not friends:
+            await container.mount(
+                Static(
+                    "Nenhum amigo favoritou este evento.",
+                    classes="empty_state"
+                )
+            )
+            return
+
+        for friend in friends:
+            await container.mount(
+                Static(
+                    f"{friend['name']} - @{friend['username']}",
+                    classes="social_text"
+                )
+            )
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "button_edit_event":
             self.app.push_screen(EditSocialEventView(self.event_id))
-        
+
         elif event.button.id == "button_delete_event":
             self.app.push_screen(DeleteSocialEventView(self.event_id))
 
