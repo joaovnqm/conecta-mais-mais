@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll
 from screens.events.event_details_view import EventDetailsView
-from services.favorite_events import check_favorited_events
+from services.favorite_events import favorite_events_services
 
 FAVORITE_EVENTS_CSS = """
 Screen {
@@ -72,7 +72,7 @@ class FavoriteEventsList(Screen):
         """
         container = self.query_one("#events_container")
         await container.query("*").remove()
-        events = check_favorited_events(self.user_id)
+        events = favorite_events_services.check_favorited_events(self.user_id)
         if events:
             for event in events:
                 await container.mount(

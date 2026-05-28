@@ -11,9 +11,9 @@ class EventParticipationService:
         self.connection = sqlite3.connect(self.database_path)
         self.connection.execute("PRAGMA foreign_keys = ON")
         self.cursor = self.connection.cursor()
-        self._create_tables()
+        self._create_table()
 
-    def _create_tables(self) -> None:
+    def _create_table(self) -> None:
         self.cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS event_participants (
@@ -22,13 +22,10 @@ class EventParticipationService:
                 status TEXT NOT NULL CHECK(status IN ('confirmed')),
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-
                 PRIMARY KEY(user_id, event_id),
-
                 FOREIGN KEY(user_id)
                     REFERENCES users(user_id)
                     ON DELETE CASCADE,
-
                 FOREIGN KEY(event_id)
                     REFERENCES events(event_id)
                     ON DELETE CASCADE
@@ -41,13 +38,10 @@ class EventParticipationService:
             CREATE TABLE IF NOT EXISTS favorite_events (
                 user_id INTEGER NOT NULL,
                 event_id INTEGER NOT NULL,
-
                 PRIMARY KEY(user_id, event_id),
-
                 FOREIGN KEY(user_id)
                     REFERENCES users(user_id)
                     ON DELETE CASCADE,
-
                 FOREIGN KEY(event_id)
                     REFERENCES events(event_id)
                     ON DELETE CASCADE
