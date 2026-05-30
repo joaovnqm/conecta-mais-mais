@@ -46,19 +46,19 @@ Screen {
 
 .event_listing {
     layout: grid;
-    grid-size: 3;
-    grid-columns: 1fr;
+    grid-size: 2;
+    grid-columns: 2fr 1fr;
     height: auto;
     margin-bottom: 1;
 }
 
 .event_buttons {
-    width: 2fr;
+    width: 100%;
     height: 3;
 }
 
 .event_submission_status {
-    width: 1fr;
+    width: 100%;
     height: 100%;
     content-align: center middle;
 }
