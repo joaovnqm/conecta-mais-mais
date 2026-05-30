@@ -16,3 +16,4 @@ class User:
     email: str
     username: str
     linkedin_url: Optional[str] = None
+    github_url: Optional[str] = None

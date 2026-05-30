@@ -95,19 +95,149 @@ class EventImportantDatesRepository:
             (event_id,)
         )
 
-        rows = cursor.fetchall()
+        dates = cursor.fetchall()
 
         return [
             {
-                "id": row[0],
-                "title": row[1],
-                "date": row[2],
-                "time": row[3],
-                "source_url": row[4],
-                "confidence": float(row[5]),
-                "is_confirmed": bool(row[6]),
-                "is_auto_generated": bool(row[7]),
-                "last_checked_at": row[8],
+                "id": date[0],
+                "title": date[1],
+                "date": date[2],
+                "time": date[3],
+                "source_url": date[4],
+                "confidence": float(date[5]),
+                "is_confirmed": bool(date[6]),
+                "is_auto_generated": bool(date[7]),
+                "last_checked_at": date[8],
             }
-            for row in rows
+            for date in dates # Isso aqui é uma list comprehension!
         ]
+
+    def get_submission_status(self, event_id: int) -> dict:
+        """
+        Determina o status do período de submissão para um evento.
+        Retorna um dicionário com as chaves:
+        - status: um entre 'none', 'not_started', 'open', 'closed', 'open_no_deadline'
+        - message: string amigável para exibição
+        - opening_date: data de abertura (ISO str) ou None
+        - deadline_date: data de prazo (ISO str) ou None
+        """
+        items = self.find_by_event_id(event_id)
+
+        if not items:
+            return {
+                "status": "none",
+                "message": "— Nenhuma informação de submissão",
+                "opening_date": None,
+                "deadline_date": None,
+            }
+
+        # Palavras-chave simples para identificar datas relacionadas a submissão
+        title_lower = lambda item: (item.get("title") or "").lower()
+        submission_indicators = [
+            "submiss",
+            "submission",
+            "submission deadline",
+            "abstract submission",
+            "paper submission",
+            "prazo",
+            "deadline",
+            "abert",
+            "opens",
+            "opening",
+        ]
+
+        related = []
+
+        for item in items:
+            if any(k in title_lower(item) for k in submission_indicators):
+                try:
+                    parsed = datetime.fromisoformat(item["date"]).date()
+
+                except Exception:
+                    continue
+
+                related.append({
+                    "date": parsed,
+                    "title": item.get("title"),
+                })
+
+        if not related:
+            return {
+                "status": "none",
+                "message": "— Nenhuma informação de submissão",
+                "opening_date": None,
+                "deadline_date": None,
+            }
+
+        # Ordena as datas encontradas
+        related.sort(key=lambda x: x["date"])
+        opening = related[0]["date"]
+        deadline = related[-1]["date"] if len(related) > 1 else None
+
+        now = datetime.now().date()
+
+        def fmt(d: datetime.date) -> str:
+            """
+            Essa função formata a data para uma string amigável, no formato DD/MM/YYYY.
+            """
+            return d.strftime("%d/%m/%Y")
+
+        # Se houver apenas uma data, tentamos inferir se é abertura ou prazo
+        if deadline is None:
+            title = (related[0]["title"] or "").lower()
+            if any(k in title for k in ("abert", "opens", "opening")):
+                if now < opening:
+                    return {
+                        "status": "not_started",
+                        "message": f"⌛ Período de submissão começa em {fmt(opening)}",
+                        "opening_date": opening.isoformat(),
+                        "deadline_date": None,
+                    }
+                else:
+                    return {
+                        "status": "open_no_deadline",
+                        "message": "✅ Período de submissão aberto",
+                        "opening_date": opening.isoformat(),
+                        "deadline_date": None,
+                    }
+            else:
+                # Assume-se que é um prazo
+                if now <= opening:
+                    return {
+                        "status": "open",
+                        "message": f"✅ Período de submissão aberto até {fmt(opening)}",
+                        "opening_date": None,
+                        "deadline_date": opening.isoformat(),
+                    }
+                else:
+                    return {
+                        "status": "closed",
+                        "message": f"❌ Período de submissão finalizada em {fmt(opening)}",
+                        "opening_date": None,
+                        "deadline_date": opening.isoformat(),
+                    }
+
+        # Se temos intervalo (abertura .. prazo)
+        if opening and deadline:
+            if now < opening:
+                return {
+                    "status": "not_started",
+                    "message": f"⌛ Período de submissão começa em {fmt(opening)}",
+                    "opening_date": opening.isoformat(),
+                    "deadline_date": deadline.isoformat(),
+                }
+            elif opening <= now <= deadline:
+                return {
+                    "status": "open",
+                    "message": f"✅ Período de submissão aberto até {fmt(deadline)}",
+                    "opening_date": opening.isoformat(),
+                    "deadline_date": deadline.isoformat(),
+                }
+            else:
+                return {
+                    "status": "closed",
+                    "message": f"❌ Período de submissão finalizada em {fmt(deadline)}",
+                    "opening_date": opening.isoformat(),
+                    "deadline_date": deadline.isoformat(),
+                }
+

@@ -1,19 +1,13 @@
 import sqlite3
 from datetime import datetime
-
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, VerticalScroll, Vertical
-
 from database.repositories.event_important_dates_repository import EventImportantDatesRepository
 from database.repositories.event_repository import event_services
 from database.repositories.user_repository import user_services
-from services.favorite_events import (
-    check_favorite_event,
-    favorite_event,
-    remove_from_favorite_event
-)
+from services.favorite_events import favorite_events_services
 from services.event_participation import event_participation_service
 
 
@@ -137,10 +131,8 @@ class EventDetailsView(Screen):
 
                 with Vertical(classes="section_card"):
                     yield Static("Informações do evento", classes="section_title")
-
                     yield Static("Descrição:", classes="info_label")
                     yield Static(event.description, classes="info_value")
-
                     yield Static("Local:", classes="info_label")
                     yield Static(
                         event.event_location or "O local do evento ainda não está disponível.",
@@ -273,7 +265,7 @@ class EventDetailsView(Screen):
         container = self.query_one("#favorite_button_container")
         await container.remove_children()
 
-        if check_favorite_event(self.user_id, self.event_id):
+        if favorite_events_services.check_favorite_event(self.user_id, self.event_id):
             await container.mount(
                 Button(
                     "Desfavoritar evento",
@@ -394,13 +386,13 @@ class EventDetailsView(Screen):
             return
 
     async def handle_favorite_button(self) -> None:
-        if check_favorite_event(self.user_id, self.event_id):
-            success, message = remove_from_favorite_event(
+        if favorite_events_services.check_favorite_event(self.user_id, self.event_id):
+            success, message = favorite_events_services.remove_from_favorite_event(
                 self.user_id,
                 self.event_id
             )
         else:
-            success, message = favorite_event(
+            success, message = favorite_events_services.favorite_event(
                 self.user_id,
                 self.event_id
             )

@@ -1,10 +1,12 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Select, Input
-from textual.containers import Center, VerticalScroll
+from textual.containers import Center, VerticalScroll, Horizontal
 from database.repositories.event_repository import event_services
 from database.repositories.interest_repository import interest_services
 from screens.events.event_details_view import EventDetailsView
+import sqlite3
+from database.repositories.event_important_dates_repository import EventImportantDatesRepository
 
 EVENTS_PAGE_CSS = """
 Screen {
@@ -35,20 +37,35 @@ Screen {
     margin-bottom: 1;
 }
 
-.main_subtitle{
+.main_subtitle {
     content-align: center middle;
     color: $text-muted;
     margin-bottom: 1;
     margin-top: 1;
 }
 
-.event_buttons{
+.event_listing {
+    layout: grid;
+    grid-size: 2;
+    grid-columns: 2fr 1fr;
+    height: auto;
+    margin-bottom: 1;
+}
+
+.event_buttons {
+    width: 100%;
+    height: 3;
+}
+
+.event_submission_status {
+    width: 100%;
+    height: 100%;
     content-align: center middle;
 }
 
-Button {
+#button_return {
     width: 100%;
-    margin-top: 1;
+    margin-top: 2;
 }
 """
 
@@ -69,6 +86,7 @@ class EventsView(Screen):
         events = event_services.check_events_by_interests(self.user_id)
         interests = interest_services.check_user_interests(self.user_id)
         select_options = [("Todos os Eventos", "all_events")] + [(interest.name, interest.name) for interest in interests if interest.name != "Social"]
+        
         with Center():
             with VerticalScroll(id="main_box"):
                 yield Static("Eventos", id="main_title")
@@ -80,11 +98,20 @@ class EventsView(Screen):
                 yield Static("Filtrar por interesse:")
                 yield Select(select_options, value="all_events", allow_blank=False)
                 yield Static("Clique em algum evento abaixo para saber mais.", classes="main_subtitle")
+                
                 with VerticalScroll(id="events_container"):
                     if events:
-                        for event in events:
-                            yield Button(event.name, id=f"event_{event.event_id}", classes="event_buttons")
+                        # carregar status de submissão para exibição
+                        with sqlite3.connect(event_services.database_path) as connection:
+                            repo = EventImportantDatesRepository(connection)
 
+                            for event in events:
+                                status = repo.get_submission_status(event.event_id)
+                                status_text = status.get("message", "—")
+
+                                with Horizontal(classes="event_listing"):
+                                    yield Button(event.name, id=f"event_{event.event_id}", classes="event_buttons")
+                                    yield Static(status_text, classes="event_submission_status")
                     else:
                         yield Static("Nenhum evento encontrado.", classes="main_subtitle")
 
@@ -127,9 +154,9 @@ class EventsView(Screen):
         
         selected_interest = select_widget.value
         search_term = input_widget.value.lower().strip()
+        
         if selected_interest == "all_events":
             result = event_services.check_events_by_interests(self.user_id)
-
         else:
             result = event_services.check_events_by_interest(selected_interest)
 
@@ -148,7 +175,22 @@ class EventsView(Screen):
         await container.remove_children()
         
         if result:
-            for event in result:
-                container.mount(Button(event.name, id=f"event_{event.event_id}", classes="event_buttons"))
+            # consultar status de submissão em lote para os eventos filtrados
+            with sqlite3.connect(event_services.database_path) as connection:
+                repo = EventImportantDatesRepository(connection)
+
+                for event in result:
+                    status = repo.get_submission_status(event.event_id)
+                    status_text = status.get("message", "—")
+
+                    container.mount(
+                        # Adicionada a classe 'event_listing' para garantir que o CSS aplique no rebuild
+                        Horizontal(
+                            Button(event.name, id=f"event_{event.event_id}", classes="event_buttons"),
+                            Static(status_text, classes="event_submission_status"),
+                            classes="event_listing"
+                        )
+                    )
+                
         else:
             container.mount(Static("Eventos com filtros selecionados não disponíveis no momento.", classes="main_subtitle"))
