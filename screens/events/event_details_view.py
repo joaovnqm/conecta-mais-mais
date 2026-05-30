@@ -120,6 +120,8 @@ class EventDetailsView(Screen):
             self.event_id)
         total_favorites = event_participation_service.count_favorites(
             self.event_id)
+        event_date_object = datetime.strptime(event.date, "%d-%m-%Y").date() if event.date else None
+        today = datetime.now().date()
 
         with Center():
             with VerticalScroll(id="main_box"):
@@ -170,10 +172,15 @@ class EventDetailsView(Screen):
                         id="important_dates_list"
                     )
 
-                with Vertical(classes="section_card"):
-                    yield Static("Ações do evento:", classes="section_title")
-                    yield Vertical(id="favorite_button_container")
-                    yield Vertical(id="presence_button_container")
+                if event_date_object is None or event_date_object >= today:
+                    with Vertical(classes="section_card"):
+                        yield Static("Ações do evento:", classes="section_title")
+                        yield Vertical(id="favorite_button_container")
+                        yield Vertical(id="presence_button_container")
+                
+                else:
+                    with Vertical(classes="section_card"):
+                        yield Static("Esse evento já aconteceu. Não é mais possível confirmar presença ou favoritar o evento, mas você pode conferir o resumo social e as datas importantes cadastradas.")
 
                 with Vertical(classes="section_card"):
                     yield Static("Resumo social", classes="section_title")
@@ -262,28 +269,36 @@ class EventDetailsView(Screen):
         await self.reload_friends_favorites()
 
     async def reload_favorite_button(self) -> None:
-        container = self.query_one("#favorite_button_container")
-        await container.remove_children()
+            try:
+                container = self.query_one("#favorite_button_container")
+            except:
+                return
+            
+            await container.remove_children()
 
-        if favorite_events_services.check_favorite_event(self.user_id, self.event_id):
-            await container.mount(
-                Button(
-                    "Desfavoritar evento",
-                    id="button_favorite_event",
-                    variant="default"
+            if favorite_events_services.check_favorite_event(self.user_id, self.event_id):
+                await container.mount(
+                    Button(
+                        "Desfavoritar evento",
+                        id="button_favorite_event",
+                        variant="default"
+                    )
                 )
-            )
-        else:
-            await container.mount(
-                Button(
-                    "★ Favoritar evento",
-                    id="button_favorite_event",
-                    variant="warning"
+            else:
+                await container.mount(
+                    Button(
+                        "★ Favoritar evento",
+                        id="button_favorite_event",
+                        variant="warning"
+                    )
                 )
-            )
 
     async def reload_presence_button(self) -> None:
-        container = self.query_one("#presence_button_container")
+        try:
+            container = self.query_one("#presence_button_container")
+        except:
+            return
+
         await container.remove_children()
 
         if event_participation_service.check_presence(self.user_id, self.event_id):
