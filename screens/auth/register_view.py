@@ -101,10 +101,8 @@ class RegisterView(Screen):
                 yield Input(placeholder="Digite seu nome...", id="name")
                 yield Input(placeholder="Digite seu e-mail...", id="email")
                 yield Input(placeholder="Crie seu username. Ex: fulano.dev", id="username")
-                yield Input(
-                    placeholder="LinkedIn opcional. Ex: https://www.linkedin.com/in/seu-perfil",
-                    id="linkedin_url"
-                )
+                yield Input(placeholder="LinkedIn opcional. Ex: https://www.linkedin.com/in/seu-perfil", id="linkedin_url")
+                yield Input(placeholder="GitHub opcional. Ex: https://www.github.com/seu-usuario", id="github_url")
 
                 with Horizontal(id="password-row"):
                     yield Input(
@@ -133,6 +131,9 @@ class RegisterView(Screen):
             input_widget.remove_class("invalid")
 
     def _validate_name_field(self) -> None:
+        """
+        Esse método valida o campo de nome, adicionando ou removendo a classe "invalid" conforme necessário.
+        """
         name_input = self.query_one("#name", Input)
         value = name_input.value.strip()
 
@@ -140,12 +141,12 @@ class RegisterView(Screen):
             name_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(
-            name_input,
-            not validation_services.valid_name_users(value)
-        )
+        self._set_invalid_if_needed(name_input, not validation_services.valid_name_users(value))
 
     def _validate_email_field(self) -> None:
+        """
+        Esse método valida o campo de e-mail, adicionando ou removendo a classe "invalid" conforme necessário.
+        """
         email_input = self.query_one("#email", Input)
         value = email_input.value.strip()
 
@@ -153,25 +154,25 @@ class RegisterView(Screen):
             email_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(
-            email_input,
-            not validation_services.valid_email(value)
-        )
+        self._set_invalid_if_needed(email_input, not validation_services.valid_email(value))
 
     def _validate_username_field(self) -> None:
-        username_input = self.query_one("#username", Input)
+        """
+        Esse método valida o campo de username, adicionando ou removendo a classe "invalid" conforme necessário.
+        """
+        username_input = self.query_one("#username", Input) 
         value = username_input.value.strip()
 
         if not value:
             username_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(
-            username_input,
-            not validation_services.valid_username(value)
-        )
+        self._set_invalid_if_needed(username_input, not validation_services.valid_username(value))
 
     def _validate_linkedin_field(self) -> None:
+        """
+        Esse método valida o campo de LinkedIn, adicionando ou removendo a classe "invalid" conforme necessário.
+        """
         linkedin_input = self.query_one("#linkedin_url", Input)
         value = linkedin_input.value.strip()
 
@@ -179,12 +180,25 @@ class RegisterView(Screen):
             linkedin_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(
-            linkedin_input,
-            not validation_services.valid_linkedin_url(value)
-        )
+        self._set_invalid_if_needed(linkedin_input, not validation_services.valid_linkedin_url(value))
+
+    def _validate_github_field(self) -> None:
+        """
+        Esse método valida o campo de GitHub, adicionando ou removendo a classe "invalid" conforme necessário.
+        """
+        github_input = self.query_one("#github_url", Input)
+        value = github_input.value.strip()
+
+        if not value:
+            github_input.remove_class("invalid")
+            return
+
+        self._set_invalid_if_needed(github_input, not validation_services.valid_github_url(value))
 
     def _validate_password_field(self) -> None:
+        """
+        Esse método valida o campo de senha, adicionando ou removendo a classe "invalid" conforme necessário.
+        """
         password_input = self.query_one("#password", Input)
         value = password_input.value
 
@@ -194,12 +208,12 @@ class RegisterView(Screen):
 
         error_message = validation_services.password_error_message(value)
 
-        self._set_invalid_if_needed(
-            password_input,
-            error_message is not None
-        )
+        self._set_invalid_if_needed(password_input, error_message is not None)
 
     def _validate_re_password_field(self) -> None:
+        """
+        Esse método valida o campo de confirmação de senha, adicionando ou removendo a classe "invalid" conforme necessário.
+        """
         password_input = self.query_one("#password", Input)
         re_password_input = self.query_one("#re_password", Input)
 
@@ -210,12 +224,13 @@ class RegisterView(Screen):
             re_password_input.remove_class("invalid")
             return
 
-        self._set_invalid_if_needed(
-            re_password_input,
-            re_password_value != password_value
-        )
+        self._set_invalid_if_needed(re_password_input, re_password_value != password_value)
 
     def on_input_changed(self, event: Input.Changed) -> None:
+        """
+        Esse método é chamado sempre que o valor de um campo de entrada é alterado. Ele identifica qual campo foi alterado e chama o método de 
+        validação correspondente para atualizar a classe "invalid" conforme necessário.
+        """
         if event.input.id == "name":
             self._validate_name_field()
 
@@ -228,6 +243,9 @@ class RegisterView(Screen):
         elif event.input.id == "linkedin_url":
             self._validate_linkedin_field()
 
+        elif event.input.id == "github_url":
+            self._validate_github_field()
+
         elif event.input.id == "password":
             self._validate_password_field()
             self._validate_re_password_field()
@@ -236,6 +254,10 @@ class RegisterView(Screen):
             self._validate_re_password_field()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """
+        Esse método é chamado quando um botão é pressionado. Ele identifica qual botão foi pressionado e executa a ação correspondente, como alternar a 
+        visibilidade da senha ou iniciar o processo de registro.
+        """
         response = self.query_one("#message", Static)
 
         if event.button.id == "toggle_password":
@@ -263,10 +285,14 @@ class RegisterView(Screen):
             return
 
     def _handle_register(self, response: Static) -> None:
+        """
+        Esse método é responsável por validar os campos de entrada e, se tudo estiver correto, iniciar o processo de registro enviando um código de verificação para o e-mail do usuário.
+        """
         name_input = self.query_one("#name", Input)
         email_input = self.query_one("#email", Input)
         username_input = self.query_one("#username", Input)
         linkedin_input = self.query_one("#linkedin_url", Input)
+        github_input = self.query_one("#github_url", Input)
         password_input = self.query_one("#password", Input)
         re_password_input = self.query_one("#re_password", Input)
 
@@ -274,6 +300,7 @@ class RegisterView(Screen):
         email = email_input.value
         username = username_input.value
         linkedin_url = linkedin_input.value
+        github_url = github_input.value
         password = password_input.value
         re_password = re_password_input.value
 
@@ -303,6 +330,13 @@ class RegisterView(Screen):
             linkedin_input.add_class("invalid")
             return
 
+        if not validation_services.valid_github_url(github_url):
+            response.update(
+                "O GitHub precisa estar no formato https://github.com/seu-usuario"
+            )
+            github_input.add_class("invalid")
+            return
+
         password_message = validation_services.password_error_message(password)
 
         if password_message is not None:
@@ -326,6 +360,7 @@ class RegisterView(Screen):
                     pending_name=name,
                     pending_password=password,
                     pending_username=username,
-                    pending_linkedin_url=linkedin_url
+                    pending_linkedin_url=linkedin_url,
+                    pending_github_url=github_url
                 )
             )

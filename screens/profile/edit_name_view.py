@@ -93,6 +93,7 @@ class EditNameView(Screen):
     - nome;
     - username;
     - LinkedIn.
+    - GitHub.
     """
 
     CSS = EDIT_PROFILE_CSS
@@ -107,11 +108,12 @@ class EditNameView(Screen):
         name = ""
         username = ""
         linkedin_url = ""
-
+        github_url = ""
         if profile is not None:
             name = profile.name or ""
             username = profile.username or ""
             linkedin_url = profile.linkedin_url or ""
+            github_url = profile.github_url or ""
 
         with Center():
             with VerticalScroll(id="edit_box"):
@@ -156,8 +158,14 @@ class EditNameView(Screen):
                         value=linkedin_url
                     )
 
-                yield Static("", id="message")
+                    yield Static("GitHub:", classes="field_label")
+                    yield Input(
+                        placeholder="Exemplo: https://github.com/seu-username",
+                        id="github_url",
+                        value=github_url
+                    )
 
+                yield Static("", id="message")
                 yield Button(
                     "Salvar alterações",
                     id="button_save",
@@ -230,10 +238,12 @@ class EditNameView(Screen):
         name_input = self.query_one("#new_name", Input)
         username_input = self.query_one("#username", Input)
         linkedin_input = self.query_one("#linkedin_url", Input)
+        github_input = self.query_one("#github_url", Input)
 
         new_name = name_input.value
         username = username_input.value
         linkedin_url = linkedin_input.value
+        github_url = github_input.value
 
         if not validation_services.valid_name_users(new_name):
             name_input.add_class("invalid")
@@ -253,6 +263,13 @@ class EditNameView(Screen):
             linkedin_input.add_class("invalid")
             response.update(
                 "O LinkedIn precisa estar no formato https://www.linkedin.com/in/seu-perfil"
+            )
+            return
+        
+        if not validation_services.valid_github_url(github_url):
+            github_input.add_class("invalid")
+            response.update(
+                "O GitHub precisa estar no formato https://github.com/seu-username"
             )
             return
 
@@ -284,6 +301,16 @@ class EditNameView(Screen):
         if not success_linkedin:
             linkedin_input.add_class("invalid")
             response.update(message_linkedin)
+            return
+
+        success_github, message_github = user_services.update_github_url(
+            self.user_id,
+            github_url
+        )
+
+        if not success_github:
+            github_input.add_class("invalid")
+            response.update(message_github)
             return
 
         self.notify("Dados do perfil atualizados com sucesso.")
