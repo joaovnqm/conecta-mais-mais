@@ -5,6 +5,8 @@ from textual.containers import Center, VerticalScroll, Horizontal
 from database.repositories.event_repository import event_services
 from database.repositories.interest_repository import interest_services
 from screens.events.event_details_view import EventDetailsView
+import sqlite3
+from database.repositories.event_important_dates_repository import EventImportantDatesRepository
 
 EVENTS_PAGE_CSS = """
 Screen {
@@ -44,19 +46,19 @@ Screen {
 
 .event_listing {
     layout: grid;
-    grid-size: 2;
-    grid-columns: 1fr 5;
+    grid-size: 3;
+    grid-columns: 1fr;
     height: auto;
     margin-bottom: 1;
 }
 
 .event_buttons {
-    width: 100%;
+    width: 2fr;
     height: 3;
 }
 
 .event_submission_status {
-    width: 100%;
+    width: 1fr;
     height: 100%;
     content-align: center middle;
 }
@@ -99,10 +101,17 @@ class EventsView(Screen):
                 
                 with VerticalScroll(id="events_container"):
                     if events:
-                        for event in events:
-                            with Horizontal(classes="event_listing"):
-                                yield Button(event.name, id=f"event_{event.event_id}", classes="event_buttons")
-                                yield Static("⌛", classes="event_submission_status")
+                        # carregar status de submissão para exibição
+                        with sqlite3.connect(event_services.database_path) as connection:
+                            repo = EventImportantDatesRepository(connection)
+
+                            for event in events:
+                                status = repo.get_submission_status(event.event_id)
+                                status_text = status.get("message", "—")
+
+                                with Horizontal(classes="event_listing"):
+                                    yield Button(event.name, id=f"event_{event.event_id}", classes="event_buttons")
+                                    yield Static(status_text, classes="event_submission_status")
                     else:
                         yield Static("Nenhum evento encontrado.", classes="main_subtitle")
 
@@ -166,15 +175,22 @@ class EventsView(Screen):
         await container.remove_children()
         
         if result:
-            for event in result:
-                container.mount(
-                    # Adicionada a classe 'event_listing' para garantir que o CSS aplique no rebuild
-                    Horizontal(
-                        Button(event.name, id=f"event_{event.event_id}", classes="event_buttons"),
-                        Static("⌛", classes="event_submission_status"),
-                        classes="event_listing"
+            # consultar status de submissão em lote para os eventos filtrados
+            with sqlite3.connect(event_services.database_path) as connection:
+                repo = EventImportantDatesRepository(connection)
+
+                for event in result:
+                    status = repo.get_submission_status(event.event_id)
+                    status_text = status.get("message", "—")
+
+                    container.mount(
+                        # Adicionada a classe 'event_listing' para garantir que o CSS aplique no rebuild
+                        Horizontal(
+                            Button(event.name, id=f"event_{event.event_id}", classes="event_buttons"),
+                            Static(status_text, classes="event_submission_status"),
+                            classes="event_listing"
+                        )
                     )
-                )
                 
         else:
             container.mount(Static("Eventos com filtros selecionados não disponíveis no momento.", classes="main_subtitle"))

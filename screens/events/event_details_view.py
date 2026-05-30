@@ -131,10 +131,8 @@ class EventDetailsView(Screen):
 
                 with Vertical(classes="section_card"):
                     yield Static("Informações do evento", classes="section_title")
-
                     yield Static("Descrição:", classes="info_label")
                     yield Static(event.description, classes="info_value")
-
                     yield Static("Local:", classes="info_label")
                     yield Static(
                         event.event_location or "O local do evento ainda não está disponível.",
