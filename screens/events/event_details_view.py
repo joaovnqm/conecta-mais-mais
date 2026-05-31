@@ -7,6 +7,7 @@ from textual.containers import Center, VerticalScroll, Vertical
 from database.repositories.event_important_dates_repository import EventImportantDatesRepository
 from database.repositories.event_repository import event_services
 from database.repositories.user_repository import user_services
+from database.repositories.interest_repository import interest_services
 from services.favorite_events import favorite_events_services
 from services.event_participation import event_participation_service
 
@@ -94,7 +95,8 @@ Screen {
     margin-bottom: 0;
 }
 
-#button_return {
+#button_return,
+#button_certificate_emission {
     width: 100%;
     margin-top: 1;
 }
@@ -116,6 +118,7 @@ class EventDetailsView(Screen):
     def compose(self) -> ComposeResult:
         event = event_services.check_event(self.event_id)
         creator_name = user_services.check_user_name(event.creator_id)
+        interests = interest_services.check_event_interests(event.event_id)
         total_presence = event_participation_service.count_confirmed_presence(
             self.event_id)
         total_favorites = event_participation_service.count_favorites(
@@ -179,8 +182,13 @@ class EventDetailsView(Screen):
                         yield Vertical(id="presence_button_container")
                 
                 else:
-                    with Vertical(classes="section_card"):
-                        yield Static("Esse evento já aconteceu. Não é mais possível confirmar presença ou favoritar o evento, mas você pode conferir o resumo social e as datas importantes cadastradas.")
+                    if event_participation_service.check_presence(self.user_id, event.event_id):
+                        with Vertical(classes="section_card"):
+                            yield Static("Você participou deste evento, envie o seu certificado de participação para o seu e-mail através do botão abaixo.")
+                            yield Button("Emitir Certificado", id="button_certificate_emission", variant="success")
+                    else:
+                        with Vertical(classes="section_card"):
+                            yield Static("Esse evento já aconteceu. Não é mais possível confirmar presença ou favoritar o evento, mas você pode conferir o resumo social e as datas importantes cadastradas.")
 
                 with Vertical(classes="section_card"):
                     yield Static("Resumo social", classes="section_title")
