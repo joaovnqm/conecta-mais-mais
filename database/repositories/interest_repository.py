@@ -63,6 +63,21 @@ class InterestServices:
         self.connection.commit()
         
         return self.cursor.lastrowid
+    
+    def name_interest(self, interest_id: int) -> str | None:
+        """
+        Essa função retorna o nome de um interesse a partir do seu id.
+        """
+        self.cursor.execute(
+            "SELECT name FROM interests WHERE interest_id = ?",
+            (interest_id,)
+        )
+        result = self.cursor.fetchone()
+        
+        if result:
+            return result[0]
+        
+        return None
 
     def add_interests(self, user_id, interest):
         """
@@ -108,7 +123,7 @@ class InterestServices:
 
         return "Interesse(s) deletado(s) com sucesso!", True
     
-    def check_user_interests(self, user_id):
+    def check_user_interests(self, user_id) -> list[Interest]:
         """
         Essa função consulta a tabela de users_interests para obter os ids dos interesses
         e os nomes dos interesses correspondentes, e retorna uma lista de objetos de interesses do usuário.
@@ -144,5 +159,28 @@ class InterestServices:
             interests.append(Interest(interest[0], interest[1]))
 
         return interests
-    
+
+    def check_event_interests(self, event_id) -> list[Interest] | None:
+        """
+        Essa função consulta a tabela de events_interests para obter os ids dos interesses
+        e os nomes dos interesses correspondentes, e retorna uma lista de objetos de interesses do evento.
+        """
+        event_id = str(event_id)
+        event_interests = []
+        self.cursor.execute(
+            "SELECT interest_id FROM events_interests WHERE event_id = ?",
+            (event_id,)
+            )
+        event_interests_id = self.cursor.fetchall()
+
+        if not event_interests_id:
+            return None
+
+        for interest_id in event_interests_id:
+            name = self.name_interest(interest_id[0])
+            event_interests.append(Interest(interest_id[0], name))
+
+        return event_interests
+
+
 interest_services = InterestServices()
