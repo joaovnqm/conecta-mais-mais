@@ -9,7 +9,7 @@ from database.repositories.event_repository import event_services
 from database.repositories.user_repository import user_services
 from database.repositories.interest_repository import interest_services
 from services.favorite_events import favorite_events_services
-from services.event_participation import event_participation_service
+from database.repositories.event_participation import event_participation_service
 
 
 EVENT_DETAILS_VIEW = """
@@ -52,7 +52,8 @@ Screen {
 #presence_button_container,
 #activities_container,
 #friends_presence_container,
-#friends_favorites_container {
+#friends_favorites_container,
+#activities_container {
     width: 100%;
     height: auto;
     margin: 0;
@@ -82,6 +83,14 @@ Screen {
 .empty_state {
     color: $text-muted;
     margin-top: 1;
+}
+
+.activities.-on {
+    color: limegreen 90%;
+}
+
+.activities.-on > .toggle--button {
+    color: limegreen 90%;
 }
 
 #important_dates_list {
@@ -188,6 +197,7 @@ class EventDetailsView(Screen):
                         with Vertical(classes="section_card"):
                             yield Static("Você participou deste evento, envie o seu certificado de participação para o seu e-mail através do botão abaixo.")
                             yield Button("Emitir Certificado", id="button_certificate_emission", variant="success")
+
                     else:
                         with Vertical(classes="section_card"):
                             yield Static("Esse evento já aconteceu. Não é mais possível confirmar presença ou favoritar o evento, mas você pode conferir o resumo social e as datas importantes cadastradas.")
@@ -409,10 +419,10 @@ class EventDetailsView(Screen):
         if (not event_participation_service.check_presence(self.user_id, self.event_id)) \
                 and interests and not any(interest.name.lower() == "social" for interest in interests):
             await container.mount(Static("Você planeja participar de algumas das seguintes atividades extras caso elas aconteçam?", classes="info_label"))
-            await container.mount(Checkbox("Publicação de Artigo", id="article_presentation"))
-            await container.mount(Checkbox("Apresentação de Palestra", id="speaker_presentation"))
-            await container.mount(Checkbox("Minicurso", id="workshop"))
-            await container.mount(Checkbox("Workshop", id="mini_course"))
+            await container.mount(Checkbox("Publicação de Artigo", id="article_presentation", classes="activities"))
+            await container.mount(Checkbox("Apresentação de Palestra", id="speaker_presentation", classes="activities"))
+            await container.mount(Checkbox("Minicurso", id="workshop", classes="activities"))
+            await container.mount(Checkbox("Workshop", id="mini_course", classes="activities"))
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "button_favorite_event":
@@ -446,15 +456,40 @@ class EventDetailsView(Screen):
 
     async def handle_presence_button(self) -> None:
         if event_participation_service.check_presence(self.user_id, self.event_id):
-            success, message = event_participation_service.cancel_presence(
-                self.user_id,
-                self.event_id
-            )
+            success, message = event_participation_service.cancel_presence(self.user_id, self.event_id)
+            await self.reload_activity_checkboxes()
+
         else:
-            success, message = event_participation_service.confirm_presence(
-                self.user_id,
-                self.event_id
-            )
+            checkboxes = list(self.query(".activities"))
+            selected_checkboxes = [cb for cb in checkboxes if getattr(cb, "value", False)]
+            if not selected_checkboxes:
+                success, message = event_participation_service.confirm_presence(self.user_id, self.event_id, "Presença")
+
+            else:
+                activities = ["Presença"]
+                for checkbox in selected_checkboxes:
+                    if checkbox.id == "article_presentation":
+                        activities.append("Publicação de Artigo")
+                        
+                    elif checkbox.id == "speaker_presentation":
+                        activities.append("Apresentação de Palestra")
+
+                    elif checkbox.id == "workshop":
+                        activities.append("Minicurso")
+
+                    elif checkbox.id == "mini_course":
+                        activities.append("Workshop")
+
+                    else:
+                        label = getattr(checkbox, "label", None)
+
+                        if label:
+                            activities.append(str(label))
+
+                extra_activity_str = "; ".join(activities)
+                success, message = event_participation_service.confirm_presence(self.user_id, self.event_id, extra_activity_str)
+
+            await self.reload_activity_checkboxes()
 
         self.app.notify(message)
 

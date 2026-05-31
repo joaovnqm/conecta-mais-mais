@@ -19,6 +19,7 @@ class EventParticipationService:
             CREATE TABLE IF NOT EXISTS event_participants (
                 user_id INTEGER NOT NULL,
                 event_id INTEGER NOT NULL,
+                extra_activity TEXT,
                 status TEXT NOT NULL CHECK(status IN ('confirmed')),
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -51,23 +52,22 @@ class EventParticipationService:
 
         self.connection.commit()
 
-    def confirm_presence(self, user_id: int, event_id: int) -> tuple[bool, str]:
+    def confirm_presence(self, user_id: int, event_id: int, extra_activity: str = None) -> tuple[bool, str]:
         """
         Confirma presença do usuário em um evento.
         """
-        if self.check_presence(user_id, event_id):
-            return False, "Você já confirmou presença nesse evento."
 
         self.cursor.execute(
             """
             INSERT INTO event_participants (
                 user_id,
                 event_id,
+                extra_activity,
                 status
             )
-            VALUES (?, ?, 'confirmed')
+            VALUES (?, ?, ?, 'confirmed')
             """,
-            (user_id, event_id)
+            (user_id, event_id, extra_activity)
         )
 
         self.connection.commit()
