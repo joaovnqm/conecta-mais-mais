@@ -2,7 +2,7 @@ import sqlite3
 from datetime import datetime
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Static, Button
+from textual.widgets import Static, Button, Checkbox
 from textual.containers import Center, VerticalScroll, Vertical
 from database.repositories.event_important_dates_repository import EventImportantDatesRepository
 from database.repositories.event_repository import event_services
@@ -50,6 +50,7 @@ Screen {
 
 #favorite_button_container,
 #presence_button_container,
+#activities_container,
 #friends_presence_container,
 #friends_favorites_container {
     width: 100%;
@@ -180,9 +181,10 @@ class EventDetailsView(Screen):
                         yield Static("Ações do evento:", classes="section_title")
                         yield Vertical(id="favorite_button_container")
                         yield Vertical(id="presence_button_container")
+                        yield Vertical(id="activities_container")
                 
                 else:
-                    if event_participation_service.check_presence(self.user_id, event.event_id):
+                    if event_participation_service.check_presence(self.user_id, event.event_id) and interests and not any(interest.name.lower() == "social" for interest in interests):
                         with Vertical(classes="section_card"):
                             yield Static("Você participou deste evento, envie o seu certificado de participação para o seu e-mail através do botão abaixo.")
                             yield Button("Emitir Certificado", id="button_certificate_emission", variant="success")
@@ -275,6 +277,7 @@ class EventDetailsView(Screen):
         await self.reload_social_summary()
         await self.reload_friends_presence()
         await self.reload_friends_favorites()
+        await self.reload_activity_checkboxes()
 
     async def reload_favorite_button(self) -> None:
             try:
@@ -394,6 +397,22 @@ class EventDetailsView(Screen):
                     classes="social_text"
                 )
             )
+
+    async def reload_activity_checkboxes(self) -> None:
+        """
+        Atualiza o container de atividades (checkboxes) de acordo com o estado de presença do usuário e os interesses do evento.
+        """
+        container = self.query_one("#activities_container")
+        await container.remove_children()
+
+        interests = interest_services.check_event_interests(self.event_id)
+        if (not event_participation_service.check_presence(self.user_id, self.event_id)) \
+                and interests and not any(interest.name.lower() == "social" for interest in interests):
+            await container.mount(Static("Você planeja participar de algumas das seguintes atividades extras caso elas aconteçam?", classes="info_label"))
+            await container.mount(Checkbox("Publicação de Artigo", id="article_presentation"))
+            await container.mount(Checkbox("Apresentação de Palestra", id="speaker_presentation"))
+            await container.mount(Checkbox("Minicurso", id="workshop"))
+            await container.mount(Checkbox("Workshop", id="mini_course"))
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "button_favorite_event":
