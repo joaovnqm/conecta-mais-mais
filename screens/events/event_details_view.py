@@ -10,7 +10,7 @@ from database.repositories.user_repository import user_services
 from database.repositories.interest_repository import interest_services
 from services.favorite_events import favorite_events_services
 from database.repositories.event_participation import event_participation_service
-
+from services.send_certificate import send_certificate
 
 EVENT_DETAILS_VIEW = """
 Screen {
@@ -52,8 +52,7 @@ Screen {
 #presence_button_container,
 #activities_container,
 #friends_presence_container,
-#friends_favorites_container,
-#activities_container {
+#friends_favorites_container{
     width: 100%;
     height: auto;
     margin: 0;
@@ -412,7 +411,13 @@ class EventDetailsView(Screen):
         """
         Atualiza o container de atividades (checkboxes) de acordo com o estado de presença do usuário e os interesses do evento.
         """
-        container = self.query_one("#activities_container")
+        try:
+            container = self.query_one("#activities_container")
+        except Exception:
+            # O container pode não existir em eventos passados ou em telas onde
+            # não foi renderizado — nada a fazer.
+            return
+
         await container.remove_children()
 
         interests = interest_services.check_event_interests(self.event_id)
@@ -432,6 +437,19 @@ class EventDetailsView(Screen):
         if event.button.id == "button_presence_event":
             await self.handle_presence_button()
             return
+        
+        if event.button.id == "button_certificate_emission":
+            event_object = event_services.check_event(self.event_id)
+            user = user_services.check_user(self.user_id)
+            send_certificate(
+                user_id=user.user_id,
+                event_id=self.event_id,
+                user_email=user.email,
+                user_name=user.name,
+                event_name=event_object.name,
+                date=event_object.date,
+                activities=event_participation_service.check_activities(self.user_id, self.event_id)
+            )
 
         if event.button.id == "button_return":
             self.app.pop_screen()
@@ -470,7 +488,7 @@ class EventDetailsView(Screen):
                 for checkbox in selected_checkboxes:
                     if checkbox.id == "article_presentation":
                         activities.append("Publicação de Artigo")
-                        
+
                     elif checkbox.id == "speaker_presentation":
                         activities.append("Apresentação de Palestra")
 

@@ -4,6 +4,7 @@ from reportlab.lib.utils import ImageReader
 from io import BytesIO
 
 def generate_certificate(name: str, event_name: str, date: str, activities: list) -> bytes:
+    activities = activities[0].split(";")
     template_path = "assets/certificate_template.png"
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=landscape(A4))
@@ -11,52 +12,38 @@ def generate_certificate(name: str, event_name: str, date: str, activities: list
     background = ImageReader(template_path)
     pdf.drawImage(background, 0, 0, width=width, height=height)
 
-    # Conteúdo do certificado
     pdf.setFont("Helvetica", 56)
-    pdf.drawCentredString(width / 2, 450, "O Conecta++ certifica que:")
+    pdf.drawCentredString(width / 2, 450, "O Conecta++ certifica que")
 
-    # Nome do participante
     pdf.setFont("Helvetica-Bold", 38)
-    pdf.drawCentredString(width / 2, 370, name)
+    pdf.drawCentredString(width / 2, 380, name)
 
-    # Nome do evento
-    pdf.setFont("Helvetica", 30)
-    pdf.drawCentredString(width / 2, 310, f"Participou do evento \"{event_name}\"")
+    pdf.setFont("Helvetica", 32)
+    pdf.drawCentredString(width / 2, 320, f"Participou do evento")
 
-    # Atividades
+    pdf.setFont("Helvetica-Bold", 30)
+    pdf.drawCentredString(width / 2, 270, event_name)
+
     pdf.setFont("Helvetica", 24)
     if len(activities) > 1:
-        pdf.drawCentredString(width / 2, 260, "As atividades realizadas pelo participante foram:")
+        pdf.drawCentredString(width / 2, 230, "As atividades realizadas pelo participante foram:")
+        y_position = 210
+        pdf.setFont("Helvetica", 18)
+
+        for activity in activities:
+            pdf.drawCentredString(width / 2, y_position, f"• {activity.strip()}")
+            y_position -= 25
     
     else:
-        pdf.drawCentredString(width / 2, 260, "A atividade realizada pelo participante foi:")
+        pdf.drawCentredString(width / 2, 240, "Atividade realizada pelo participante:")
+        y_position = 210
+        pdf.setFont("Helvetica", 18)
+        pdf.drawCentredString(width / 2, y_position, f"• {activities[0]}")
 
-    y_position = 220
     pdf.setFont("Helvetica", 18)
-
-    for activity in activities:
-        pdf.drawCentredString(width / 2, y_position, f"• {activity}")
-        y_position -= 20
-
-    # Data
-    pdf.setFont("Helvetica", 14)
-    pdf.drawCentredString(width / 2, 100, f"Realizado em {date}")
+    pdf.drawCentredString(width / 2, 90, f"Evento realizado em {date}")
 
     pdf.save()
 
-    # Retorna os bytes do PDF
     buffer.seek(0)
     return buffer.getvalue()
-
-pdf_bytes = generate_certificate(
-    "João Victor Macêdo",
-    "CESAR Beat 2026",
-    "16 de maio de 2026",
-    [
-        "Palestra sobre IA",
-        "Workshop de Python"
-    ]
-)
-
-with open("certificate.pdf", "wb") as f:
-    f.write(pdf_bytes)

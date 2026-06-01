@@ -474,6 +474,29 @@ class UserServices:
             return None
 
         return validation_services.normalize_name(user[0])
+    
+    def check_user(self, user_id: int) -> User | None:
+        """
+        Busca os dados do usuário.
+        """
+        self.cursor.execute(
+            """SELECT name, email, username FROM users WHERE user_id = ?""",
+            (user_id,)
+        )
+
+        user = self.cursor.fetchone()
+
+        if user is None:
+            return None
+
+        name, email, user_name = user
+
+        return User(
+            user_id = user_id,
+            name = name,
+            email = email,
+            username = user_name
+        )
 
 
 user_services = UserServices()

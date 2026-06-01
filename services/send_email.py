@@ -43,29 +43,29 @@ class EmailService:
         if purpose == "register":
             assunto = "Código de verificação de e-mail - Conecta++"
             mensagem = f"""
-Olá!
+            Olá!
 
-Seu código para verificar seu e-mail é:
+            Seu código para verificar seu e-mail é:
 
-{code}
+            {code}
 
-Esse código expira em 10 minutos.
+            Esse código expira em 10 minutos.
 
-Se você não solicitou esse cadastro, ignore este e-mail.
-"""
+            Se você não solicitou esse cadastro, ignore este e-mail.
+            """
         elif purpose == "reset_password":
             assunto = "Código de recuperação de senha - Conecta++"
             mensagem = f"""
-Olá!
+            Olá!
 
-Seu código para recuperação de senha é:
+            Seu código para recuperação de senha é:
 
-{code}
+            {code}
 
-Esse código expira em 10 minutos.
+            Esse código expira em 10 minutos.
 
-Se você não solicitou essa recuperação, ignore este e-mail.
-"""
+            Se você não solicitou essa recuperação, ignore este e-mail.
+            """
         else:
             raise ValueError("Finalidade de e-mail inválida.")
 
@@ -74,6 +74,28 @@ Se você não solicitou essa recuperação, ignore este e-mail.
         msg["To"] = destinatario
         msg["Subject"] = assunto
         msg.set_content(mensagem)
+
+        with smtplib.SMTP_SSL(self.SMTP_HOST, self.SMTP_PORT) as smtp:
+            smtp.login(remetente, password_app)
+            smtp.send_message(msg)
+
+    def send_email_with_attachment(self, user_email: str, subject: str, body: str, certificate_bytes: bytes, event_name: str) -> None:
+        remetente = os.getenv("APP_EMAIL")
+        password_app = os.getenv("APP_EMAIL_PASSWORD")
+
+        if not remetente or not password_app:
+            raise ValueError(
+                "Defina APP_EMAIL e APP_EMAIL_PASSWORD nas variáveis de ambiente ou no arquivo .env."
+             )
+
+        msg = EmailMessage()
+        msg["From"] = remetente
+        msg["To"] = user_email
+        msg["Subject"] = subject
+        msg.set_content(body)
+
+        # Anexa o certificado em PDF
+        msg.add_attachment(certificate_bytes, maintype="application", subtype="pdf", filename=f"certificado_{event_name}.pdf")
 
         with smtplib.SMTP_SSL(self.SMTP_HOST, self.SMTP_PORT) as smtp:
             smtp.login(remetente, password_app)
