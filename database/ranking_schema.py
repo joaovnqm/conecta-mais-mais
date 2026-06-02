@@ -1,75 +1,110 @@
-import sqlite3
 from pathlib import Path
+import sqlite3
 
 
 def get_default_db_path() -> Path:
     """
-    Retorna o caminho padrão do banco
+    Retorna o caminho padrão do banco de dados do projeto.
     """
-    project_root = Path(__file__).resolve().parents[1]
-    return project_root / "conecta++.db"
+    root_dir = Path(__file__).resolve().parents[1]
+    return root_dir / "conecta++.db"
 
 
-def create_ranking_tables(db_path: str | Path | None = None) -> None:
+def drop_ranking_tables(cursor: sqlite3.Cursor) -> None:
     """
-    Cria as tabelas necessárias para o sistema de ranking
+    Remove apenas as tabelas relacionadas ao ranking.
+    Use isso quando a estrutura antiga estiver quebrada/incompleta.
+    """
+    cursor.execute("DROP TABLE IF EXISTS user_event_achievements;")
+    cursor.execute("DROP TABLE IF EXISTS user_event_ranking;")
+    cursor.execute("DROP TABLE IF EXISTS event_ranking_actions;")
+
+
+def create_ranking_tables(db_path: Path | str | None = None, reset: bool = False) -> None:
+    """
+    Cria as tabelas necessárias para o sistema de ranking/gamificação.
     """
 
-    database_path = Path(db_path) if db_path else get_default_db_path()
+    if db_path is None:
+        db_path = get_default_db_path()
 
-    with sqlite3.connect(database_path) as conn:
+    conn = sqlite3.connect(db_path)
+
+    try:
         cursor = conn.cursor()
 
+        if reset:
+            drop_ranking_tables(cursor)
+
         cursor.execute(
             """
-            CREATE TABLE IF NOT EXISTS event_xp_entries (
+            CREATE TABLE IF NOT EXISTS event_ranking_actions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
+                event_id INTEGER NOT NULL,
                 action_type TEXT NOT NULL,
-                points INTEGER NOT NULL CHECK(points >= 0),
-                description TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(user_id, event_id, action_type)
+                points INTEGER NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
-            """)
+            """
+        )
 
         cursor.execute(
             """
-            CREATE TABLE IF NOT EXISTS user_achievements (
+            CREATE TABLE IF NOT EXISTS user_event_ranking (
+                user_id INTEGER PRIMARY KEY,
+                total_points INTEGER NOT NULL DEFAULT 0,
+                current_level TEXT NOT NULL DEFAULT 'Recém-chegado',
+                events_attended INTEGER NOT NULL DEFAULT 0,
+                certificates_received INTEGER NOT NULL DEFAULT 0,
+                presentations_done INTEGER NOT NULL DEFAULT 0,
+                last_updated TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        )
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_event_achievements (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
-                achievement_key TEXT NOT NULL,
                 achievement_name TEXT NOT NULL,
-                description TEXT NOT NULL,
-                icon TEXT NOT NULL,
-                unlocked_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                
-                UNIQUE(user_id, achievement_key)
+                achievement_description TEXT,
+                unlocked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, achievement_name)
             );
-            """)
+            """
+        )
 
         cursor.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_event_xp_event_id
-            ON event_xp_entries(user_id);
-            """)
+            CREATE INDEX IF NOT EXISTS idx_event_ranking_actions_user_id
+            ON event_ranking_actions(user_id);
+            """
+        )
 
         cursor.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_event_xp_event_id
-            ON event_xp_entries(event_id);
-            """)
+            CREATE INDEX IF NOT EXISTS idx_event_ranking_actions_event_id
+            ON event_ranking_actions(event_id);
+            """
+        )
 
         cursor.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_event_xp_action_type
-            ON event_xp_entries(action_type);
-            """)
+            CREATE INDEX IF NOT EXISTS idx_event_ranking_actions_action_type
+            ON event_ranking_actions(action_type);
+            """
+        )
 
         cursor.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_user_achievements_user_id
-            ON user_achievements(user_id);
-            """)
+            CREATE INDEX IF NOT EXISTS idx_user_event_ranking_total_points
+            ON user_event_ranking(total_points DESC);
+            """
+        )
 
         conn.commit()
+
+    finally:
+        conn.close()
