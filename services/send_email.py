@@ -101,5 +101,26 @@ class EmailService:
             smtp.login(remetente, password_app)
             smtp.send_message(msg)
 
+    def send_email_with_calendar_attachment(self, user_email: str, subject: str, body: str, calendar_bytes: bytes, event_name: str) -> None:
+        remetente = os.getenv("APP_EMAIL")
+        password_app = os.getenv("APP_EMAIL_PASSWORD")
+
+        if not remetente or not password_app:
+            raise ValueError(
+                "Defina APP_EMAIL e APP_EMAIL_PASSWORD nas variáveis de ambiente ou no arquivo .env."
+             )
+
+        msg = EmailMessage()
+        msg["From"] = remetente
+        msg["To"] = user_email
+        msg["Subject"] = subject
+        msg.set_content(body)
+
+        # Anexa o arquivo de calendário em formato .ics
+        msg.add_attachment(calendar_bytes, maintype="text", subtype="calendar", filename=f"evento_{event_name}.ics")
+
+        with smtplib.SMTP_SSL(self.SMTP_HOST, self.SMTP_PORT) as smtp:
+            smtp.login(remetente, password_app)
+            smtp.send_message(msg)
 
 email_service = EmailService()
