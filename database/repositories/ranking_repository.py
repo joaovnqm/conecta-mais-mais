@@ -17,10 +17,6 @@ class RankingRepository:
         return conn
 
     def get_ranking(self, limit: int = 50) -> list[dict[str, Any]]:
-        """
-        Retorna o ranking geral dos usuários por pontos.
-        """
-
         query = """
             SELECT
                 user_id,
@@ -56,19 +52,37 @@ class RankingRepository:
 
         return ranking
 
-    def add_points(
+    def add_points_once(
         self,
         user_id: int,
         event_id: int,
         action_type: str,
         points: int,
-    ) -> None:
+    ) -> bool:
         """
-        Registra uma ação do usuário e atualiza o ranking.
+        Adiciona pontos uma única vez para cada usuário/evento/ação.
         """
 
         with self._connect() as conn:
             cursor = conn.cursor()
+
+            already_exists = cursor.execute(
+                """
+                SELECT id
+                FROM event_ranking_actions
+                WHERE user_id = ?
+                  AND event_id = ?
+                  AND action_type = ?;
+                """,
+                (user_id, event_id, action_type),
+            ).fetchone()
+
+            if already_exists:
+                return False
+
+            current_total = self.get_total_points(user_id, conn)
+            new_total = current_total + points
+            new_level = self.get_level_by_points(new_total)
 
             cursor.execute(
                 """
@@ -93,20 +107,20 @@ class RankingRepository:
                 VALUES (?, ?, ?)
                 ON CONFLICT(user_id)
                 DO UPDATE SET
-                    total_points = total_points + excluded.total_points,
+                    total_points = ?,
                     current_level = ?,
                     last_updated = CURRENT_TIMESTAMP;
                 """,
                 (
                     user_id,
-                    points,
-                    self.get_level_by_points(points),
-                    self.get_level_by_points(
-                        self.get_total_points(user_id, conn) + points),
+                    new_total,
+                    new_level,
+                    new_total,
+                    new_level,
                 ),
             )
 
-            if action_type == "event_attendance":
+            if action_type == "presence_confirmed":
                 cursor.execute(
                     """
                     UPDATE user_event_ranking
@@ -126,7 +140,7 @@ class RankingRepository:
                     (user_id,),
                 )
 
-            elif action_type == "presentation":
+            elif action_type == "lecture_presentation":
                 cursor.execute(
                     """
                     UPDATE user_event_ranking
@@ -137,12 +151,13 @@ class RankingRepository:
                 )
 
             conn.commit()
+            return True
 
-    def get_total_points(self, user_id: int, conn: sqlite3.Connection | None = None) -> int:
-        """
-        Retorna a pontuação atual do usuário.
-        """
-
+    def get_total_points(
+        self,
+        user_id: int,
+        conn: sqlite3.Connection | None = None,
+    ) -> int:
         close_connection = False
 
         if conn is None:
@@ -170,10 +185,6 @@ class RankingRepository:
 
     @staticmethod
     def get_level_by_points(points: int) -> str:
-        """
-        Define o nível universal do usuário de acordo com os pontos.
-        """
-
         if points >= 5000:
             return "Lendário"
         if points >= 3000:
