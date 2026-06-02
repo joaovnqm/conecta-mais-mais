@@ -13,7 +13,7 @@ class RankingLevel:
 class XpAction:
     key: str
     label: str
-    points: str
+    points: int
     description: str
 
 
@@ -24,7 +24,6 @@ class Achievement:
     description: str
     metric: str
     required_value: int
-    icon: str
 
 
 RANKING_LEVELS: list[RankingLevel] = [
@@ -36,8 +35,9 @@ RANKING_LEVELS: list[RankingLevel] = [
     RankingLevel("Influente", 1400, 2099),
     RankingLevel("Elite", 2100, 2999),
     RankingLevel("Mestre", 3000, 6499),
-    RankingLevel("Mestre", 6500, None),
+    RankingLevel("Lendário", 6500, None),
 ]
+
 
 XP_ACTIONS: dict[str, XpAction] = {
     "event_registration": XpAction(
@@ -62,7 +62,7 @@ XP_ACTIONS: dict[str, XpAction] = {
         key="event_review",
         label="Avaliação do evento",
         points=5,
-        description="Usuário avaliou ou comentou sobre o evento"
+        description="Usuário avaliou ou comentou sobre o evento",
     ),
     "presentation": XpAction(
         key="presentation",
@@ -96,6 +96,7 @@ XP_ACTIONS: dict[str, XpAction] = {
     ),
 }
 
+
 ACHIEVEMENTS: list[Achievement] = [
     Achievement(
         key="first_event",
@@ -126,7 +127,7 @@ ACHIEVEMENTS: list[Achievement] = [
         required_value=5,
     ),
     Achievement(
-        key="activate_organizer",
+        key="active_organizer",
         name="Organizador ativo",
         description="Organizou ou ajudou em 3 eventos",
         metric="events_organized",
@@ -168,7 +169,7 @@ def get_next_level(total_xp: int) -> Optional[RankingLevel]:
         if level.min_xp > current_level.min_xp:
             return level
 
-        return None
+    return None
 
 
 def get_missing_xp_for_next_level(total_xp: int) -> int:
