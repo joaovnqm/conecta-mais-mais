@@ -8,6 +8,7 @@ from database.repositories.event_important_dates_repository import EventImportan
 from database.repositories.event_repository import event_services
 from database.repositories.user_repository import user_services
 from database.repositories.interest_repository import interest_services
+from database.repositories.ranking_repository import RankingRepository
 from services.favorite_events import favorite_events_services
 from database.repositories.event_participation import event_participation_service
 from services.event_certificate import certificate_service
@@ -113,6 +114,36 @@ Screen {
 """
 
 
+RANKING_POINTS = {
+    "presence_confirmed": 15,
+    "article_publication": 40,
+    "lecture_presentation": 70,
+    "mini_course": 30,
+    "workshop": 30,
+    "certificate_presence": 25,
+}
+
+
+ACTIVITY_OPTIONS = {
+    "activity_article_publication": {
+        "label": "Publicação de Artigo",
+        "ranking_action": "article_publication",
+    },
+    "activity_lecture_presentation": {
+        "label": "Apresentação de Palestra",
+        "ranking_action": "lecture_presentation",
+    },
+    "activity_mini_course": {
+        "label": "Minicurso",
+        "ranking_action": "mini_course",
+    },
+    "activity_workshop": {
+        "label": "Workshop",
+        "ranking_action": "workshop",
+    },
+}
+
+
 class EventDetailsView(Screen):
     """
     Tela responsável por exibir detalhes do evento e permitir ações sociais.
@@ -122,18 +153,28 @@ class EventDetailsView(Screen):
 
     def __init__(self, user_id: int, event_id: int):
         super().__init__()
-        self.user_id = user_id
+        self.user_id = int(user_id)
         self.event_id = int(event_id)
+        self.ranking_repository = RankingRepository()
 
     def compose(self) -> ComposeResult:
         event = event_services.check_event(self.event_id)
         creator_name = user_services.check_user_name(event.creator_id)
         interests = interest_services.check_event_interests(event.event_id)
+
         total_presence = event_participation_service.count_confirmed_presence(
-            self.event_id)
+            self.event_id
+        )
         total_favorites = event_participation_service.count_favorites(
-            self.event_id)
-        event_date_object = datetime.strptime(event.date, "%d-%m-%Y").date() if event.date else None
+            self.event_id
+        )
+
+        event_date_object = (
+            datetime.strptime(event.date, "%d-%m-%Y").date()
+            if event.date
+            else None
+        )
+
         today = datetime.now().date()
 
         with Center():
@@ -141,48 +182,50 @@ class EventDetailsView(Screen):
                 yield Static(f"Evento: {event.name}", id="main_title")
                 yield Static(
                     "Veja os detalhes do evento e acompanhe a atividade dos seus amigos.",
-                    classes="subtitle"
+                    classes="subtitle",
                 )
 
                 with Vertical(classes="section_card"):
                     yield Static("Informações do evento", classes="section_title")
+
                     yield Static("Descrição:", classes="info_label")
                     yield Static(event.description, classes="info_value")
+
                     yield Static("Local:", classes="info_label")
                     yield Static(
                         event.event_location or "O local do evento ainda não está disponível.",
-                        classes="info_value"
+                        classes="info_value",
                     )
 
                     yield Static("Data:", classes="info_label")
                     yield Static(
                         event.date or "A data do evento ainda não está disponível.",
-                        classes="info_value"
+                        classes="info_value",
                     )
 
                     yield Static("Hora:", classes="info_label")
                     yield Static(
                         event.hour or "A hora do evento ainda não foi divulgada.",
-                        classes="info_value"
+                        classes="info_value",
                     )
 
                     yield Static("Criador:", classes="info_label")
                     yield Static(
                         creator_name or "Criador não encontrado.",
-                        classes="info_value"
+                        classes="info_value",
                     )
 
                     yield Static("Fonte oficial:", classes="info_label")
                     yield Static(
                         event.official_url or "Nenhum link oficial cadastrado.",
-                        classes="info_value"
+                        classes="info_value",
                     )
 
                 with Vertical(classes="section_card"):
                     yield Static("Datas importantes", classes="section_title")
                     yield Static(
                         "Carregando datas importantes...",
-                        id="important_dates_list"
+                        id="important_dates_list",
                     )
 
                 if event_date_object is None or event_date_object >= today:
@@ -191,28 +234,51 @@ class EventDetailsView(Screen):
                         yield Vertical(id="favorite_button_container")
                         yield Vertical(id="presence_button_container")
                         yield Vertical(id="activities_container")
-                
+
                 else:
-                    if event_participation_service.check_presence(self.user_id, event.event_id) and interests and not any(interest.name.lower() == "social" for interest in interests):
+                    user_confirmed_presence = event_participation_service.check_presence(
+                        self.user_id,
+                        event.event_id,
+                    )
+
+                    is_social_event = (
+                        interests
+                        and any(
+                            interest.name.lower() == "social"
+                            for interest in interests
+                        )
+                    )
+
+                    if user_confirmed_presence and not is_social_event:
                         with Vertical(classes="section_card"):
-                            yield Static("Você participou deste evento, envie o seu certificado de participação para o seu e-mail através do botão abaixo.")
-                            yield Button("Emitir Certificado", id="button_certificate_emission", variant="success")
+                            yield Static(
+                                "Você participou deste evento, envie o seu certificado de participação para o seu e-mail através do botão abaixo."
+                            )
+                            yield Button(
+                                "Emitir Certificado",
+                                id="button_certificate_emission",
+                                variant="success",
+                            )
 
                     else:
                         with Vertical(classes="section_card"):
-                            yield Static("Esse evento já aconteceu. Não é mais possível confirmar presença ou favoritar o evento, mas você pode conferir o resumo social e as datas importantes cadastradas.")
+                            yield Static(
+                                "Esse evento já aconteceu. Não é mais possível confirmar presença ou favoritar o evento, mas você pode conferir o resumo social e as datas importantes cadastradas."
+                            )
 
                 with Vertical(classes="section_card"):
                     yield Static("Resumo social", classes="section_title")
+
                     yield Static(
                         f"Pessoas com presença confirmada: {total_presence}",
                         id="presence_count",
-                        classes="social_text"
+                        classes="social_text",
                     )
+
                     yield Static(
                         f"Pessoas que favoritaram: {total_favorites}",
                         id="favorite_count",
-                        classes="social_text"
+                        classes="social_text",
                     )
 
                 with Vertical(classes="section_card"):
@@ -290,34 +356,34 @@ class EventDetailsView(Screen):
         await self.reload_activity_checkboxes()
 
     async def reload_favorite_button(self) -> None:
-            try:
-                container = self.query_one("#favorite_button_container")
-            except:
-                return
-            
-            await container.remove_children()
+        try:
+            container = self.query_one("#favorite_button_container")
+        except Exception:
+            return
 
-            if favorite_events_services.check_favorite_event(self.user_id, self.event_id):
-                await container.mount(
-                    Button(
-                        "Desfavoritar evento",
-                        id="button_favorite_event",
-                        variant="default"
-                    )
+        await container.remove_children()
+
+        if favorite_events_services.check_favorite_event(self.user_id, self.event_id):
+            await container.mount(
+                Button(
+                    "Desfavoritar evento",
+                    id="button_favorite_event",
+                    variant="default",
                 )
-            else:
-                await container.mount(
-                    Button(
-                        "★ Favoritar evento",
-                        id="button_favorite_event",
-                        variant="warning"
-                    )
+            )
+        else:
+            await container.mount(
+                Button(
+                    "★ Favoritar evento",
+                    id="button_favorite_event",
+                    variant="warning",
                 )
+            )
 
     async def reload_presence_button(self) -> None:
         try:
             container = self.query_one("#presence_button_container")
-        except:
+        except Exception:
             return
 
         await container.remove_children()
@@ -327,7 +393,7 @@ class EventDetailsView(Screen):
                 Button(
                     "Desmarcar presença",
                     id="button_presence_event",
-                    variant="error"
+                    variant="error",
                 )
             )
         else:
@@ -335,7 +401,7 @@ class EventDetailsView(Screen):
                 Button(
                     "Confirmar presença",
                     id="button_presence_event",
-                    variant="success"
+                    variant="success",
                 )
             )
 
@@ -362,14 +428,14 @@ class EventDetailsView(Screen):
 
         friends = event_participation_service.list_friends_confirmed_presence(
             self.user_id,
-            self.event_id
+            self.event_id,
         )
 
         if not friends:
             await container.mount(
                 Static(
                     "Nenhum amigo confirmou presença neste evento.",
-                    classes="empty_state"
+                    classes="empty_state",
                 )
             )
             return
@@ -378,7 +444,7 @@ class EventDetailsView(Screen):
             await container.mount(
                 Static(
                     f"{friend['name']} - @{friend['username']}",
-                    classes="social_text"
+                    classes="social_text",
                 )
             )
 
@@ -388,14 +454,14 @@ class EventDetailsView(Screen):
 
         friends = event_participation_service.list_friends_favorited_event(
             self.user_id,
-            self.event_id
+            self.event_id,
         )
 
         if not friends:
             await container.mount(
                 Static(
                     "Nenhum amigo favoritou este evento.",
-                    classes="empty_state"
+                    classes="empty_state",
                 )
             )
             return
@@ -404,31 +470,82 @@ class EventDetailsView(Screen):
             await container.mount(
                 Static(
                     f"{friend['name']} - @{friend['username']}",
-                    classes="social_text"
+                    classes="social_text",
                 )
             )
 
     async def reload_activity_checkboxes(self) -> None:
         """
-        Atualiza o container de atividades (checkboxes) de acordo com o estado de presença do usuário e os interesses do evento.
+        Atualiza o container de atividades extras.
+
+        Os checkboxes só aparecem antes da confirmação de presença.
+        Depois que o usuário confirma presença, as atividades ficam salvas
+        em event_participation_service.confirm_presence().
         """
+
         try:
             container = self.query_one("#activities_container")
         except Exception:
-            # O container pode não existir em eventos passados ou em telas onde
-            # não foi renderizado — nada a fazer.
             return
 
         await container.remove_children()
 
         interests = interest_services.check_event_interests(self.event_id)
-        if (not event_participation_service.check_presence(self.user_id, self.event_id)) \
-                and interests and not any(interest.name.lower() == "social" for interest in interests):
-            await container.mount(Static("Você planeja participar de algumas das seguintes atividades extras caso elas aconteçam?", classes="info_label"))
-            await container.mount(Checkbox("Publicação de Artigo", id="article_presentation", classes="activities"))
-            await container.mount(Checkbox("Apresentação de Palestra", id="speaker_presentation", classes="activities"))
-            await container.mount(Checkbox("Minicurso", id="workshop", classes="activities"))
-            await container.mount(Checkbox("Workshop", id="mini_course", classes="activities"))
+
+        user_has_presence = event_participation_service.check_presence(
+            self.user_id,
+            self.event_id,
+        )
+
+        is_social_event = (
+            interests
+            and any(
+                interest.name.lower() == "social"
+                for interest in interests
+            )
+        )
+
+        if user_has_presence or is_social_event:
+            return
+
+        await container.mount(
+            Static(
+                "Você planeja participar de algumas das seguintes atividades extras caso elas aconteçam?",
+                classes="info_label",
+            )
+        )
+
+        await container.mount(
+            Checkbox(
+                "Publicação de Artigo",
+                id="activity_article_publication",
+                classes="activities",
+            )
+        )
+
+        await container.mount(
+            Checkbox(
+                "Apresentação de Palestra",
+                id="activity_lecture_presentation",
+                classes="activities",
+            )
+        )
+
+        await container.mount(
+            Checkbox(
+                "Minicurso",
+                id="activity_mini_course",
+                classes="activities",
+            )
+        )
+
+        await container.mount(
+            Checkbox(
+                "Workshop",
+                id="activity_workshop",
+                classes="activities",
+            )
+        )
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "button_favorite_event":
@@ -438,34 +555,29 @@ class EventDetailsView(Screen):
         if event.button.id == "button_presence_event":
             await self.handle_presence_button()
             return
-        
+
         if event.button.id == "button_certificate_emission":
-            event_object = event_services.check_event(self.event_id)
-            user = user_services.check_user(self.user_id)
-            certificate_service.send_certificate(
-                user_id=user.user_id,
-                event_id=self.event_id,
-                user_email=user.email,
-                user_name=user.name,
-                event_name=event_object.name,
-                date=event_object.date,
-                activities=event_participation_service.check_activities(self.user_id, self.event_id)
-            )
+            await self.handle_certificate_emission()
+            return
 
         if event.button.id == "button_return":
             self.app.pop_screen()
             return
 
     async def handle_favorite_button(self) -> None:
+        """
+        Favoritar não gera pontos no ranking.
+        """
+
         if favorite_events_services.check_favorite_event(self.user_id, self.event_id):
             success, message = favorite_events_services.remove_from_favorite_event(
                 self.user_id,
-                self.event_id
+                self.event_id,
             )
         else:
             success, message = favorite_events_services.favorite_event(
                 self.user_id,
-                self.event_id
+                self.event_id,
             )
 
         self.app.notify(message)
@@ -474,49 +586,199 @@ class EventDetailsView(Screen):
             await self.reload_event_social_data()
 
     async def handle_presence_button(self) -> None:
+        """
+        Confirma ou cancela presença do usuário no evento.
+        """
+
         if event_participation_service.check_presence(self.user_id, self.event_id):
-            success, message = event_participation_service.cancel_presence(self.user_id, self.event_id)
-            await self.reload_activity_checkboxes()
+            success, message = event_participation_service.cancel_presence(
+                self.user_id,
+                self.event_id,
+            )
 
-        else:
-            checkboxes = list(self.query(".activities"))
-            selected_checkboxes = [cb for cb in checkboxes if getattr(cb, "value", False)]
-            if not selected_checkboxes:
-                success, message = event_participation_service.confirm_presence(self.user_id, self.event_id, "Presença")
+            self.app.notify(message)
 
-            else:
-                activities = ["Presença"]
-                for checkbox in selected_checkboxes:
-                    if checkbox.id == "article_presentation":
-                        activities.append("Publicação de Artigo")
+            if success:
+                await self.reload_event_social_data()
 
-                    elif checkbox.id == "speaker_presentation":
-                        activities.append("Apresentação de Palestra")
+            return
 
-                    elif checkbox.id == "workshop":
-                        activities.append("Minicurso")
+        selected_extra_activities = self._get_selected_extra_activities()
 
-                    elif checkbox.id == "mini_course":
-                        activities.append("Workshop")
+        activities = ["Presença"]
 
-                    else:
-                        label = getattr(checkbox, "label", None)
+        for activity in selected_extra_activities:
+            activities.append(activity["label"])
 
-                        if label:
-                            activities.append(str(label))
+        activities_text = "; ".join(activities)
 
-                extra_activity_str = "; ".join(activities)
-                success, message = event_participation_service.confirm_presence(self.user_id, self.event_id, extra_activity_str)
-            
-            calendar_service.send_calendar_event(
-                user_email=user_services.check_user(self.user_id).email,
-                title=event_services.check_event(self.event_id).name,
-                description=event_services.check_event(self.event_id).description or "",
-                start_time=datetime.strptime(f"{event_services.check_event(self.event_id).date} {event_services.check_event(self.event_id).hour}", "%d-%m-%Y %H:%M") if event_services.check_event(self.event_id).date and event_services.check_event(self.event_id).hour else datetime.now(),
-                )
-            await self.reload_activity_checkboxes()
+        success, message = event_participation_service.confirm_presence(
+            self.user_id,
+            self.event_id,
+            activities_text,
+        )
 
         self.app.notify(message)
 
-        if success:
-            await self.reload_event_social_data()
+        if not success:
+            return
+
+        ranking_message = self._register_ranking_points_for_presence(
+            selected_extra_activities
+        )
+
+        if ranking_message:
+            self.app.notify(ranking_message)
+
+        self._send_event_to_calendar()
+
+        await self.reload_event_social_data()
+
+    async def handle_certificate_emission(self) -> None:
+        """
+        Emite certificado e registra pontuação no ranking.
+        """
+
+        event_object = event_services.check_event(self.event_id)
+        user = user_services.check_user(self.user_id)
+
+        certificate_service.send_certificate(
+            user_id=user.user_id,
+            event_id=self.event_id,
+            user_email=user.email,
+            user_name=user.name,
+            event_name=event_object.name,
+            date=event_object.date,
+            activities=event_participation_service.check_activities(
+                self.user_id,
+                self.event_id,
+            ),
+        )
+
+        was_registered = self.ranking_repository.add_points_once(
+            user_id=self.user_id,
+            event_id=self.event_id,
+            action_type="certificate_presence",
+            points=RANKING_POINTS["certificate_presence"],
+        )
+
+        if was_registered:
+            self.app.notify(
+                f"Certificado emitido. +{RANKING_POINTS['certificate_presence']} pontos adicionados ao ranking."
+            )
+        else:
+            self.app.notify(
+                "Certificado emitido. A pontuação desse certificado já havia sido registrada."
+            )
+
+        await self.reload_event_social_data()
+
+    def _get_selected_extra_activities(self) -> list[dict[str, str]]:
+        """
+        Retorna as atividades extras marcadas pelo usuário.
+        """
+
+        selected_activities: list[dict[str, str]] = []
+
+        for checkbox in self.query(".activities"):
+            if not isinstance(checkbox, Checkbox):
+                continue
+
+            if not checkbox.value:
+                continue
+
+            checkbox_id = checkbox.id
+
+            if not checkbox_id:
+                continue
+
+            activity = ACTIVITY_OPTIONS.get(checkbox_id)
+
+            if activity:
+                selected_activities.append(activity)
+
+        return selected_activities
+
+    def _register_ranking_points_for_presence(
+        self,
+        selected_extra_activities: list[dict[str, str]],
+    ) -> str:
+        """
+        Registra pontos da presença e das atividades extras.
+        """
+
+        gained_points = 0
+        registered_labels: list[str] = []
+        duplicated_labels: list[str] = []
+
+        presence_was_registered = self.ranking_repository.add_points_once(
+            user_id=self.user_id,
+            event_id=self.event_id,
+            action_type="presence_confirmed",
+            points=RANKING_POINTS["presence_confirmed"],
+        )
+
+        if presence_was_registered:
+            gained_points += RANKING_POINTS["presence_confirmed"]
+            registered_labels.append("presença confirmada")
+        else:
+            duplicated_labels.append("presença confirmada")
+
+        for activity in selected_extra_activities:
+            ranking_action = activity["ranking_action"]
+            label = activity["label"]
+            points = RANKING_POINTS[ranking_action]
+
+            was_registered = self.ranking_repository.add_points_once(
+                user_id=self.user_id,
+                event_id=self.event_id,
+                action_type=ranking_action,
+                points=points,
+            )
+
+            if was_registered:
+                gained_points += points
+                registered_labels.append(label)
+            else:
+                duplicated_labels.append(label)
+
+        if gained_points > 0:
+            return (
+                f"+{gained_points} pontos adicionados ao ranking: "
+                f"{', '.join(registered_labels)}."
+            )
+
+        if duplicated_labels:
+            return "Esses pontos já tinham sido registrados anteriormente."
+
+        return ""
+
+    def _send_event_to_calendar(self) -> None:
+        """
+        Envia o evento confirmado para o calendário do usuário.
+        """
+
+        try:
+            user = user_services.check_user(self.user_id)
+            event_object = event_services.check_event(self.event_id)
+
+            if event_object.date and event_object.hour:
+                start_time = datetime.strptime(
+                    f"{event_object.date} {event_object.hour}",
+                    "%d-%m-%Y %H:%M",
+                )
+            else:
+                start_time = datetime.now()
+
+            calendar_service.send_calendar_event(
+                user_email=user.email,
+                title=event_object.name,
+                description=event_object.description or "",
+                start_time=start_time,
+            )
+
+        except Exception as error:
+            self.app.notify(
+                f"Presença confirmada, mas não foi possível enviar para o calendário: {error}",
+                severity="warning",
+            )
