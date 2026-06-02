@@ -10,7 +10,7 @@ from database.repositories.user_repository import user_services
 from database.repositories.interest_repository import interest_services
 from services.favorite_events import favorite_events_services
 from database.repositories.event_participation import event_participation_service
-from services.send_certificate import send_certificate
+from services.event_certificate import certificate_service
 
 EVENT_DETAILS_VIEW = """
 Screen {
@@ -441,7 +441,7 @@ class EventDetailsView(Screen):
         if event.button.id == "button_certificate_emission":
             event_object = event_services.check_event(self.event_id)
             user = user_services.check_user(self.user_id)
-            send_certificate(
+            certificate_service.send_certificate(
                 user_id=user.user_id,
                 event_id=self.event_id,
                 user_email=user.email,
@@ -506,7 +506,8 @@ class EventDetailsView(Screen):
 
                 extra_activity_str = "; ".join(activities)
                 success, message = event_participation_service.confirm_presence(self.user_id, self.event_id, extra_activity_str)
-
+            
+            
             await self.reload_activity_checkboxes()
 
         self.app.notify(message)
