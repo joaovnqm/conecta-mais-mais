@@ -2,6 +2,8 @@ from pathlib import Path
 import sqlite3
 from typing import Any
 
+from database.repositories.user_repository import user_services
+
 
 class RankingRepository:
     def __init__(self, db_path: str | Path | None = None) -> None:
@@ -17,6 +19,10 @@ class RankingRepository:
         return conn
 
     def get_ranking(self, limit: int = 50) -> list[dict[str, Any]]:
+        """
+        Retorna o ranking geral dos usuários por pontos
+        """
+
         query = """
             SELECT
                 user_id,
@@ -37,16 +43,23 @@ class RankingRepository:
         ranking: list[dict[str, Any]] = []
 
         for position, row in enumerate(rows, start=1):
+            user_id = int(row["user_id"])
+
+            user_name = user_services.check_user_name(user_id)
+
+            if not user_name:
+                user_name = f"Usuário sem nome ({user_id})"
+
             ranking.append(
                 {
                     "position": position,
-                    "user_id": row["user_id"],
-                    "name": f"Usuário {row['user_id']}",
-                    "total_points": row["total_points"],
+                    "user_id": user_id,
+                    "name": user_name,
+                    "total_points": int(row["total_points"]),
                     "current_level": row["current_level"],
-                    "events_attended": row["events_attended"],
-                    "certificates_received": row["certificates_received"],
-                    "presentations_done": row["presentations_done"],
+                    "events_attended": int(row["events_attended"]),
+                    "certificates_received": int(row["certificates_received"]),
+                    "presentations_done": int(row["presentations_done"]),
                 }
             )
 
