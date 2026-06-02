@@ -18,7 +18,7 @@ def create_ranking_tables(db_path: str | Path | None = None) -> None:
     database_path = Path(db_path) if db_path else get_default_db_path()
 
     with sqlite3.connect(database_path) as conn:
-        cursor = conn.cursor
+        cursor = conn.cursor()
 
         cursor.execute(
             """
