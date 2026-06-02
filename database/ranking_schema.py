@@ -13,7 +13,6 @@ def get_default_db_path() -> Path:
 def drop_ranking_tables(cursor: sqlite3.Cursor) -> None:
     """
     Remove apenas as tabelas relacionadas ao ranking.
-    Use isso quando a estrutura antiga estiver quebrada/incompleta.
     """
     cursor.execute("DROP TABLE IF EXISTS user_event_achievements;")
     cursor.execute("DROP TABLE IF EXISTS user_event_ranking;")
