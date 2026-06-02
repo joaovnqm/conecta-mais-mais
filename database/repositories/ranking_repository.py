@@ -1,270 +1,196 @@
-import sqlite3
 from pathlib import Path
+import sqlite3
 from typing import Any
-
-from database.ranking_schema import create_ranking_tables, get_default_db_path
-from models.ranking import ACHIEVEMENTS, XP_ACTIONS
 
 
 class RankingRepository:
     def __init__(self, db_path: str | Path | None = None) -> None:
-        self.db_path = Path(db_path) if db_path else get_default_db_path()
-        create_ranking_tables(self.db_path)
+        if db_path is None:
+            root_dir = Path(__file__).resolve().parents[2]
+            db_path = root_dir / "conecta++.db"
+
+        self.db_path = str(db_path)
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         return conn
 
-    def add_xp_entry(
+    def get_ranking(self, limit: int = 50) -> list[dict[str, Any]]:
+        """
+        Retorna o ranking geral dos usuários por pontos.
+        """
+
+        query = """
+            SELECT
+                user_id,
+                total_points,
+                current_level,
+                events_attended,
+                certificates_received,
+                presentations_done,
+                last_updated
+            FROM user_event_ranking
+            ORDER BY total_points DESC, events_attended DESC, certificates_received DESC
+            LIMIT ?;
+        """
+
+        with self._connect() as conn:
+            rows = conn.execute(query, (limit,)).fetchall()
+
+        ranking: list[dict[str, Any]] = []
+
+        for position, row in enumerate(rows, start=1):
+            ranking.append(
+                {
+                    "position": position,
+                    "user_id": row["user_id"],
+                    "name": f"Usuário {row['user_id']}",
+                    "total_points": row["total_points"],
+                    "current_level": row["current_level"],
+                    "events_attended": row["events_attended"],
+                    "certificates_received": row["certificates_received"],
+                    "presentations_done": row["presentations_done"],
+                }
+            )
+
+        return ranking
+
+    def add_points(
         self,
         user_id: int,
-        event_id: int | None,
+        event_id: int,
         action_type: str,
-        description: str | None = None,
-    ) -> bool:
+        points: int,
+    ) -> None:
         """
-        Adiciona XP ao usuário.
+        Registra uma ação do usuário e atualiza o ranking.
         """
-
-        if action_type not in XP_ACTIONS:
-            return False
-
-        action = XP_ACTIONS[action_type]
-        final_description = description or action.description
 
         with self._connect() as conn:
             cursor = conn.cursor()
 
-            try:
-                cursor.execute("""
-                    INSERT INTO event_xp_entries (
-                        user_id,
-                        event_id,
-                        action_type,
-                        points,
-                        description
-                    )
-                    VALUES (?, ?, ?, ?, ?);
-                """, (
+            cursor.execute(
+                """
+                INSERT INTO event_ranking_actions (
                     user_id,
                     event_id,
                     action_type,
-                    action.points,
-                    final_description,
-                ))
+                    points
+                )
+                VALUES (?, ?, ?, ?);
+                """,
+                (user_id, event_id, action_type, points),
+            )
 
-                conn.commit()
-                return cursor.rowcount > 0
-
-            except sqlite3.IntegrityError:
-                return False
-
-    def get_user_total_xp(self, user_id: int) -> int:
-        with self._connect() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute("""
-                SELECT COALESCE(SUM(points), 0) AS total_xp
-                FROM event_xp_entries
-                WHERE user_id = ?;
-            """, (user_id,))
-
-            row = cursor.fetchone()
-            return int(row["total_xp"] or 0)
-
-    def get_user_stats(self, user_id: int) -> dict[str, int]:
-        """
-        Retorna estatísticas usadas para liberar medalhas/conquistas.
-        """
-
-        total_xp = self.get_user_total_xp(user_id)
-
-        with self._connect() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute("""
-                SELECT COUNT(DISTINCT event_id) AS total
-                FROM event_xp_entries
-                WHERE user_id = ?
-                  AND action_type = 'event_attendance';
-            """, (user_id,))
-            events_attended = int(cursor.fetchone()["total"] or 0)
-
-            cursor.execute("""
-                SELECT COUNT(*) AS total
-                FROM event_xp_entries
-                WHERE user_id = ?
-                  AND action_type IN (
-                    'attendance_certificate',
-                    'presentation_certificate'
-                  );
-            """, (user_id,))
-            certificates_received = int(cursor.fetchone()["total"] or 0)
-
-            cursor.execute("""
-                SELECT COUNT(*) AS total
-                FROM event_xp_entries
-                WHERE user_id = ?
-                  AND action_type = 'presentation';
-            """, (user_id,))
-            presentations_done = int(cursor.fetchone()["total"] or 0)
-
-            cursor.execute("""
-                SELECT COUNT(*) AS total
-                FROM event_xp_entries
-                WHERE user_id = ?
-                  AND action_type = 'event_organization';
-            """, (user_id,))
-            events_organized = int(cursor.fetchone()["total"] or 0)
-
-            cursor.execute("""
-                SELECT COUNT(*) AS total
-                FROM event_xp_entries
-                WHERE user_id = ?
-                  AND action_type = 'support_team';
-            """, (user_id,))
-            support_events = int(cursor.fetchone()["total"] or 0)
-
-            cursor.execute("""
-                SELECT COUNT(*) AS total
-                FROM event_xp_entries
-                WHERE user_id = ?
-                  AND action_type = 'highlighted_participation';
-            """, (user_id,))
-            highlighted_participations = int(cursor.fetchone()["total"] or 0)
-
-        return {
-            "total_xp": total_xp,
-            "events_attended": events_attended,
-            "certificates_received": certificates_received,
-            "presentations_done": presentations_done,
-            "events_organized": events_organized,
-            "support_events": support_events,
-            "highlighted_participations": highlighted_participations,
-        }
-
-    def unlock_achievement(
-        self,
-        user_id: int,
-        achievement_key: str,
-        achievement_name: str,
-        description: str,
-        icon: str,
-    ) -> bool:
-        with self._connect() as conn:
-            cursor = conn.cursor()
-
-            try:
-                cursor.execute("""
-                    INSERT INTO user_achievements (
-                        user_id,
-                        achievement_key,
-                        achievement_name,
-                        description,
-                        icon
-                    )
-                    VALUES (?, ?, ?, ?, ?);
-                """, (
+            cursor.execute(
+                """
+                INSERT INTO user_event_ranking (
                     user_id,
-                    achievement_key,
-                    achievement_name,
-                    description,
-                    icon,
-                ))
+                    total_points,
+                    current_level
+                )
+                VALUES (?, ?, ?)
+                ON CONFLICT(user_id)
+                DO UPDATE SET
+                    total_points = total_points + excluded.total_points,
+                    current_level = ?,
+                    last_updated = CURRENT_TIMESTAMP;
+                """,
+                (
+                    user_id,
+                    points,
+                    self.get_level_by_points(points),
+                    self.get_level_by_points(
+                        self.get_total_points(user_id, conn) + points),
+                ),
+            )
 
-                conn.commit()
-                return cursor.rowcount > 0
-
-            except sqlite3.IntegrityError:
-                return False
-
-    def update_user_achievements(self, user_id: int) -> list[dict[str, Any]]:
-        """
-        Verifica as estatísticas do usuário e libera novas conquistas.
-        """
-
-        stats = self.get_user_stats(user_id)
-        unlocked_now: list[dict[str, Any]] = []
-
-        for achievement in ACHIEVEMENTS:
-            current_value = stats.get(achievement.metric, 0)
-
-            if current_value >= achievement.required_value:
-                was_unlocked = self.unlock_achievement(
-                    user_id=user_id,
-                    achievement_key=achievement.key,
-                    achievement_name=achievement.name,
-                    description=achievement.description,
-                    icon=achievement.icon,
+            if action_type == "event_attendance":
+                cursor.execute(
+                    """
+                    UPDATE user_event_ranking
+                    SET events_attended = events_attended + 1
+                    WHERE user_id = ?;
+                    """,
+                    (user_id,),
                 )
 
-                if was_unlocked:
-                    unlocked_now.append({
-                        "key": achievement.key,
-                        "name": achievement.name,
-                        "description": achievement.description,
-                        "icon": achievement.icon,
-                    })
+            elif action_type == "certificate_presence":
+                cursor.execute(
+                    """
+                    UPDATE user_event_ranking
+                    SET certificates_received = certificates_received + 1
+                    WHERE user_id = ?;
+                    """,
+                    (user_id,),
+                )
 
-        return unlocked_now
+            elif action_type == "presentation":
+                cursor.execute(
+                    """
+                    UPDATE user_event_ranking
+                    SET presentations_done = presentations_done + 1
+                    WHERE user_id = ?;
+                    """,
+                    (user_id,),
+                )
 
-    def get_user_achievements(self, user_id: int) -> list[dict[str, Any]]:
-        with self._connect() as conn:
-            cursor = conn.cursor()
+            conn.commit()
 
-            cursor.execute("""
-                SELECT
-                    achievement_key,
-                    achievement_name,
-                    description,
-                    icon,
-                    unlocked_at
-                FROM user_achievements
-                WHERE user_id = ?
-                ORDER BY unlocked_at DESC;
-            """, (user_id,))
+    def get_total_points(self, user_id: int, conn: sqlite3.Connection | None = None) -> int:
+        """
+        Retorna a pontuação atual do usuário.
+        """
 
-            rows = cursor.fetchall()
+        close_connection = False
 
-        return [dict(row) for row in rows]
+        if conn is None:
+            conn = self._connect()
+            close_connection = True
 
-    def get_user_xp_history(self, user_id: int, limit: int = 30) -> list[dict[str, Any]]:
-        with self._connect() as conn:
-            cursor = conn.cursor()
+        try:
+            row = conn.execute(
+                """
+                SELECT total_points
+                FROM user_event_ranking
+                WHERE user_id = ?;
+                """,
+                (user_id,),
+            ).fetchone()
 
-            cursor.execute("""
-                SELECT
-                    id,
-                    event_id,
-                    action_type,
-                    points,
-                    description,
-                    created_at
-                FROM event_xp_entries
-                WHERE user_id = ?
-                ORDER BY created_at DESC
-                LIMIT ?;
-            """, (user_id, limit))
+            if row is None:
+                return 0
 
-            rows = cursor.fetchall()
+            return int(row["total_points"])
 
-        return [dict(row) for row in rows]
+        finally:
+            if close_connection:
+                conn.close()
 
-    def get_leaderboard(self, limit: int = 20) -> list[dict[str, Any]]:
-        with self._connect() as conn:
-            cursor = conn.cursor()
+    @staticmethod
+    def get_level_by_points(points: int) -> str:
+        """
+        Define o nível universal do usuário de acordo com os pontos.
+        """
 
-            cursor.execute("""
-                SELECT
-                    user_id,
-                    COALESCE(SUM(points), 0) AS total_xp
-                FROM event_xp_entries
-                GROUP BY user_id
-                ORDER BY total_xp DESC, user_id ASC
-                LIMIT ?;
-            """, (limit,))
+        if points >= 5000:
+            return "Lendário"
+        if points >= 3000:
+            return "Mestre"
+        if points >= 2000:
+            return "Elite"
+        if points >= 1400:
+            return "Referência"
+        if points >= 900:
+            return "Influente"
+        if points >= 600:
+            return "Experiente"
+        if points >= 350:
+            return "Engajado"
+        if points >= 180:
+            return "Explorador"
+        if points >= 60:
+            return "Participante"
 
-            rows = cursor.fetchall()
-
-        return [dict(row) for row in rows]
+        return "Recém-chegado"
