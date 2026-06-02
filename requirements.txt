@@ -1,0 +1,6 @@
+textual
+rich
+python-dotenv
+unidecode
+reportlab
+ics

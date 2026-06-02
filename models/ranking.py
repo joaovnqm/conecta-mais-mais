@@ -7,7 +7,6 @@ class RankingLevel:
     name: str
     min_xp: int
     max_xp: Optional[int]
-    icon: str
 
 
 @dataclass(frozen=True)
@@ -97,7 +96,7 @@ XP_ACTIONS: dict[str, XpAction] = {
     ),
 }
 
-ACHIVEMENTS: list[Achievement] = [
+ACHIEVEMENTS: list[Achievement] = [
     Achievement(
         key="first_event",
         name="Primeiro evento",
