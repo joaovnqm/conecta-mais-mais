@@ -19,7 +19,24 @@ def drop_ranking_tables(cursor: sqlite3.Cursor) -> None:
     cursor.execute("DROP TABLE IF EXISTS event_ranking_actions;")
 
 
-def create_ranking_tables(db_path: Path | str | None = None, reset: bool = False) -> None:
+def _table_has_column(
+    cursor: sqlite3.Cursor,
+    table_name: str,
+    column_name: str,
+) -> bool:
+    """
+    Verifica se uma tabela possui determinada coluna.
+    """
+    cursor.execute(f"PRAGMA table_info({table_name});")
+    columns = cursor.fetchall()
+
+    return any(column[1] == column_name for column in columns)
+
+
+def create_ranking_tables(
+    db_path: Path | str | None = None,
+    reset: bool = False,
+) -> None:
     """
     Cria as tabelas necessárias para o sistema de ranking/gamificação.
     """
@@ -43,7 +60,8 @@ def create_ranking_tables(db_path: Path | str | None = None, reset: bool = False
                 event_id INTEGER NOT NULL,
                 action_type TEXT NOT NULL,
                 points INTEGER NOT NULL,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, event_id, action_type)
             );
             """
         )
@@ -72,6 +90,13 @@ def create_ranking_tables(db_path: Path | str | None = None, reset: bool = False
                 unlocked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(user_id, achievement_name)
             );
+            """
+        )
+
+        cursor.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_event_ranking_actions_unique
+            ON event_ranking_actions(user_id, event_id, action_type);
             """
         )
 
