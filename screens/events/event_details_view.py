@@ -11,6 +11,7 @@ from database.repositories.interest_repository import interest_services
 from services.favorite_events import favorite_events_services
 from database.repositories.event_participation import event_participation_service
 from services.event_certificate import certificate_service
+from services.add_event_to_calendar import calendar_service
 
 EVENT_DETAILS_VIEW = """
 Screen {
@@ -507,7 +508,12 @@ class EventDetailsView(Screen):
                 extra_activity_str = "; ".join(activities)
                 success, message = event_participation_service.confirm_presence(self.user_id, self.event_id, extra_activity_str)
             
-            
+            calendar_service.send_calendar_event(
+                user_email=user_services.check_user(self.user_id).email,
+                title=event_services.check_event(self.event_id).name,
+                description=event_services.check_event(self.event_id).description or "",
+                start_time=datetime.strptime(f"{event_services.check_event(self.event_id).date} {event_services.check_event(self.event_id).hour}", "%d-%m-%Y %H:%M") if event_services.check_event(self.event_id).date and event_services.check_event(self.event_id).hour else datetime.now(),
+                )
             await self.reload_activity_checkboxes()
 
         self.app.notify(message)
