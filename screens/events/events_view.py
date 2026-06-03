@@ -1,12 +1,18 @@
+from typing import Any
+
+import sqlite3
 from textual.app import ComposeResult
+from textual.containers import Center, Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
-from textual.widgets import Static, Button, Select, Input
-from textual.containers import Center, VerticalScroll, Horizontal
+from textual.widgets import Button, Input, Select, Static
+
+from database.repositories.event_important_dates_repository import (
+    EventImportantDatesRepository,
+)
 from database.repositories.event_repository import event_services
 from database.repositories.interest_repository import interest_services
 from screens.events.event_details_view import EventDetailsView
-import sqlite3
-from database.repositories.event_important_dates_repository import EventImportantDatesRepository
+
 
 EVENTS_PAGE_CSS = """
 Screen {
@@ -14,7 +20,7 @@ Screen {
     background: $surface;
 }
 
-#main_box { 
+#main_box {
     width: 86;
     height: auto;
     border: round $primary;
@@ -49,18 +55,52 @@ Screen {
     grid-size: 2;
     grid-columns: 2fr 1fr;
     height: auto;
+    min-height: 4;
     margin-bottom: 1;
 }
 
 .event_buttons {
     width: 100%;
-    height: 3;
+    height: 4;
 }
 
-.event_submission_status {
+.submission_badges {
     width: 100%;
-    height: 100%;
-    content-align: center middle;
+    height: auto;
+    padding: 0 1;
+}
+
+.submission_badge_line {
+    width: 100%;
+    height: auto;
+    min-height: 1;
+    content-align: left middle;
+    text-style: bold;
+}
+
+.status_open {
+    color: green;
+}
+
+.status_closing_soon {
+    color: yellow;
+}
+
+.status_closed {
+    color: red;
+}
+
+.status_not_started {
+    color: cyan;
+}
+
+.status_track_specific {
+    color: yellow;
+}
+
+.status_unknown {
+    color: $text-muted;
+    text-style: none;
 }
 
 #button_return {
@@ -69,64 +109,82 @@ Screen {
 }
 """
 
+
 class EventsView(Screen):
     """
-    Classe responsável pela tela de listagem de eventos. Ela exibe uma lista de eventos disponíveis, com a opção de filtrar 
-    por interesse e buscar por nome.
+    Tela de listagem de eventos.
+
+    Exibe:
+    - busca por nome do evento;
+    - filtro por interesse;
+    - lista de eventos disponíveis;
+    - status de submissão de resumos/artigos quando a data for simples;
+    - aviso para consultar o site oficial quando houver trilhas, tracks,
+      modalidades ou múltiplas datas de submissão.
     """
+
     CSS = EVENTS_PAGE_CSS
 
-    # Inicializa a tela com os dados básicos do usuário autenticado
     def __init__(self, user_id: int):
         super().__init__()
         self.user_id = user_id
 
-    # Monta a interface com filtros por interesse e listagem de eventos
     def compose(self) -> ComposeResult:
         events = event_services.check_events_by_interests(self.user_id)
         interests = interest_services.check_user_interests(self.user_id)
-        select_options = [("Todos os Eventos", "all_events")] + [(interest.name, interest.name) for interest in interests if interest.name != "Social"]
-        
+
+        select_options = [("Todos os Eventos", "all_events")] + [
+            (interest.name, interest.name)
+            for interest in interests
+            if interest.name != "Social"
+        ]
+
         with Center():
             with VerticalScroll(id="main_box"):
                 yield Static("Eventos", id="main_title")
+
                 yield Static("Buscar evento:")
                 yield Input(
                     placeholder="Insira o nome do evento...",
-                    id="search_event"
+                    id="search_event",
                 )
+
                 yield Static("Filtrar por interesse:")
-                yield Select(select_options, value="all_events", allow_blank=False)
-                yield Static("Clique em algum evento abaixo para saber mais.", classes="main_subtitle")
-                
+                yield Select(
+                    select_options,
+                    value="all_events",
+                    allow_blank=False,
+                )
+
+                yield Static(
+                    "Clique em algum evento abaixo para saber mais.",
+                    classes="main_subtitle",
+                )
+
                 with VerticalScroll(id="events_container"):
                     if events:
-                        # carregar status de submissão para exibição
-                        with sqlite3.connect(event_services.database_path) as connection:
-                            repo = EventImportantDatesRepository(connection)
-
-                            for event in events:
-                                status = repo.get_submission_status(event.event_id)
-                                status_text = status.get("message", "—")
-
-                                with Horizontal(classes="event_listing"):
-                                    yield Button(event.name, id=f"event_{event.event_id}", classes="event_buttons")
-                                    yield Static(status_text, classes="event_submission_status")
+                        for event in events:
+                            yield self._build_event_row(event)
                     else:
-                        yield Static("Nenhum evento encontrado.", classes="main_subtitle")
+                        yield Static(
+                            "Nenhum evento encontrado.",
+                            classes="main_subtitle",
+                        )
 
                 yield Button("Voltar", id="button_return", variant="primary")
-                
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """
-        Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado,
-        e executa a ação correspondente:
-        - Se for um botão de evento, ela extrai o ID do evento a partir do ID do botão e navega para a tela de detalhes do evento.
-        - Se for o botão de voltar, ela simplesmente retorna para a tela anterior.
+        Trata cliques nos botões da tela.
         """
+
         if event.button.has_class("event_buttons"):
-            button_id = event.button.id
-            event_id = str(button_id.split("_")[1])
+            button_id = event.button.id or ""
+
+            if "_" not in button_id:
+                return
+
+            event_id = str(button_id.split("_", maxsplit=1)[1])
             self.app.push_screen(EventDetailsView(self.user_id, event_id))
 
         elif event.button.id == "button_return":
@@ -134,63 +192,161 @@ class EventsView(Screen):
 
     async def on_input_changed(self, event: Input.Changed) -> None:
         """
-        Função que lida com a digitação no campo de busca. Sempre que o texto muda, ela aciona a reavaliação dos filtros.
+        Reaplica os filtros quando o usuário digita no campo de busca.
         """
+
         if event.input.id == "search_event":
             await self._apply_filters()
-            
+
     async def on_select_changed(self, event: Select.Changed) -> None:
         """
-        Função que lida com os eventos de mudança na seleção do filtro por interesse.
+        Reaplica os filtros quando o usuário altera o interesse selecionado.
         """
+
         await self._apply_filters()
 
     async def _apply_filters(self) -> None:
         """
-        Função centralizadora que lê o estado do Select e do Input, aplica ambas as filtragens e chama a atualização da tela.
+        Aplica filtro por interesse e busca por nome.
         """
+
         select_widget = self.query_one(Select)
         input_widget = self.query_one("#search_event", Input)
-        
+
         selected_interest = select_widget.value
         search_term = input_widget.value.lower().strip()
-        
+
         if selected_interest == "all_events":
             result = event_services.check_events_by_interests(self.user_id)
         else:
             result = event_services.check_events_by_interest(selected_interest)
 
         if search_term and result:
-            result = [event for event in result if search_term in event.name.lower()]
+            result = [
+                event
+                for event in result
+                if search_term in event.name.lower()
+            ]
 
         await self.update_events_on_screen(result)
 
-    async def update_events_on_screen(self, result):
+    async def update_events_on_screen(self, result) -> None:
         """
-        Função auxiliar para atualizar a listagem de eventos exibida na tela, com base no resultado da aplicação do filtro 
-        por interesse. Ela remove os eventos atualmente exibidos e monta novos botões para os eventos filtrados, 
-        ou exibe uma mensagem caso nenhum evento esteja disponível para os filtros selecionados.
+        Atualiza a lista de eventos após busca ou filtro.
         """
+
         container = self.query_one("#events_container")
         await container.remove_children()
-        
-        if result:
-            # consultar status de submissão em lote para os eventos filtrados
+
+        if not result:
+            await container.mount(
+                Static(
+                    "Eventos com filtros selecionados não disponíveis no momento.",
+                    classes="main_subtitle",
+                )
+            )
+            return
+
+        for event in result:
+            await container.mount(self._build_event_row(event))
+
+    def _build_event_row(self, event) -> Horizontal:
+        """
+        Monta uma linha da listagem com:
+        - botão do evento;
+        - status de submissão ou aviso de trilhas/modalidades.
+        """
+
+        return Horizontal(
+            Button(
+                event.name,
+                id=f"event_{event.event_id}",
+                classes="event_buttons",
+            ),
+            self._build_submission_badges(event.event_id),
+            classes="event_listing",
+        )
+
+    def _build_submission_badges(self, event_id: int) -> Vertical:
+        """
+        Monta os status resumidos da submissão.
+
+        Pode exibir:
+        - Resumos;
+        - Artigos;
+        - aviso para consultar site oficial;
+        - sem submissão publicada.
+        """
+
+        statuses = self._get_submission_statuses_safe(event_id)
+
+        status_widgets = []
+
+        for status in statuses:
+            status_name = status.get("status", "unknown")
+
+            status_text = (
+                status.get("short_message")
+                or status.get("message")
+                or "⚪ Sem submissão publicada"
+            )
+
+            css_class = self._get_submission_status_class(status_name)
+
+            status_widgets.append(
+                Static(
+                    status_text,
+                    classes=f"submission_badge_line {css_class}",
+                )
+            )
+
+        return Vertical(
+            *status_widgets,
+            classes="submission_badges",
+        )
+
+    def _get_submission_statuses_safe(self, event_id: int) -> list[dict[str, Any]]:
+        """
+        Consulta os status de submissão.
+
+        Se der erro, retorna um status neutro para não quebrar a tela.
+        """
+
+        try:
             with sqlite3.connect(event_services.database_path) as connection:
-                repo = EventImportantDatesRepository(connection)
+                repository = EventImportantDatesRepository(connection)
 
-                for event in result:
-                    status = repo.get_submission_status(event.event_id)
-                    status_text = status.get("message", "—")
+                if hasattr(repository, "get_submission_statuses"):
+                    return repository.get_submission_statuses(event_id)
 
-                    container.mount(
-                        # Adicionada a classe 'event_listing' para garantir que o CSS aplique no rebuild
-                        Horizontal(
-                            Button(event.name, id=f"event_{event.event_id}", classes="event_buttons"),
-                            Static(status_text, classes="event_submission_status"),
-                            classes="event_listing"
-                        )
-                    )
-                
-        else:
-            container.mount(Static("Eventos com filtros selecionados não disponíveis no momento.", classes="main_subtitle"))
+                return [repository.get_submission_status(event_id)]
+
+        except sqlite3.Error:
+            return [
+                {
+                    "status": "unknown",
+                    "short_message": "⚪ Status indisponível",
+                    "message": "Não foi possível consultar as datas de submissão.",
+                    "opening_date": None,
+                    "deadline_date": None,
+                    "days_until_deadline": None,
+                }
+            ]
+
+    def _get_submission_status_class(self, status: str) -> str:
+        """
+        Converte o status lógico em classe CSS.
+        """
+
+        status_classes = {
+            "open": "status_open",
+            "closing_soon": "status_closing_soon",
+            "closed": "status_closed",
+            "not_started": "status_not_started",
+            "open_no_deadline": "status_open",
+            "track_specific": "status_track_specific",
+            "unknown": "status_unknown",
+            "none": "status_unknown",
+        }
+
+        return status_classes.get(status, "status_unknown")

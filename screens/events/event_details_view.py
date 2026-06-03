@@ -5,6 +5,7 @@ from textual.screen import Screen
 from textual.widgets import Static, Button, Checkbox
 from textual.containers import Center, VerticalScroll, Vertical
 from database.repositories.event_important_dates_repository import EventImportantDatesRepository
+from services.important_dates_policy import ImportantDatesPolicy
 from database.repositories.event_repository import event_services
 from database.repositories.user_repository import user_services
 from database.repositories.interest_repository import interest_services
@@ -301,37 +302,82 @@ class EventDetailsView(Screen):
 
     def load_important_dates(self) -> None:
         """
-        Carrega as datas importantes salvas no banco e exibe na tela.
+        Carrega datas importantes limpas e organizadas por categoria.
+
+        Observação:
+        O status resumido de submissão aparece somente na tela principal
+        de eventos. Aqui ficam apenas as datas importantes do evento,
+        separadas por categoria e com aviso destacado quando houver trilhas,
+        tracks ou modalidades específicas.
         """
 
         dates_widget = self.query_one("#important_dates_list", Static)
 
         with sqlite3.connect(event_services.database_path) as connection:
             repository = EventImportantDatesRepository(connection)
-            important_dates = repository.find_by_event_id(self.event_id)
+            important_dates = repository.get_display_dates_by_event_id(self.event_id)
 
         if not important_dates:
             dates_widget.update(
-                "Nenhuma data importante encontrada ainda. Cadastre um link oficial para permitir a busca automática."
+                "Nenhuma data importante confiável foi encontrada para este evento."
             )
             return
 
-        formatted_dates = []
+        grouped_dates: dict[str, list[dict]] = {}
 
         for item in important_dates:
-            confidence_percent = int(item["confidence"] * 100)
-            status = "confirmada" if item["is_confirmed"] else "precisa de confirmação"
-            time_text = f" às {item['time']}" if item["time"] else ""
-            checked_text = self._format_datetime(item["last_checked_at"])
+            grouped_dates.setdefault(item["category_label"], []).append(item)
 
-            formatted_dates.append(
-                f"• {item['title']}: {self._format_date(item['date'])}{time_text} "
-                f"({confidence_percent}% de confiança, {status})\n"
-                f"  Fonte: {item['source_url'] or 'não informada'}\n"
-                f"  Atualizado em: {checked_text}"
+        group_order = [
+            "Submissões",
+            "Pós-submissão",
+            "Evento",
+            "Outras datas",
+        ]
+
+        formatted_sections: list[str] = []
+
+        for group_name in group_order:
+            group_items = grouped_dates.get(group_name)
+
+            if not group_items:
+                continue
+
+            section_lines = [group_name.upper()]
+
+            for item in group_items:
+                time_text = f" às {item['time']}" if item["time"] else ""
+
+                section_lines.append(
+                    f"• {item['title']}: {self._format_date(item['date'])}{time_text}"
+                )
+
+            formatted_sections.append("\n".join(section_lines))
+
+        source_url = important_dates[0].get("source_url") or "não informada"
+        checked_text = self._format_datetime(
+            important_dates[0].get("last_checked_at")
+        )
+
+        final_sections = formatted_sections.copy()
+
+        if ImportantDatesPolicy.has_track_specific_dates(
+            important_dates,
+            source_url,
+        ):
+            final_sections.insert(
+                0,
+                ImportantDatesPolicy.get_track_specific_dates_notice(),
             )
 
-        dates_widget.update("\n\n".join(formatted_dates))
+        footer = (
+            f"Fonte oficial: {source_url}\n"
+            f"Atualizado em: {checked_text}"
+        )
+
+        final_sections.append(footer)
+
+        dates_widget.update("\n\n".join(final_sections))
 
     def _format_date(self, iso_date: str) -> str:
         year, month, day = iso_date.split("-")
