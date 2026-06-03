@@ -373,4 +373,4 @@ Este projeto integra as atividades da disciplina **PISI I (Projeto Interdiscipli
 A documentação das funcionalidades do projeto também está organizada em uma planilha, contendo as features planejadas, fluxos principais, fluxos alternativos, fluxos de erro, status de desenvolvimento, prioridade e escopo de entrega.
 
 🔗 **Acesse a planilha de features aqui:**
-[Planilha de Features do Projeto]([https://docs.google.com/spreadsheets/d/19YSUOH3TCYiOljYli4W6_OuNz7OMyL29pgIxmgoxNoU/edit?gid=0#gid=0](https://docs.google.com/spreadsheets/d/1Aaw829HiQKvhQ1wD777NaCNEmsDNXbLNe9va6_c-bOA/edit?gid=1939892147#gid=1939892147))
+[Planilha de Features do Projeto](https://docs.google.com/spreadsheets/d/1Aaw829HiQKvhQ1wD777NaCNEmsDNXbLNe9va6_c-bOA/edit?gid=1939892147#gid=1939892147)
