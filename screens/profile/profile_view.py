@@ -116,41 +116,22 @@ class ProfileView(Screen):
                 else:
                     with Vertical(classes="section_card"):
                         yield Static("Dados pessoais", classes="section_title")
-
                         yield Static("Nome:", classes="profile_label")
-                        yield Static(
-                            profile.name,
-                            id="name_value",
-                            classes="profile_value"
-                        )
-
+                        yield Static(profile.name, id="name_value", classes="profile_value")
                         yield Static("E-mail:", classes="profile_label")
-                        yield Static(
-                            profile.email,
-                            id="email_value",
-                            classes="profile_value"
-                        )
+                        yield Static(profile.email,id="email_value", classes="profile_value")
 
                     with Vertical(classes="section_card"):
                         yield Static("Dados sociais", classes="section_title")
-
                         yield Static("Username:", classes="profile_label")
-                        yield Static(
-                            profile.username or "Username não informado.",
-                            id="username_value",
-                            classes="profile_value"
-                        )
-
+                        yield Static(profile.username or "Username não informado.", id="username_value", classes="profile_value")
                         yield Static("LinkedIn:", classes="profile_label")
-                        yield Static(
-                            self._build_linkedin_text(profile.linkedin_url),
-                            id="linkedin_value",
-                            classes="profile_value"
-                        )
+                        yield Static(self._build_linkedin_text(profile.linkedin_url), id="linkedin_value", classes="profile_value")
+                        yield Static("GitHub:", classes="profile_label")
+                        yield Static(self._build_github_text(profile.github_url), id="github_value", classes="profile_value")
 
                     with Vertical(classes="section_card"):
                         yield Static("Ações do perfil", classes="section_title")
-
                         yield Button(
                             "👤 Atualizar dados do perfil",
                             id="button_edit_name",
@@ -184,7 +165,6 @@ class ProfileView(Screen):
     def _build_linkedin_text(self, linkedin_url: str | None):
         """
         Monta o texto do LinkedIn.
-
         Quando o terminal suporta links, o endereço fica clicável.
         """
         if not linkedin_url:
@@ -197,6 +177,22 @@ class ProfileView(Screen):
         )
 
         return linkedin_text
+
+    def _build_github_text(self, github_url: str | None):
+        """
+        Monta o texto do GitHub.
+        Quando o terminal suporta links, o endereço fica clicável.
+        """
+        if not github_url:
+            return "GitHub não informado."
+
+        github_text = Text()
+        github_text.append(
+            github_url,
+            style=f"link {github_url} underline"
+        )
+
+        return github_text
 
     def reload_profile(self) -> None:
         """
@@ -216,6 +212,10 @@ class ProfileView(Screen):
 
         self.query_one("#linkedin_value", Static).update(
             self._build_linkedin_text(profile.linkedin_url)
+        )
+
+        self.query_one("#github_value", Static).update(
+            self._build_github_text(profile.github_url)
         )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:

@@ -6,6 +6,7 @@ from screens.profile.profile_view import ProfileView
 from screens.social.friends_view import FriendsView
 from screens.events.favorite_events_list_view import FavoriteEventsList
 from screens.events.events_general_view import EventsGeneralView
+from screens.ranking.ranking_view import RankingView
 from utils.validations import validation_services
 from database.repositories.user_repository import user_services
 
@@ -41,19 +42,20 @@ Button {
 }
 """
 
+
 class MainPageView(Screen):
     """
     Classe responsável pela tela principal do aplicativo. Ela é exibida após o login bem-sucedido, e oferece opções de navegação para
     o perfil do usuário, a lista de eventos disponíveis, a lista de eventos favoritados, e a opção de logout.
     """
     CSS = MAIN_PAGE_CSS
-    
+
     # Inicializa a tela principal com os dados do usuário autenticado
     def __init__(self, user_id: int, user_name: str):
         super().__init__()
         self.user_name = validation_services.normalize_name(user_name)
         self.user_id = user_id
-    
+
     # Monta a tela principal após o login
     def compose(self) -> ComposeResult:
         with Center():
@@ -63,16 +65,17 @@ class MainPageView(Screen):
                 yield Button("Meu perfil", id="button_profile")
                 yield Button("Eventos", id="button_events")
                 yield Button("Eventos Favoritados", id="button_favorite_events")
+                yield Button("Ranking de Eventos", id="ranking_button")
                 yield Button("Amigos", id="button_friends")
                 yield Button("Logout", id="button_logout", variant="error")
 
     def on_screen_resume(self) -> None:
-            user_data = user_services.get_user_profile(self.user_id)
-            name = user_data.name
-            self.user_name = validation_services.normalize_name(name)
-            welcome_message = self.query_one("#name", Static)
-            welcome_message.update(f"Bem-vindo(a), {self.user_name}!")
-    
+        user_data = user_services.get_user_profile(self.user_id)
+        name = user_data.name
+        self.user_name = validation_services.normalize_name(name)
+        welcome_message = self.query_one("#name", Static)
+        welcome_message.update(f"Bem-vindo(a), {self.user_name}!")
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """
         Função que lida com os eventos de clique nos botões da tela principal. Ela verifica qual botão foi clicado, e executa a ação 
@@ -85,16 +88,20 @@ class MainPageView(Screen):
         facilitar uma nova tentativa de login.
         """
         from screens.auth.login_view import LoginView
-        
+
         if event.button.id == "button_profile":
             self.app.push_screen(ProfileView(self.user_id))
 
         elif event.button.id == "button_events":
-            self.app.push_screen(EventsGeneralView(self.user_id, self.user_name))
+            self.app.push_screen(EventsGeneralView(
+                self.user_id, self.user_name))
 
         elif event.button.id == "button_favorite_events":
             self.app.push_screen(FavoriteEventsList(self.user_id))
-            
+
+        elif event.button.id == "ranking_button":
+            self.app.push_screen(RankingView())
+
         elif event.button.id == "button_friends":
             self.app.push_screen(FriendsView(self.user_id))
 

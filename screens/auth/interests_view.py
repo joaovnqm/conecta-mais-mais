@@ -75,7 +75,7 @@ class InterestsView(Screen):
                 yield Static("Conecta++", id="title")
                 yield Static("Selecione todos os seus interesses abaixo. Pode ser mais de um.", classes="subtitle")
                 if interests:
-                    for interest in interests:
+                    for interest in [i for i in interests if i.name != "Social"]:
                         interest_id = interest.name.replace(" ", "_").lower().strip()
                         interest_id = unidecode(interest_id)
                         yield Checkbox(interest.name, id=f"interesse_{interest_id}", classes="interests")

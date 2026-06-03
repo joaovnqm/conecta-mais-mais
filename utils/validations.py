@@ -29,6 +29,15 @@ class ValidationService:
         
         pattern = r"^https://(www\.)?linkedin\.com/in/[A-Za-z0-9\-_%]+/?$"
         return re.fullmatch(pattern, linkedin_url) is not None
+    
+    def valid_github_url(self, github_url: str) -> bool:
+        github_url = github_url.strip()
+        
+        if not github_url:
+            return True
+        
+        pattern = r"^https://(www\.)?github\.com/[A-Za-z0-9\-_%]+/?$"
+        return re.fullmatch(pattern, github_url) is not None
 
     def valid_name_users(self, name: str) -> bool:
         """

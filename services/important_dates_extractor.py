@@ -161,22 +161,12 @@ class ImportantDatesExtractor:
         "camera ready copy": "Versão final do artigo",
     }
 
-    def extract(
-        self,
-        text: str,
-        source_url: str,
-        fallback_year: int | None = None
-    ) -> list[dict]:
+    def extract(self, text: str, source_url: str, fallback_year: int | None = None) -> list[dict]:
         if not text:
             return []
 
         clean_text = self._clean_text(text)
-
-        special_card_dates = self._extract_special_important_date_cards(
-            clean_text,
-            source_url
-        )
-
+        special_card_dates = self._extract_special_important_date_cards(clean_text, source_url)
         if special_card_dates:
             return self._remove_duplicates_and_obsolete_dates(special_card_dates)
 
@@ -184,73 +174,25 @@ class ImportantDatesExtractor:
             fallback_year = self._infer_global_year(clean_text)
 
         important_dates = []
-
-        important_dates.extend(
-            self._extract_numeric_dates(clean_text, source_url)
-        )
-
-        important_dates.extend(
-            self._extract_english_month_dates(clean_text, source_url)
-        )
-
-        important_dates.extend(
-            self._extract_english_month_day_without_year(
-                clean_text,
-                source_url,
-                fallback_year
-            )
-        )
-
-        important_dates.extend(
-            self._extract_english_same_month_range_without_year(
-                clean_text,
-                source_url,
-                fallback_year
-            )
-        )
-
-        important_dates.extend(
-            self._extract_english_cross_month_ranges(clean_text, source_url)
-        )
-
-        important_dates.extend(
-            self._extract_english_day_month_ranges(clean_text, source_url)
-        )
-
-        important_dates.extend(
-            self._extract_english_same_month_ranges(clean_text, source_url)
-        )
-
-        important_dates.extend(
-            self._extract_portuguese_month_dates(
-                clean_text,
-                source_url,
-                fallback_year
-            )
-        )
-
-        important_dates.extend(
-            self._extract_portuguese_month_ranges(
-                clean_text,
-                source_url,
-                fallback_year
-            )
-        )
-
-        important_dates.extend(
-            self._extract_portuguese_multiple_days_same_month(
-                clean_text,
-                source_url,
-                fallback_year
-            )
-        )
+        important_dates.extend(self._extract_numeric_dates(clean_text, source_url))
+        important_dates.extend(self._extract_english_month_dates(clean_text, source_url))
+        important_dates.extend(self._extract_english_month_day_without_year(clean_text, source_url, fallback_year))
+        important_dates.extend(self._extract_english_same_month_range_without_year(clean_text, source_url, fallback_year))
+        important_dates.extend(self._extract_english_cross_month_ranges(clean_text, source_url))
+        important_dates.extend(self._extract_english_day_month_ranges(clean_text, source_url))
+        important_dates.extend(self._extract_english_same_month_ranges(clean_text, source_url))
+        important_dates.extend(self._extract_portuguese_month_dates(clean_text, source_url, fallback_year))
+        important_dates.extend(self._extract_portuguese_month_ranges(clean_text, source_url, fallback_year))
+        important_dates.extend(self._extract_portuguese_multiple_days_same_month(clean_text, source_url, fallback_year))
 
         return self._remove_duplicates_and_obsolete_dates(important_dates)
 
     def _clean_text(self, text: str) -> str:
+        """
+        Limpa o HTML, remove conteúdos riscados e obsoletos, e normaliza o texto para facilitar a extração de datas.
+        """
         text = html.unescape(text)
         text = self._remove_crossed_out_content(text)
-
         text = re.sub(
             r"<script.*?</script>",
             " ",
@@ -414,12 +356,7 @@ class ImportantDatesExtractor:
 
         return filtered_occurrences
 
-    def _extract_confirmed_date_from_card_block(
-        self,
-        block: str,
-        title: str,
-        source_url: str
-    ) -> dict | None:
+    def _extract_confirmed_date_from_card_block(self, block: str, title: str, source_url: str) -> dict | None:
         """
         Extrai a data confirmada de um card.
 
@@ -525,6 +462,9 @@ class ImportantDatesExtractor:
         return None
 
     def _extract_numeric_dates(self, text: str, source_url: str) -> list[dict]:
+        """
+        Essa função é chamada apenas para extrair datas numéricas, e não para extrair datas de cards especiais, para evitar falsos positivos.
+        """
         important_dates = []
 
         for pattern in self.NUMERIC_DATE_PATTERNS:
@@ -551,11 +491,10 @@ class ImportantDatesExtractor:
 
         return important_dates
 
-    def _extract_english_month_dates(
-        self,
-        text: str,
-        source_url: str
-    ) -> list[dict]:
+    def _extract_english_month_dates(self, text: str, source_url: str) -> list[dict]:
+        """
+        Essa função é chamada apenas para extrair datas com mês escrito, e não para extrair datas de cards especiais, para evitar falsos positivos.
+        """
         month_names = "|".join(self.ENGLISH_MONTHS.keys())
         pattern = rf"\b({month_names})\s+(\d{{1,2}}),?\s+(\d{{4}})\b"
 
@@ -584,12 +523,7 @@ class ImportantDatesExtractor:
 
         return important_dates
 
-    def _extract_english_month_day_without_year(
-        self,
-        text: str,
-        source_url: str,
-        fallback_year: int | None
-    ) -> list[dict]:
+    def _extract_english_month_day_without_year(self, text: str, source_url: str, fallback_year: int | None) -> list[dict]:
         """
         Extrai datas em inglês sem ano explícito.
         """
@@ -629,12 +563,7 @@ class ImportantDatesExtractor:
 
         return important_dates
 
-    def _extract_english_same_month_range_without_year(
-        self,
-        text: str,
-        source_url: str,
-        fallback_year: int | None
-    ) -> list[dict]:
+    def _extract_english_same_month_range_without_year(self, text: str, source_url: str, fallback_year: int | None) -> list[dict]:
         """
         Extrai intervalos em inglês sem ano explícito.
         """
@@ -681,11 +610,10 @@ class ImportantDatesExtractor:
             if not item["ignore"]
         ]
 
-    def _extract_english_cross_month_ranges(
-        self,
-        text: str,
-        source_url: str
-    ) -> list[dict]:
+    def _extract_english_cross_month_ranges(self, text: str, source_url: str) -> list[dict]:
+        """
+        Essa função extrai intervalos em inglês que cruzam meses, como "December 30 - January 2, 2024".
+        """
         month_names = "|".join(self.ENGLISH_MONTHS.keys())
         pattern = rf"\b({month_names})\s+(\d{{1,2}})\s*[-–]\s*({month_names})\s+(\d{{1,2}}),?\s+(\d{{4}})\b"
 
@@ -718,24 +646,18 @@ class ImportantDatesExtractor:
             if not item["ignore"]
         ]
 
-    def _extract_english_day_month_ranges(
-        self,
-        text: str,
-        source_url: str
-    ) -> list[dict]:
+    def _extract_english_day_month_ranges(self, text: str, source_url: str) -> list[dict]:
         """
         Extrai intervalos em inglês no formato:
         """
 
         month_names = "|".join(self.ENGLISH_MONTHS.keys())
-
         pattern = (
             rf"\b(\d{{1,2}})\s+({month_names})\s*[-–]\s*"
             rf"(\d{{1,2}})\s+({month_names}),?\s+(\d{{4}})\b"
         )
 
         important_dates = []
-
         for match in re.finditer(pattern, text, flags=re.IGNORECASE):
             start_day = int(match.group(1))
             start_month = self.ENGLISH_MONTHS[match.group(2).lower()]
@@ -743,43 +665,20 @@ class ImportantDatesExtractor:
             end_month = self.ENGLISH_MONTHS[match.group(4).lower()]
             year = int(match.group(5))
 
-            start_date = self._build_iso_date(
-                year,
-                start_month,
-                start_day
-            )
-
-            end_date = self._build_iso_date(
-                year,
-                end_month,
-                end_day
-            )
-
+            start_date = self._build_iso_date(year, start_month, start_day)
+            end_date = self._build_iso_date(year, end_month, end_day)
             if start_date and end_date:
                 important_dates.extend(
-                    self._build_range_items(
-                        text,
-                        match.start(),
-                        match.end(),
-                        start_date,
-                        end_date,
-                        source_url
-                    )
-                )
+                    self._build_range_items(text, match.start(), match.end(), start_date, end_date, source_url))
 
-        return [
-            item for item in important_dates
-            if not item["ignore"]
-        ]
+        return [item for item in important_dates if not item["ignore"]]
 
-    def _extract_english_same_month_ranges(
-        self,
-        text: str,
-        source_url: str
-    ) -> list[dict]:
+    def _extract_english_same_month_ranges(self, text: str, source_url: str) -> list[dict]:
+        """
+        Essa função extrai intervalos em inglês no formato "January 10-12, 2024", onde o mês é escrito e o ano é explícito, mas o dia é um intervalo.
+        """
         month_names = "|".join(self.ENGLISH_MONTHS.keys())
         pattern = rf"\b({month_names})\s+(\d{{1,2}})\s*[-–]\s*(\d{{1,2}}),?\s+(\d{{4}})\b"
-
         important_dates = []
 
         for match in re.finditer(pattern, text, flags=re.IGNORECASE):
@@ -793,32 +692,18 @@ class ImportantDatesExtractor:
 
             if start_date and end_date:
                 important_dates.extend(
-                    self._build_range_items(
-                        text,
-                        match.start(),
-                        match.end(),
-                        start_date,
-                        end_date,
-                        source_url
-                    )
-                )
+                    self._build_range_items(text, match.start(), match.end(), start_date, end_date, source_url))
 
-        return [
-            item for item in important_dates
-            if not item["ignore"]
-        ]
+        return [item for item in important_dates if not item["ignore"]]
 
-    def _extract_portuguese_month_dates(
-        self,
-        text: str,
-        source_url: str,
-        fallback_year: int | None
-    ) -> list[dict]:
+    def _extract_portuguese_month_dates(self, text: str, source_url: str, fallback_year: int | None) -> list[dict]:
+        """
+        Essa função é chamada apenas para extrair datas com mês escrito, e não para extrair datas de cards especiais, para evitar falsos positivos.
+        """
         month_names = "|".join(self.PORTUGUESE_MONTHS.keys())
         pattern = rf"\b(\d{{1,2}})\s+de\s+({month_names})(?:\s+de\s+|\s*,?\s*)(\d{{4}})?\b"
 
         important_dates = []
-
         for match in re.finditer(pattern, text, flags=re.IGNORECASE):
             day = int(match.group(1))
             month = self.PORTUGUESE_MONTHS[match.group(2).lower()]
@@ -826,8 +711,10 @@ class ImportantDatesExtractor:
 
             if year_text:
                 year = int(year_text)
+
             elif fallback_year:
                 year = fallback_year
+
             else:
                 continue
 
@@ -836,30 +723,22 @@ class ImportantDatesExtractor:
             if not iso_date:
                 continue
 
-            item = self._build_date_item(
-                text,
-                match.start(),
-                match.end(),
-                iso_date,
-                source_url
-            )
+            item = self._build_date_item(text, match.start(), match.end(), iso_date, source_url)
 
             if not item["ignore"]:
                 important_dates.append(item)
 
         return important_dates
 
-    def _extract_portuguese_month_ranges(
-        self,
-        text: str,
-        source_url: str,
-        fallback_year: int | None
-    ) -> list[dict]:
+    def _extract_portuguese_month_ranges(self, text: str, source_url: str, fallback_year: int | None) -> list[dict]:
+        """
+        Essa função extrai intervalos em português no formato "10 a 12 de Janeiro de 2024", em que o mês é escrito e o ano é explícito, mas o dia é um intervalo. 
+        Ela também lida com variações como "10 a 12 de Janeiro" (sem ano) e "10 a 12 de Janeiro, 2024".
+        """
         month_names = "|".join(self.PORTUGUESE_MONTHS.keys())
         pattern = rf"\b(\d{{1,2}})\s+a\s+(\d{{1,2}})\s+de\s+({month_names})(?:\s+de\s+|\s*,?\s*)(\d{{4}})?\b"
 
         important_dates = []
-
         for match in re.finditer(pattern, text, flags=re.IGNORECASE):
             start_day = int(match.group(1))
             end_day = int(match.group(2))
@@ -868,95 +747,56 @@ class ImportantDatesExtractor:
 
             if year_text:
                 year = int(year_text)
+
             elif fallback_year:
                 year = fallback_year
+            
             else:
                 continue
 
             start_date = self._build_iso_date(year, month, start_day)
             end_date = self._build_iso_date(year, month, end_day)
-
             if start_date and end_date:
-                important_dates.extend(
-                    self._build_range_items(
-                        text,
-                        match.start(),
-                        match.end(),
-                        start_date,
-                        end_date,
-                        source_url
-                    )
-                )
+                important_dates.extend(self._build_range_items(text, match.start(), match.end(), start_date, end_date, source_url))
 
-        return [
-            item for item in important_dates
-            if not item["ignore"]
-        ]
+        return [item for item in important_dates if not item["ignore"]]
 
-    def _extract_portuguese_multiple_days_same_month(
-        self,
-        text: str,
-        source_url: str,
-        fallback_year: int | None
-    ) -> list[dict]:
+    def _extract_portuguese_multiple_days_same_month(self, text: str,source_url: str, fallback_year: int | None) -> list[dict]:
+        """
+        Essa função extrai intervalos em português no formato "10, 11 e 12 de Janeiro de 2024", em que o mês é escrito e o ano é explícito, mas o dia é uma lista de dias. 
+        Ela também lida com variações como "10, 11 e 12 de Janeiro" (sem ano) e "10, 11 e 12 de Janeiro, 2024".
+        """
         month_names = "|".join(self.PORTUGUESE_MONTHS.keys())
         pattern = rf"\b(\d{{1,2}}),\s*(\d{{1,2}})\s+e\s+(\d{{1,2}})\s+de\s+({month_names})(?:\s+de\s+|\s*,?\s*)(\d{{4}})?\b"
 
         important_dates = []
-
         for match in re.finditer(pattern, text, flags=re.IGNORECASE):
-            days = [
-                int(match.group(1)),
-                int(match.group(2)),
-                int(match.group(3))
-            ]
+            days = [int(match.group(1)), int(match.group(2)), int(match.group(3))]
 
             month = self.PORTUGUESE_MONTHS[match.group(4).lower()]
             year_text = match.group(5)
-
             if year_text:
                 year = int(year_text)
+
             elif fallback_year:
                 year = fallback_year
+
             else:
                 continue
 
             start_date = self._build_iso_date(year, month, min(days))
             end_date = self._build_iso_date(year, month, max(days))
-
             if start_date and end_date:
-                important_dates.extend(
-                    self._build_range_items(
-                        text,
-                        match.start(),
-                        match.end(),
-                        start_date,
-                        end_date,
-                        source_url
-                    )
-                )
+                important_dates.extend(self._build_range_items(text, match.start(), match.end(), start_date, end_date, source_url))
 
-        return [
-            item for item in important_dates
-            if not item["ignore"]
-        ]
+        return [item for item in important_dates if not item["ignore"]]
 
-    def _build_date_item(
-        self,
-        text: str,
-        start: int,
-        end: int,
-        iso_date: str,
-        source_url: str
-    ) -> dict:
+    def _build_date_item(self, text: str, start: int, end: int, iso_date: str, source_url: str) -> dict:
+        """
+        Essa função constrói o item de data importante, inferindo o título, extraindo a hora (se houver), calculando a confiança e verificando se a data deve ser ignorada.
+        """
         context = self._get_context(text, start, end)
-
-        title = (
-            self._infer_title_after_date(text, end)
-            or self._infer_title_near_date(text, start, end)
-            or self._infer_title(context)
-        )
-
+        title = (self._infer_title_after_date(text, end) or self._infer_title_near_date(text, start, end) or self._infer_title(context))
         time = self._extract_time(context)
         confidence = self._calculate_confidence(context, title, time)
         ignore = self._should_ignore_date(text, start, end, title)
@@ -970,29 +810,20 @@ class ImportantDatesExtractor:
             "ignore": ignore,
         }
 
-    def _build_range_items(
-        self,
-        text: str,
-        start: int,
-        end: int,
-        start_date: str,
-        end_date: str,
-        source_url: str
-    ) -> list[dict]:
+    def _build_range_items(self, text: str, start: int, end: int, start_date: str, end_date: str, source_url: str) -> list[dict]:
+        """
+        Essa função constrói os itens de data importante para intervalos, inferindo o título, calculando a confiança e verificando se as datas devem ser ignoradas.
+        """
         context = self._get_context(text, start, end)
 
-        base_title = (
-            self._infer_title_after_date(text, end)
-            or self._infer_title_near_date(text, start, end)
-            or self._infer_title(context)
-        )
-
+        base_title = (self._infer_title_after_date(text, end) or self._infer_title_near_date(text, start, end) or self._infer_title(context))
         confidence = self._calculate_confidence(context, base_title, None)
         ignore = self._should_ignore_date(text, start, end, base_title)
 
         if base_title in {"Data importante", "Datas importantes", "Data do evento"}:
             start_title = "Início do evento"
             end_title = "Fim do evento"
+        
         else:
             start_title = f"Início - {base_title}"
             end_title = f"Fim - {base_title}"
@@ -1016,13 +847,10 @@ class ImportantDatesExtractor:
             }
         ]
 
-    def _should_ignore_date(
-        self,
-        text: str,
-        start: int,
-        end: int,
-        title: str
-    ) -> bool:
+    def _should_ignore_date(self, text: str, start: int, end: int, title: str) -> bool:
+        """
+        Determina se uma data deve ser ignorada com base em palavras-chave próximas e no título inferido.
+        """
         near_before = text[max(0, start - 100):start].lower()
         near_after = text[end:min(len(text), end + 100)].lower()
         near_text = f"{near_before} {near_after}"
@@ -1038,11 +866,7 @@ class ImportantDatesExtractor:
 
         return any(term in near_text for term in ignored_terms)
 
-    def _infer_title_after_date(
-        self,
-        text: str,
-        match_end: int
-    ) -> str | None:
+    def _infer_title_after_date(self, text: str, match_end: int) -> str | None:
         """
         Infere o título quando o rótulo aparece depois da data.
         """
@@ -1051,7 +875,6 @@ class ImportantDatesExtractor:
         after_context = after_context.split("\n")[0]
         after_context = re.sub(r"^[\s\.\-–:]+", "", after_context)
         after_context = re.sub(r"\s+", " ", after_context).strip().lower()
-
         if not after_context:
             return None
 
@@ -1065,12 +888,10 @@ class ImportantDatesExtractor:
 
         return None
 
-    def _infer_title_near_date(
-        self,
-        text: str,
-        match_start: int,
-        match_end: int
-    ) -> str | None:
+    def _infer_title_near_date(self, text: str, match_start: int, match_end: int) -> str | None:
+        """
+        Essa função tenta inferir o título da data importante procurando por rótulos próximos antes da data, dando prioridade para os mais próximos. Se não encontrar, tenta inferir a partir da linha.
+        """
         before_context = text[max(0, match_start - 240):match_start].lower()
         before_context = re.sub(r"\s+", " ", before_context)
 
@@ -1095,11 +916,10 @@ class ImportantDatesExtractor:
 
         return self._infer_title_from_line(text, match_start)
 
-    def _infer_title_from_line(
-        self,
-        text: str,
-        match_start: int
-    ) -> str | None:
+    def _infer_title_from_line(self, text: str, match_start: int) -> str | None:
+        """
+        Essa função tenta inferir o título a partir da linha em que a data foi encontrada, dando prioridade para o texto antes da data. Se não encontrar, tenta usar as linhas anteriores.
+        """
         lines = text.splitlines()
         current_position = 0
 
@@ -1110,9 +930,7 @@ class ImportantDatesExtractor:
             if line_start <= match_start <= line_end:
                 candidates = []
 
-                current_line_before_date = line[
-                    :max(0, match_start - line_start)
-                ].strip()
+                current_line_before_date = line[:max(0, match_start - line_start)].strip()
 
                 if current_line_before_date:
                     candidates.append(current_line_before_date)
@@ -1135,6 +953,9 @@ class ImportantDatesExtractor:
         return None
 
     def _normalize_label(self, candidate: str) -> str | None:
+        """
+        Essa função normaliza um candidato a título, removendo excesso de espaços, convertendo para minúsculas e verificando se contém rótulos conhecidos ou se é um título plausível. Ela também descarta candidatos muito longos ou que contenham anos, para evitar falsos positivos.
+        """
         candidate = re.sub(r"\s+", " ", candidate).strip()
         candidate_lower = candidate.lower()
 
@@ -1154,6 +975,9 @@ class ImportantDatesExtractor:
         return None
 
     def _infer_title(self, context: str) -> str:
+        """
+        Essa função tenta inferir o título da data importante a partir do contexto, procurando por palavras-chave que indiquem o tipo de data. Ela dá prioridade para as palavras-chave mais específicas e mais próximas da data.
+        """
         normalized_context = context.lower()
 
         priority_phrases = sorted(
@@ -1169,10 +993,10 @@ class ImportantDatesExtractor:
         return "Data importante"
 
     def _extract_time(self, context: str) -> str | None:
-        match = re.search(
-            r"\b(\d{1,2})h(\d{2})?\b|\b(\d{1,2}):(\d{2})\b",
-            context
-        )
+        """
+        Essa função tenta extrair a hora do contexto, procurando por padrões como "14h30" ou "14:30". Ela retorna a hora no formato "HH:MM".
+        """
+        match = re.search(r"\b(\d{1,2})h(\d{2})?\b|\b(\d{1,2}):(\d{2})\b", context)
 
         if not match:
             return None
@@ -1187,12 +1011,12 @@ class ImportantDatesExtractor:
 
         return f"{hour:02d}:{minute:02d}"
 
-    def _calculate_confidence(
-        self,
-        context: str,
-        title: str,
-        time: str | None
-    ) -> float:
+    def _calculate_confidence(self, context: str, title: str, time: str | None) -> float:
+        """
+        Essa função calcula a confiança da data importante com base no título inferido, na presença de hora e em palavras-chave no contexto. 
+        Ela começa com uma confiança base de 0.50 e adiciona pontos para cada evidência encontrada, limitando a confiança máxima a 0.95 para evitar 
+        falsos positivos com confiança total.
+        """
         confidence = 0.50
 
         if title != "Data importante":
@@ -1220,38 +1044,31 @@ class ImportantDatesExtractor:
 
         return min(confidence, 0.95)
 
-    def _build_iso_date(
-        self,
-        year: int,
-        month: int,
-        day: int
-    ) -> str | None:
+    def _build_iso_date(self, year: int, month: int, day: int) -> str | None:
+        """
+        Essa função tenta construir uma data ISO a partir de componentes numéricos, validando se a data é real. Se a data for inválida, ela retorna None.
+        """
         try:
             parsed_date = datetime(year, month, day).date()
             return parsed_date.isoformat()
+        
         except ValueError:
             return None
 
-    def _get_context(
-        self,
-        text: str,
-        start: int,
-        end: int,
-        window: int = 220
-    ) -> str:
+    def _get_context(self, text: str, start: int, end: int, window: int = 220) -> str:
+        """
+        Essa função extrai um contexto ao redor da data encontrada, com um tamanho definido pela janela. Ela é usada para inferir o título, extrair a hora e calcular a confiança da data importante. O contexto é convertido para minúsculas para facilitar a busca por palavras-chave.
+        """
         context_start = max(0, start - window)
         context_end = min(len(text), end + window)
 
         return text[context_start:context_end].lower()
 
-    def _remove_duplicates_and_obsolete_dates(
-        self,
-        dates: list[dict]
-    ) -> list[dict]:
-        filtered_dates = [
-            item for item in dates
-            if not item.get("ignore", False)
-        ]
+    def _remove_duplicates_and_obsolete_dates(self, dates: list[dict]) -> list[dict]:
+        """
+        Essa função remove datas duplicadas e obsoletas, dando prioridade para as datas com maior confiança e para as datas mais recentes quando os títulos são iguais. Ela também remove as datas marcadas para serem ignoradas. O resultado é uma lista de datas importantes únicas, ordenadas cronologicamente.
+        """
+        filtered_dates = [item for item in dates if not item.get("ignore", False)]
 
         exact_unique = {}
 

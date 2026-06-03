@@ -54,6 +54,9 @@ class UserServices:
         if "linkedin_url" not in columns:
             self.cursor.execute("ALTER TABLE users ADD COLUMN linkedin_url TEXT")
 
+        if "github_url" not in columns:
+            self.cursor.execute("ALTER TABLE users ADD COLUMN github_url TEXT")
+
         self.cursor.execute("""
             CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower
             ON users(LOWER(username))
@@ -102,7 +105,8 @@ class UserServices:
         email: str,
         password: str,
         username: str,
-        linkedin_url: str | None = None
+        linkedin_url: str | None = None,
+        github_url: str | None = None
     ):
         """
         Cadastra um novo usuário.
@@ -112,6 +116,7 @@ class UserServices:
         - e-mail obrigatório, válido e único;
         - username obrigatório, válido e único;
         - LinkedIn opcional, mas se informado precisa ter formato válido;
+        - github_url opcional, mas se informado precisa ter formato válido;
         - senha obrigatória e válida;
         - senha armazenada com hash seguro.
         """
@@ -119,7 +124,7 @@ class UserServices:
         email = email.strip().lower()
         username = validation_services.normalize_username(username)
         linkedin_url = (linkedin_url or "").strip()
-
+        github_url = (github_url or "").strip()
         if not validation_services.valid_name_users(name):
             return (
                 False,
@@ -141,6 +146,13 @@ class UserServices:
             return (
                 False,
                 "O LinkedIn precisa estar no formato https://www.linkedin.com/in/seu-perfil",
+                None
+            )
+
+        if not validation_services.valid_github_url(github_url):
+            return (
+                False,
+                "O GitHub precisa estar no formato https://github.com/seu-usuario",
                 None
             )
 
@@ -181,11 +193,12 @@ class UserServices:
                 email,
                 username,
                 linkedin_url,
+                github_url,
                 password
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (name, email, username, linkedin_url, password_hash)
+            (name, email, username, linkedin_url, github_url, password_hash)
         )
 
         self.connection.commit()
@@ -200,7 +213,7 @@ class UserServices:
         """
         self.cursor.execute(
             """
-            SELECT name, email, username, linkedin_url
+            SELECT name, email, username, linkedin_url, github_url
             FROM users
             WHERE user_id = ?
             """,
@@ -212,14 +225,15 @@ class UserServices:
         if user is None:
             return None
 
-        name, email, username, linkedin_url = user
+        name, email, username, linkedin_url, github_url = user
 
         return User(
             user_id=user_id,
-            name=name,
-            email=email,
-            username=username or "",
-            linkedin_url=linkedin_url
+            name = name,
+            email = email,
+            username = username or "",
+            linkedin_url = linkedin_url,
+            github_url = github_url
         )
 
     def update_user_name(self, user_id: int, new_name: str):
@@ -337,6 +351,39 @@ class UserServices:
         self.connection.commit()
 
         return True, "LinkedIn alterado com sucesso."
+    
+    def update_github_url(self, user_id: int, github_url: str):
+        """
+        Atualiza o link do GitHub do usuário.
+
+        O GitHub é opcional, mas se informado precisa seguir o formato validado.
+        """
+        github_url = github_url.strip()
+
+        if not validation_services.valid_github_url(github_url):
+            return False, "O GitHub precisa estar no formato https://github.com/seu-username"
+        
+        self.cursor.execute(
+            "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)",
+            (user_id,)
+        )
+        user_exists = bool(self.cursor.fetchone()[0])
+
+        if not user_exists:
+            return False, "Usuário não encontrado."
+
+        self.cursor.execute(
+            """
+            UPDATE users
+            SET github_url = ?
+            WHERE user_id = ?
+            """,
+            (github_url, user_id)
+        )
+
+        self.connection.commit()
+
+        return True, "GitHub alterado com sucesso."
 
     def change_user_password(self, user_id: int, current_password: str, new_password: str):
         """
@@ -427,6 +474,29 @@ class UserServices:
             return None
 
         return validation_services.normalize_name(user[0])
+    
+    def check_user(self, user_id: int) -> User | None:
+        """
+        Busca os dados do usuário.
+        """
+        self.cursor.execute(
+            """SELECT name, email, username FROM users WHERE user_id = ?""",
+            (user_id,)
+        )
+
+        user = self.cursor.fetchone()
+
+        if user is None:
+            return None
+
+        name, email, user_name = user
+
+        return User(
+            user_id = user_id,
+            name = name,
+            email = email,
+            username = user_name
+        )
 
 
 user_services = UserServices()

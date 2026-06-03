@@ -1,16 +1,14 @@
 import sqlite3
 from datetime import datetime
-
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.containers import Center, Vertical, VerticalScroll
-
 from database.repositories.event_important_dates_repository import EventImportantDatesRepository
 from database.repositories.event_repository import event_services
 from screens.events.delete_social_event_view import DeleteSocialEventView
 from screens.events.edit_social_event_view import EditSocialEventView
-from services.event_participation import event_participation_service
+from database.repositories.event_participation import event_participation_service
 
 
 MY_EVENT_DETAILS_VIEW = """
