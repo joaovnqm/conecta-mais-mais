@@ -210,10 +210,10 @@ class EventImportantDatesRepository:
         """
         Retorna os status separados das datas de submissão.
 
-        Regra:
-        - Se houver trilhas/tracks/modalidades, não mostra Resumos/Artigos.
-        - Se houver múltiplas datas de resumo ou artigo, não mostra Resumos/Artigos.
-        - Se houver apenas uma data de resumo e/ou uma data de artigo, mostra normalmente.
+        Regras:
+        - SBBD mostra resumos/artigos de completos e curtos.
+        - Eventos com trilhas genéricas mostram aviso para consultar o site.
+        - Eventos simples mostram Resumos e Artigos normalmente.
         """
 
         items = self.get_display_dates_by_event_id(event_id)
@@ -230,7 +230,10 @@ class EventImportantDatesRepository:
                 )
             ]
 
-        source_url = items[0].get("source_url")
+        source_url = items[0].get("source_url") or ""
+
+        if "sbbd.org.br/2026/trilha-principal" in source_url.lower():
+            return self._build_sbbd_submission_statuses(items)
 
         has_track_specific_dates = ImportantDatesPolicy.has_track_specific_dates(
             items,
@@ -256,7 +259,7 @@ class EventImportantDatesRepository:
             return [
                 self._build_submission_status(
                     status="track_specific",
-                    short_message=" ⚠️  Consulte as datas por trilha no site oficial",
+                    short_message="⚠️ Consulte as datas por trilha no site oficial",
                     message=(
                         "Este evento possui trilhas, modalidades ou várias datas "
                         "de submissão. Consulte o site oficial para verificar a "
@@ -296,6 +299,112 @@ class EventImportantDatesRepository:
             ]
 
         return statuses
+
+    def _build_sbbd_submission_statuses(self, items: list[dict]) -> list[dict]:
+        """
+        Monta os quatro status específicos do SBBD:
+
+        - Resumos completos
+        - Artigos completos
+        - Resumos curtos
+        - Artigos curtos
+        """
+
+        expected_dates = [
+            (
+                "submission_abstract",
+                "artigos completos",
+                "Resumos completos",
+            ),
+            (
+                "submission_article",
+                "artigos completos",
+                "Artigos completos",
+            ),
+            (
+                "submission_abstract",
+                "artigos curtos",
+                "Resumos curtos",
+            ),
+            (
+                "submission_article",
+                "artigos curtos",
+                "Artigos curtos",
+            ),
+        ]
+
+        statuses: list[dict] = []
+
+        for category, title_part, label in expected_dates:
+            deadline_date = self._get_latest_date_by_category_and_title_part(
+                items,
+                category,
+                title_part,
+            )
+
+            if not deadline_date:
+                continue
+
+            statuses.append(
+                self._build_submission_status_by_date(
+                    label=label,
+                    deadline_date=deadline_date,
+                )
+            )
+
+        if not statuses:
+            return [
+                self._build_submission_status(
+                    status="unknown",
+                    short_message="⚪ Sem submissão publicada",
+                    message=(
+                        "Nenhuma data de submissão de resumo ou artigo "
+                        "foi identificada para o SBBD."
+                    ),
+                )
+            ]
+
+        return statuses
+
+    def _get_latest_date_by_category_and_title_part(
+        self,
+        items: list[dict],
+        category: str,
+        title_part: str,
+    ):
+        """
+        Busca a maior data de uma categoria específica e com um trecho no título.
+
+        Exemplo:
+        category = "submission_article"
+        title_part = "artigos curtos"
+        """
+
+        dates = []
+
+        normalized_title_part = ImportantDatesPolicy._normalize_text(
+            title_part)
+
+        for item in items:
+            if item.get("category") != category:
+                continue
+
+            title = ImportantDatesPolicy._normalize_text(
+                item.get("title", "")
+            )
+
+            if normalized_title_part not in title:
+                continue
+
+            parsed_date = self._parse_iso_date(item.get("date"))
+
+            if parsed_date:
+                dates.append(parsed_date)
+
+        if not dates:
+            return None
+
+        return max(dates)
 
     def _get_dates_by_category(
         self,

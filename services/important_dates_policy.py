@@ -203,39 +203,66 @@ class ImportantDatesPolicy:
 
         if "sbbd.org.br/2026/trilha-principal" in url:
             return [
+                # Artigos completos
                 cls._manual_date(
-                    "Submissão de resumos",
+                    "Submissão de resumos — Artigos completos",
                     "2026-03-20",
                     source_url,
                     0.98,
                 ),
                 cls._manual_date(
-                    "Submissão de artigos",
+                    "Submissão de artigos — Artigos completos",
                     "2026-03-29",
                     source_url,
                     0.98,
                 ),
                 cls._manual_date(
-                    "Notificação aos autores",
+                    "Notificação aos autores — Artigos completos",
                     "2026-05-11",
                     source_url,
                     0.95,
                 ),
                 cls._manual_date(
-                    "Submissão de rebuttal",
+                    "Submissão de rebuttal — Artigos completos",
                     "2026-05-18",
                     source_url,
                     0.95,
                 ),
                 cls._manual_date(
-                    "Notificação final",
+                    "Notificação final — Artigos completos",
                     "2026-06-03",
                     source_url,
                     0.95,
                 ),
                 cls._manual_date(
-                    "Envio da versão final",
+                    "Envio da versão final — Artigos completos",
                     "2026-06-14",
+                    source_url,
+                    0.95,
+                ),
+
+                # Artigos curtos
+                cls._manual_date(
+                    "Submissão de resumos — Artigos curtos",
+                    "2026-05-15",
+                    source_url,
+                    0.98,
+                ),
+                cls._manual_date(
+                    "Submissão de artigos — Artigos curtos",
+                    "2026-05-15",
+                    source_url,
+                    0.98,
+                ),
+                cls._manual_date(
+                    "Notificação aos autores — Artigos curtos",
+                    "2026-06-04",
+                    source_url,
+                    0.95,
+                ),
+                cls._manual_date(
+                    "Envio da versão final — Artigos curtos",
+                    "2026-06-18",
                     source_url,
                     0.95,
                 ),
@@ -372,6 +399,9 @@ class ImportantDatesPolicy:
         """
 
         url = (source_url or "").lower()
+
+        if "sbbd.org.br/2026/trilha-principal" in url:
+            return False
 
         track_url_parts = (
             "icde2026.github.io/important-dates",
@@ -561,11 +591,24 @@ class ImportantDatesPolicy:
             "event_end": "Fim do evento",
         }
 
-        if "—" in title and category == "submission_article":
-            suffix = title.split("—", 1)[1].strip()
-            return f"Submissão de artigos — {suffix}"
+        base_title = normalized_titles.get(category, title)
 
-        return normalized_titles.get(category, title)
+        # Preserva o complemento depois de "—".
+        # Exemplo:
+        # "Submissão de artigos — Artigos completos"
+        # continua indicando a modalidade.
+        if "—" in title and category in {
+            "submission_abstract",
+            "submission_article",
+            "rebuttal",
+            "notification",
+            "notification_final",
+            "camera_ready",
+        }:
+            suffix = title.split("—", 1)[1].strip()
+            return f"{base_title} — {suffix}"
+
+        return base_title
 
     @classmethod
     def category_label(cls, category: str) -> str:
