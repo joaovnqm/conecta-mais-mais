@@ -115,37 +115,37 @@ class EventParticipationService:
         return bool(self.cursor.fetchone()[0])
 
 
-def check_activities(self, user_id: int, event_id: int) -> list[str]:
-    """
-    Retorna as atividades registradas na participação do usuário.
-    """
-
-    self.cursor.execute(
+    def check_activities(self, user_id: int, event_id: int) -> list[str]:
         """
-        SELECT extra_activity
-        FROM event_participants
-        WHERE user_id = ?
-          AND event_id = ?
-          AND status = 'confirmed'
-        """,
-        (user_id, event_id),
-    )
+        Retorna as atividades registradas na participação do usuário.
+        """
 
-    result = self.cursor.fetchone()
+        self.cursor.execute(
+            """
+            SELECT extra_activity
+            FROM event_participants
+            WHERE user_id = ?
+            AND event_id = ?
+            AND status = 'confirmed'
+            """,
+            (user_id, event_id),
+        )
 
-    if not result:
-        return []
+        result = self.cursor.fetchone()
 
-    activities_text = result[0]
+        if not result:
+            return []
 
-    if not activities_text:
-        return []
+        activities_text = result[0]
 
-    return [
-        activity.strip()
-        for activity in activities_text.split(";")
-        if activity.strip()
-    ]
+        if not activities_text:
+            return []
+
+        return [
+            activity.strip()
+            for activity in activities_text.split(";")
+            if activity.strip()
+        ]
 
     def count_confirmed_presence(self, event_id: int) -> int:
         """
