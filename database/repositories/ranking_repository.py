@@ -65,13 +65,7 @@ class RankingRepository:
 
         return ranking
 
-    def add_points_once(
-        self,
-        user_id: int,
-        event_id: int,
-        action_type: str,
-        points: int,
-    ) -> bool:
+    def add_points_once(self, user_id: int, event_id: int, action_type: str, points: int) -> bool:
         """
         Adiciona pontos uma única vez para cada usuário/evento/ação.
         """

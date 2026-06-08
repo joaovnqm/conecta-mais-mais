@@ -1,8 +1,6 @@
 import sqlite3
 from datetime import datetime
-
 from services.important_dates_policy import ImportantDatesPolicy
-
 
 class EventImportantDatesRepository:
     """
@@ -12,11 +10,7 @@ class EventImportantDatesRepository:
     def __init__(self, connection: sqlite3.Connection):
         self.connection = connection
 
-    def replace_auto_generated_dates(
-        self,
-        event_id: int,
-        important_dates: list[dict]
-    ) -> None:
+    def replace_auto_generated_dates(self, event_id: int, important_dates: list[dict]) -> None:
         """
         Substitui as datas automáticas de um evento pelas datas mais recentes.
 
@@ -25,7 +19,6 @@ class EventImportantDatesRepository:
 
         cursor = self.connection.cursor()
         now = datetime.now().isoformat(timespec="seconds")
-
         cursor.execute(
             """
             DELETE FROM event_important_dates
@@ -366,15 +359,9 @@ class EventImportantDatesRepository:
 
         return statuses
 
-    def _get_latest_date_by_category_and_title_part(
-        self,
-        items: list[dict],
-        category: str,
-        title_part: str,
-    ):
+    def _get_latest_date_by_category_and_title_part(self, items: list[dict], category: str, title_part: str):
         """
         Busca a maior data de uma categoria específica e com um trecho no título.
-
         Exemplo:
         category = "submission_article"
         title_part = "artigos curtos"
@@ -406,11 +393,7 @@ class EventImportantDatesRepository:
 
         return max(dates)
 
-    def _get_dates_by_category(
-        self,
-        items: list[dict],
-        category: str,
-    ) -> list:
+    def _get_dates_by_category(self, items: list[dict], category: str) -> list:
         """
         Retorna todas as datas de uma categoria específica.
         """
@@ -429,11 +412,7 @@ class EventImportantDatesRepository:
         dates.sort()
         return dates
 
-    def _build_submission_status_by_date(
-        self,
-        label: str,
-        deadline_date,
-    ) -> dict:
+    def _build_submission_status_by_date(self, label: str, deadline_date) -> dict:
         """
         Monta o status visual para uma data específica de submissão.
         """
@@ -479,6 +458,7 @@ class EventImportantDatesRepository:
         )
 
     def _parse_iso_date(self, value: str | None):
+        """Tenta converter uma string ISO para um objeto date. Retorna None se falhar."""
         if not value:
             return None
 
@@ -488,9 +468,11 @@ class EventImportantDatesRepository:
             return None
 
     def _is_valid_iso_date(self, value: str | None) -> bool:
+        """Verifica se uma string é uma data ISO válida."""
         return self._parse_iso_date(value) is not None
 
     def _format_date(self, value) -> str:
+        """Formata um objeto date para o formato dd/mm/yyyy."""
         return value.strftime("%d/%m/%Y")
 
     def _build_submission_status(
@@ -502,6 +484,7 @@ class EventImportantDatesRepository:
         deadline_date: str | None = None,
         days_until_deadline: int | None = None,
     ) -> dict:
+        """Constrói um dicionário de status de submissão com as informações fornecidas."""
         return {
             "status": status,
             "short_message": short_message,

@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 from typing import Optional
-
-
 @dataclass(frozen=True)
 class RankingLevel:
     name: str
@@ -15,16 +13,6 @@ class XpAction:
     label: str
     points: int
     description: str
-
-
-@dataclass(frozen=True)
-class Achievement:
-    key: str
-    name: str
-    description: str
-    metric: str
-    required_value: int
-
 
 RANKING_LEVELS: list[RankingLevel] = [
     RankingLevel("Recém-chegado", 0, 99),
@@ -58,12 +46,6 @@ XP_ACTIONS: dict[str, XpAction] = {
         points=25,
         description="Usuário recebeu certificado de participação",
     ),
-    "event_review": XpAction(
-        key="event_review",
-        label="Avaliação do evento",
-        points=5,
-        description="Usuário avaliou ou comentou sobre o evento",
-    ),
     "presentation": XpAction(
         key="presentation",
         label="Apresentação realizada",
@@ -76,79 +58,7 @@ XP_ACTIONS: dict[str, XpAction] = {
         points=35,
         description="Usuário recebeu certificado como apresentador",
     ),
-    "event_organization": XpAction(
-        key="event_organization",
-        label="Organização de evento",
-        points=60,
-        description="Usuário organizou ou ajudou a organizar um evento",
-    ),
-    "support_team": XpAction(
-        key="support_team",
-        label="Equipe de apoio",
-        points=35,
-        description="Usuário participou da equipe de apoio do evento",
-    ),
-    "highlighted_participation": XpAction(
-        key="highlighted_participation",
-        label="Participação em destaque",
-        points=40,
-        description="Usuário teve participação em destaque no evento",
-    ),
 }
-
-
-ACHIEVEMENTS: list[Achievement] = [
-    Achievement(
-        key="first_event",
-        name="Primeiro evento",
-        description="Participou do primeiro evento",
-        metric="events_attended",
-        required_value=1,
-    ),
-    Achievement(
-        key="confirmed_presence",
-        name="Presença confirmada",
-        description="Compareceu a 5 eventos",
-        metric="events_attended",
-        required_value=5,
-    ),
-    Achievement(
-        key="certificate_collector",
-        name="Colecionador de Certificados",
-        description="Recebeu 10 certificados",
-        metric="certificates_received",
-        required_value=10,
-    ),
-    Achievement(
-        key="recurring_speaker",
-        name="Apresentador Recorrente",
-        description="Fez 5 apresentações",
-        metric="presentations_done",
-        required_value=5,
-    ),
-    Achievement(
-        key="active_organizer",
-        name="Organizador ativo",
-        description="Organizou ou ajudou em 3 eventos",
-        metric="events_organized",
-        required_value=3,
-    ),
-    Achievement(
-        key="community_highlight",
-        name="Destaque da comunidade",
-        description="Recebeu destaque em evento",
-        metric="highlighted_participations",
-        required_value=1,
-    ),
-    Achievement(
-        key="xp_1000",
-        name="Mil pontos de experiência",
-        description="Alcançou 1000 de XP de evento",
-        metric="total_xp",
-        required_value=1000,
-    ),
-]
-
 
 def get_level_by_xp(total_xp: int) -> RankingLevel:
     for level in RANKING_LEVELS:

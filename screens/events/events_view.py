@@ -1,14 +1,10 @@
 from typing import Any
-
 import sqlite3
 from textual.app import ComposeResult
 from textual.containers import Center, Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Button, Input, Select, Static
-
-from database.repositories.event_important_dates_repository import (
-    EventImportantDatesRepository,
-)
+from database.repositories.event_important_dates_repository import (EventImportantDatesRepository)
 from database.repositories.event_repository import event_services
 from database.repositories.interest_repository import interest_services
 from screens.events.event_details_view import EventDetailsView
