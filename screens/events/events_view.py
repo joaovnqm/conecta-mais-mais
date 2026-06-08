@@ -30,6 +30,26 @@ Screen {
     margin-bottom: 1;
 }
 
+#top_bar {
+    width: 100%;
+    height: auto;
+    layout: grid;
+    grid-size: 3;
+    grid-columns: 6 1fr 6;
+    margin-bottom: 1;
+}
+
+#home_button {
+    width: 8;
+    height: 3;
+}
+
+#top_title {
+    content-align: center middle;
+    height: 3;
+    text-style: bold;
+}
+
 #events_container {
     content-align: center middle;
 }
@@ -137,7 +157,10 @@ class EventsView(Screen):
 
         with Center():
             with VerticalScroll(id="main_box"):
-                yield Static("Eventos", id="main_title")
+                with Horizontal(id="top_bar"):
+                    yield Button("🏠", id="home_button", variant="primary")
+                    yield Static("Eventos Disponíveis", id="top_title")
+                    yield Static("")
 
                 yield Static("Buscar evento:")
                 yield Input(
@@ -184,6 +207,10 @@ class EventsView(Screen):
             self.app.push_screen(EventDetailsView(self.user_id, event_id))
 
         elif event.button.id == "button_return":
+            self.app.pop_screen()
+
+        elif event.button.id == "home_button":
+            self.app.pop_screen()
             self.app.pop_screen()
 
     async def on_input_changed(self, event: Input.Changed) -> None:

@@ -3,7 +3,7 @@ from datetime import datetime
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Checkbox
-from textual.containers import Center, VerticalScroll, Vertical
+from textual.containers import Center, VerticalScroll, Vertical, Horizontal
 from database.repositories.event_important_dates_repository import EventImportantDatesRepository
 from services.important_dates_policy import ImportantDatesPolicy
 from database.repositories.event_repository import event_services
@@ -34,6 +34,26 @@ Screen {
     content-align: center middle;
     text-style: bold;
     margin-bottom: 1;
+}
+
+#top_bar {
+    width: 100%;
+    height: auto;
+    layout: grid;
+    grid-size: 3;
+    grid-columns: 6 1fr 6;
+    margin-bottom: 1;
+}
+
+#home_button {
+    width: 8;
+    height: 3;
+}
+
+#top_title {
+    content-align: center middle;
+    height: 3;
+    text-style: bold;
 }
 
 .subtitle {
@@ -144,7 +164,6 @@ ACTIVITY_OPTIONS = {
     },
 }
 
-
 class EventDetailsView(Screen):
     """
     Tela responsável por exibir detalhes do evento e permitir ações sociais.
@@ -159,6 +178,7 @@ class EventDetailsView(Screen):
         self.ranking_repository = RankingRepository()
 
     def compose(self) -> ComposeResult:
+        """Composição da tela de detalhes do evento."""
         event = event_services.check_event(self.event_id)
         creator_name = user_services.check_user_name(event.creator_id)
         interests = interest_services.check_event_interests(event.event_id)
@@ -180,7 +200,11 @@ class EventDetailsView(Screen):
 
         with Center():
             with VerticalScroll(id="main_box"):
-                yield Static(f"Evento: {event.name}", id="main_title")
+                with Horizontal(id="top_bar"):
+                    yield Button("🏠", id="home_button", variant="primary")
+                    yield Static(f"Detalhes do Evento: {event.name}", id="top_title")
+                    yield Static("")
+
                 yield Static(
                     "Veja os detalhes do evento e acompanhe a atividade dos seus amigos.",
                     classes="subtitle",
@@ -293,10 +317,12 @@ class EventDetailsView(Screen):
                 yield Button("Voltar", id="button_return", variant="primary")
 
     async def on_mount(self) -> None:
+        """Carrega as datas importantes e os dados sociais do evento ao montar a tela."""
         self.load_important_dates()
         await self.reload_event_social_data()
 
     async def on_screen_resume(self) -> None:
+        """Atualiza as datas importantes e os dados sociais do evento ao retornar para a tela."""
         self.load_important_dates()
         await self.reload_event_social_data()
 
@@ -380,10 +406,12 @@ class EventDetailsView(Screen):
         dates_widget.update("\n\n".join(final_sections))
 
     def _format_date(self, iso_date: str) -> str:
+        """Formata data do formato ISO (AAAA-MM-DD) para o formato brasileiro (DD/MM/AAAA)."""
         year, month, day = iso_date.split("-")
         return f"{day}/{month}/{year}"
 
     def _format_datetime(self, iso_datetime: str | None) -> str:
+        """Formata data e hora do formato ISO para o formato brasileiro, ou retorna um texto padrão se a data for nula ou inválida."""
         if not iso_datetime:
             return "não informado"
 
@@ -394,6 +422,7 @@ class EventDetailsView(Screen):
             return iso_datetime
 
     async def reload_event_social_data(self) -> None:
+        """Recarrega os dados sociais do evento, incluindo status de presença, favoritos e atividades extras."""
         await self.reload_favorite_button()
         await self.reload_presence_button()
         await self.reload_social_summary()
@@ -402,6 +431,7 @@ class EventDetailsView(Screen):
         await self.reload_activity_checkboxes()
 
     async def reload_favorite_button(self) -> None:
+        """Atualiza o botão de favorito com base no status atual do evento para o usuário."""
         try:
             container = self.query_one("#favorite_button_container")
         except Exception:
@@ -427,6 +457,7 @@ class EventDetailsView(Screen):
             )
 
     async def reload_presence_button(self) -> None:
+        """Atualiza o botão de presença com base no status atual do evento para o usuário."""
         try:
             container = self.query_one("#presence_button_container")
         except Exception:
@@ -452,6 +483,7 @@ class EventDetailsView(Screen):
             )
 
     async def reload_social_summary(self) -> None:
+        """Atualiza o resumo social do evento, incluindo contagem de presença confirmada e favoritos."""
         total_presence = event_participation_service.count_confirmed_presence(
             self.event_id
         )
@@ -469,6 +501,7 @@ class EventDetailsView(Screen):
         )
 
     async def reload_friends_presence(self) -> None:
+        """Atualiza a lista de amigos com presença confirmada no evento."""
         container = self.query_one("#friends_presence_container")
         await container.remove_children()
 
@@ -495,6 +528,7 @@ class EventDetailsView(Screen):
             )
 
     async def reload_friends_favorites(self) -> None:
+        """Atualiza a lista de amigos que favoritaram o evento."""
         container = self.query_one("#friends_favorites_container")
         await container.remove_children()
 
@@ -594,6 +628,7 @@ class EventDetailsView(Screen):
         )
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Trata cliques nos botões da tela de detalhes do evento, direcionando para a função de tratamento correspondente a cada ação."""
         if event.button.id == "button_favorite_event":
             await self.handle_favorite_button()
             return
@@ -609,6 +644,10 @@ class EventDetailsView(Screen):
         if event.button.id == "button_return":
             self.app.pop_screen()
             return
+        
+        if event.button.id == "home_button":
+            while self.app.screen is not self.app.screen_stack[2]:
+                self.app.pop_screen()
 
     async def handle_favorite_button(self) -> None:
         """

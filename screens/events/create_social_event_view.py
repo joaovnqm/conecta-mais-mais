@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
-from textual.containers import Center, VerticalScroll
+from textual.containers import Center, VerticalScroll, Horizontal
 
 from database.repositories.event_repository import event_services
 
@@ -33,6 +33,26 @@ Screen {
     margin-top: 1;
 }
 
+#top_bar {
+    width: 100%;
+    height: auto;
+    layout: grid;
+    grid-size: 3;
+    grid-columns: 6 1fr 6;
+    margin-bottom: 1;
+}
+
+#home_button {
+    width: 8;
+    height: 3;
+}
+
+#top_title {
+    content-align: center middle;
+    height: 3;
+    text-style: bold;
+}
+
 Input {
     width: 100%;
     margin-top: 1;
@@ -48,7 +68,12 @@ Input.invalid {
     color: $warning;
 }
 
-Button {
+#button_create_event {
+    width: 100%;
+    margin-top: 1;
+}
+
+#button_return {
     width: 100%;
     margin-top: 1;
 }
@@ -69,9 +94,12 @@ class CreateSocialEventView(Screen):
     def compose(self) -> ComposeResult:
         with Center():
             with VerticalScroll(id="main_box"):
-                yield Static("Criar Evento Social", id="main_title")
-                yield Static("Preencha as informações do evento que você deseja criar:")
+                with Horizontal(id="top_bar"):
+                    yield Button("🏠", id="home_button", variant="primary")
+                    yield Static("Criar Evento Social", id="top_title")
+                    yield Static("")
 
+                yield Static("Preencha as informações do evento que você deseja criar:")
                 yield Input(placeholder="Insira o nome do evento...", id="event_name")
                 yield Input(placeholder="Insira a descrição do evento...", id="event_description")
                 yield Input(placeholder="Insira o local do evento (opcional)...", id="event_location")
@@ -117,4 +145,8 @@ class CreateSocialEventView(Screen):
                 self.query_one("#message", Static).update(message)
 
         elif event.button.id == "button_return":
+            self.app.pop_screen()
+
+        elif event.button.id == "home_button":
+            self.app.pop_screen()
             self.app.pop_screen()

@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
-from textual.containers import Center, VerticalScroll
+from textual.containers import Center, VerticalScroll, Horizontal
 from database.repositories.event_repository import event_services
 from screens.events.event_details_view import EventDetailsView
 
@@ -34,6 +34,31 @@ Screen {
     margin-bottom: 1;
 }
 
+#top_bar {
+    width: 100%;
+    height: auto;
+    layout: grid;
+    grid-size: 3;
+    grid-columns: 6 1fr 6;
+    margin-bottom: 1;
+}
+
+#home_button {
+    width: 8;
+    height: 3;
+}
+
+#top_title {
+    content-align: center middle;
+    height: 3;
+    text-style: bold;
+}
+
+#button_return {
+    width: 100%;
+    margin-top: 1;
+}
+
 .main_subtitle{
     content-align: center middle;
     color: $text-muted;
@@ -43,9 +68,6 @@ Screen {
 
 .event_buttons{
     content-align: center middle;
-}
-
-Button {
     width: 100%;
     margin-top: 1;
 }
@@ -68,7 +90,11 @@ class EventsSocialView(Screen):
         events = event_services.check_events_by_social(self.user_id)
         with Center():
             with VerticalScroll(id="main_box"):
-                yield Static("Eventos Sociais", id="main_title")
+                with Horizontal(id="top_bar"):
+                    yield Button("🏠", id="home_button", variant="primary")
+                    yield Static("Eventos Sociais", id="top_title")
+                    yield Static("")
+
                 yield Static("Buscar evento:")
                 yield Input(
                     placeholder="Insira o nome do evento...",
@@ -98,6 +124,10 @@ class EventsSocialView(Screen):
             self.app.push_screen(EventDetailsView(self.user_id, event_id))
 
         elif event.button.id == "button_return":
+            self.app.pop_screen()
+
+        elif event.button.id == "home_button":
+            self.app.pop_screen()
             self.app.pop_screen()
 
     async def on_input_changed(self, event: Input.Changed) -> None:

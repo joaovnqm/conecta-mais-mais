@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
-from textual.containers import Center, VerticalScroll
+from textual.containers import Center, VerticalScroll, Horizontal
 from screens.events.my_event_details_view import MyEventDetailsView
 from database.repositories.event_repository import event_services
 
@@ -25,6 +25,31 @@ Screen {
     margin-bottom: 1;
 }
 
+#top_bar {
+    width: 100%;
+    height: auto;
+    layout: grid;
+    grid-size: 3;
+    grid-columns: 6 1fr 6;
+    margin-bottom: 1;
+}
+
+#home_button {
+    width: 8;
+    height: 3;
+}
+
+#top_title {
+    content-align: center middle;
+    height: 3;
+    text-style: bold;
+}
+
+#button_return {
+    width: 100%;
+    margin-top: 1;
+}
+
 #events_container {
     content-align: center middle;
 }
@@ -42,12 +67,9 @@ Screen {
 }
 
 .event_buttons{
-    content-align: center middle;
-}
-
-Button {
     width: 100%;
     margin-top: 1;
+    content-align: center middle;
 }
 """
 
@@ -65,7 +87,11 @@ class MyEventsView(Screen):
         events = event_services.check_events_by_user(self.user_id)
         with Center():
             with VerticalScroll(id="main_box"):
-                yield Static("Meus Eventos", id="main_title")
+                with Horizontal(id="top_bar"):
+                    yield Button("🏠", id="home_button", variant="primary")
+                    yield Static("Meus Eventos", id="top_title")
+                    yield Static("")
+
                 yield Static("Clique no evento para ver os detalhes.", classes="main_subtitle")
                 if events:
                     for event in events:
@@ -86,4 +112,8 @@ class MyEventsView(Screen):
             self.app.push_screen(MyEventDetailsView(event_id, self.user_id))
         
         elif event.button.id == "button_return":
+            self.app.pop_screen() 
+
+        elif event.button.id == "home_button":
+            self.app.pop_screen()
             self.app.pop_screen() 
