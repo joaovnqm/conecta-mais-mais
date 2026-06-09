@@ -9,11 +9,12 @@ class RankingRepository:
     def __init__(self, database_path: str = "conecta++.db"):
         self.database_path = database_path
         self.connection = sqlite3.connect(self.database_path)
+        self.connection.row_factory = sqlite3.Row
         self.connection.execute("PRAGMA foreign_keys = ON")
         self.cursor = self.connection.cursor()
         self._create_table()
 
-    def create_table(self) -> None:
+    def _create_table(self) -> None:
         self.cursor.executescript(
             """
             CREATE TABLE IF NOT EXISTS event_ranking_actions (
@@ -83,9 +84,7 @@ class RankingRepository:
             LIMIT ?;
         """
 
-        with self._connect() as conn:
-            rows = conn.execute(query, (limit,)).fetchall()
-
+        rows = self.cursor.execute(query, (limit,)).fetchall()
         ranking: list[dict[str, Any]] = []
 
         for position, row in enumerate(rows, start=1):
@@ -115,96 +114,94 @@ class RankingRepository:
         """
         Adiciona pontos uma única vez para cada usuário/evento/ação.
         """
+        self.cursor = self.connection.cursor()
 
-        with self._connect() as conn:
-            cursor = conn.cursor()
+        already_exists = self.cursor.execute(
+            """
+            SELECT id
+            FROM event_ranking_actions
+            WHERE user_id = ?
+                AND event_id = ?
+                AND action_type = ?;
+            """,
+            (user_id, event_id, action_type),
+        ).fetchone()
 
-            already_exists = cursor.execute(
+        if already_exists:
+            return False
+
+        current_total = self.get_total_points(user_id, self.connection)
+        new_total = current_total + points
+        new_level = self.get_level_by_points(new_total)
+
+        self.cursor.execute(
+            """
+            INSERT INTO event_ranking_actions (
+                user_id,
+                event_id,
+                action_type,
+                points
+            )
+            VALUES (?, ?, ?, ?);
+            """,
+            (user_id, event_id, action_type, points),
+        )
+
+        self.cursor.execute(
+            """
+            INSERT INTO user_event_ranking (
+                user_id,
+                total_points,
+                current_level
+            )
+            VALUES (?, ?, ?)
+            ON CONFLICT(user_id)
+            DO UPDATE SET
+                total_points = ?,
+                current_level = ?,
+                last_updated = CURRENT_TIMESTAMP;
+            """,
+            (
+                user_id,
+                new_total,
+                new_level,
+                new_total,
+                new_level,
+            ),
+        )
+
+        if action_type == "presence_confirmed":
+            self.cursor.execute(
                 """
-                SELECT id
-                FROM event_ranking_actions
-                WHERE user_id = ?
-                  AND event_id = ?
-                  AND action_type = ?;
+                UPDATE user_event_ranking
+                SET events_attended = events_attended + 1
+                WHERE user_id = ?;
                 """,
-                (user_id, event_id, action_type),
-            ).fetchone()
-
-            if already_exists:
-                return False
-
-            current_total = self.get_total_points(user_id, conn)
-            new_total = current_total + points
-            new_level = self.get_level_by_points(new_total)
-
-            cursor.execute(
-                """
-                INSERT INTO event_ranking_actions (
-                    user_id,
-                    event_id,
-                    action_type,
-                    points
-                )
-                VALUES (?, ?, ?, ?);
-                """,
-                (user_id, event_id, action_type, points),
+                (user_id,),
             )
 
-            cursor.execute(
+        elif action_type == "certificate_presence":
+            self.cursor.execute(
                 """
-                INSERT INTO user_event_ranking (
-                    user_id,
-                    total_points,
-                    current_level
-                )
-                VALUES (?, ?, ?)
-                ON CONFLICT(user_id)
-                DO UPDATE SET
-                    total_points = ?,
-                    current_level = ?,
-                    last_updated = CURRENT_TIMESTAMP;
+                UPDATE user_event_ranking
+                SET certificates_received = certificates_received + 1
+                WHERE user_id = ?;
                 """,
-                (
-                    user_id,
-                    new_total,
-                    new_level,
-                    new_total,
-                    new_level,
-                ),
+                (user_id,),
             )
 
-            if action_type == "presence_confirmed":
-                cursor.execute(
-                    """
-                    UPDATE user_event_ranking
-                    SET events_attended = events_attended + 1
-                    WHERE user_id = ?;
-                    """,
-                    (user_id,),
-                )
+        elif action_type == "lecture_presentation":
+            self.cursor.execute(
+                """
+                UPDATE user_event_ranking
+                SET presentations_done = presentations_done + 1
+                WHERE user_id = ?;
+                """,
+                (user_id,),
+            )
 
-            elif action_type == "certificate_presence":
-                cursor.execute(
-                    """
-                    UPDATE user_event_ranking
-                    SET certificates_received = certificates_received + 1
-                    WHERE user_id = ?;
-                    """,
-                    (user_id,),
-                )
-
-            elif action_type == "lecture_presentation":
-                cursor.execute(
-                    """
-                    UPDATE user_event_ranking
-                    SET presentations_done = presentations_done + 1
-                    WHERE user_id = ?;
-                    """,
-                    (user_id,),
-                )
-
-            conn.commit()
-            return True
+        self.connection.commit()
+        return True
 
     def get_total_points(
         self,

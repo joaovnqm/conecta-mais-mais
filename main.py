@@ -3,7 +3,7 @@ import sqlite3
 
 from textual.app import App
 
-from database.repositories.important_dates_schema import initialize_important_dates_feature
+from database.repositories.important_dates_schema import important_dates_repository
 from screens.auth.login_view import LoginView
 from services.background_important_dates_updater import BackgroundImportantDatesUpdater
 
@@ -23,7 +23,7 @@ class MinhaApp(App):
         self.connection = sqlite3.connect(DATABASE_PATH)
         self.connection.execute("PRAGMA foreign_keys = ON;")
 
-        initialize_important_dates_feature(self.connection)
+        important_dates_repository.initialize_important_dates_feature(self.connection)
 
         self.important_dates_updater = BackgroundImportantDatesUpdater(
             database_path=DATABASE_PATH,

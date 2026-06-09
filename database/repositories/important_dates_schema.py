@@ -94,3 +94,5 @@ class ImportantDatesRepository:
 
         self.ensure_events_official_url_columns(connection)
         self.create_event_important_dates_table(connection)
+
+important_dates_repository = ImportantDatesRepository()
