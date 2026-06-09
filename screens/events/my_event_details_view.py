@@ -3,7 +3,7 @@ from datetime import datetime
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
-from textual.containers import Center, Vertical, VerticalScroll
+from textual.containers import Center, Vertical, VerticalScroll, Horizontal
 from database.repositories.event_important_dates_repository import EventImportantDatesRepository
 from database.repositories.event_repository import event_services
 from screens.events.delete_social_event_view import DeleteSocialEventView
@@ -38,6 +38,26 @@ Screen {
     width: 100%;
     content-align: center middle;
     margin: 1;
+}
+
+#top_bar {
+    width: 100%;
+    height: auto;
+    layout: grid;
+    grid-size: 3;
+    grid-columns: 6 1fr 6;
+    margin-bottom: 1;
+}
+
+#home_button {
+    width: 8;
+    height: 3;
+}
+
+#top_title {
+    content-align: center middle;
+    height: 3;
+    text-style: bold;
 }
 
 #friends_presence_container,
@@ -102,7 +122,10 @@ class MyEventDetailsView(Screen):
 
         with Center():
             with VerticalScroll(id="main_box"):
-                yield Static(f"Evento: {event.name}", id="main_title")
+                with Horizontal(id="top_bar"):
+                    yield Button("🏠", id="home_button", variant="primary")
+                    yield Static(f"Evento: {event.name}", id="top_title")
+                    yield Static("")
                 yield Static(
                     "Veja as informações do seu evento criado. Você pode editar ou excluir o evento usando os botões abaixo."
                 )
@@ -306,4 +329,9 @@ class MyEventDetailsView(Screen):
             self.app.push_screen(DeleteSocialEventView(self.event_id))
 
         elif event.button.id == "button_return":
+            self.app.pop_screen()
+
+        elif event.button.id == "home_button":
+            self.app.pop_screen()
+            self.app.pop_screen()
             self.app.pop_screen()

@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input, Label
-from textual.containers import Center, VerticalScroll
+from textual.containers import Center, VerticalScroll, Horizontal
 
 from database.repositories.event_repository import event_services
 
@@ -33,6 +33,42 @@ Screen {
     margin-top: 1;
 }
 
+#top_bar {
+    width: 100%;
+    height: auto;
+    layout: grid;
+    grid-size: 3;
+    grid-columns: 6 1fr 6;
+    margin-bottom: 1;
+}
+
+#home_button {
+    width: 8;
+    height: 3;
+}
+
+#top_title {
+    content-align: center middle;
+    height: 3;
+    text-style: bold;
+}
+
+#button_save_changes {
+    width: 100%;
+    margin-top: 1;
+}
+
+#button_return {
+    width: 100%;
+    margin-top: 1;
+}
+
+.event_buttons{
+    content-align: center middle;
+    width: 100%;
+    margin-top: 1;
+}
+
 Input {
     width: 100%;
     margin-top: 1;
@@ -46,11 +82,6 @@ Input.invalid {
     height: 2;
     margin-top: 1;
     color: $warning;
-}
-
-Button {
-    width: 100%;
-    margin-top: 1;
 }
 """
 
@@ -67,11 +98,15 @@ class EditSocialEventView(Screen):
         self.event_id = event_id
 
     def compose(self) -> ComposeResult:
+        """Composição da tela de edição de evento social."""
         event = event_services.check_event(self.event_id)
 
         with Center():
             with VerticalScroll(id="main_box"):
-                yield Static(f"Editar Evento: {event.name}", id="main_title")
+                with Horizontal(id="top_bar"):
+                    yield Button("🏠", id="home_button", variant="primary")
+                    yield Static(f"Editar Evento: {event.name}", id="top_title")
+                    yield Static("")
 
                 yield Input(value=event.name, placeholder="Nome do evento", id="input_event_name")
                 yield Input(value=event.description, placeholder="Descrição do evento", id="input_event_description")
@@ -106,6 +141,7 @@ class EditSocialEventView(Screen):
                 yield Button("Voltar", id="button_return", variant="primary")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Trata cliques nos botões da tela."""
         response = self.query_one("#message", Label)
 
         if event.button.id == "button_save_changes":
@@ -137,4 +173,10 @@ class EditSocialEventView(Screen):
                 response.update(message)
 
         elif event.button.id == "button_return":
+            self.app.pop_screen()
+
+        elif event.button.id == "home_button":
+            self.app.pop_screen()
+            self.app.pop_screen()
+            self.app.pop_screen()
             self.app.pop_screen()

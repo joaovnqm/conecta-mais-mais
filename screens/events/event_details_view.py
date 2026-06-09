@@ -3,8 +3,9 @@ from datetime import datetime
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Checkbox
-from textual.containers import Center, VerticalScroll, Vertical
+from textual.containers import Center, VerticalScroll, Vertical, Horizontal
 from database.repositories.event_important_dates_repository import EventImportantDatesRepository
+from services.important_dates_policy import ImportantDatesPolicy
 from database.repositories.event_repository import event_services
 from database.repositories.user_repository import user_services
 from database.repositories.interest_repository import interest_services
@@ -33,6 +34,26 @@ Screen {
     content-align: center middle;
     text-style: bold;
     margin-bottom: 1;
+}
+
+#top_bar {
+    width: 100%;
+    height: auto;
+    layout: grid;
+    grid-size: 3;
+    grid-columns: 6 1fr 6;
+    margin-bottom: 1;
+}
+
+#home_button {
+    width: 8;
+    height: 3;
+}
+
+#top_title {
+    content-align: center middle;
+    height: 3;
+    text-style: bold;
 }
 
 .subtitle {
@@ -143,7 +164,6 @@ ACTIVITY_OPTIONS = {
     },
 }
 
-
 class EventDetailsView(Screen):
     """
     Tela responsável por exibir detalhes do evento e permitir ações sociais.
@@ -158,6 +178,7 @@ class EventDetailsView(Screen):
         self.ranking_repository = RankingRepository()
 
     def compose(self) -> ComposeResult:
+        """Composição da tela de detalhes do evento."""
         event = event_services.check_event(self.event_id)
         creator_name = user_services.check_user_name(event.creator_id)
         interests = interest_services.check_event_interests(event.event_id)
@@ -179,7 +200,11 @@ class EventDetailsView(Screen):
 
         with Center():
             with VerticalScroll(id="main_box"):
-                yield Static(f"Evento: {event.name}", id="main_title")
+                with Horizontal(id="top_bar"):
+                    yield Button("🏠", id="home_button", variant="primary")
+                    yield Static(f"Detalhes do Evento: {event.name}", id="top_title")
+                    yield Static("")
+
                 yield Static(
                     "Veja os detalhes do evento e acompanhe a atividade dos seus amigos.",
                     classes="subtitle",
@@ -292,52 +317,101 @@ class EventDetailsView(Screen):
                 yield Button("Voltar", id="button_return", variant="primary")
 
     async def on_mount(self) -> None:
+        """Carrega as datas importantes e os dados sociais do evento ao montar a tela."""
         self.load_important_dates()
         await self.reload_event_social_data()
 
     async def on_screen_resume(self) -> None:
+        """Atualiza as datas importantes e os dados sociais do evento ao retornar para a tela."""
         self.load_important_dates()
         await self.reload_event_social_data()
 
     def load_important_dates(self) -> None:
         """
-        Carrega as datas importantes salvas no banco e exibe na tela.
+        Carrega datas importantes limpas e organizadas por categoria.
+
+        Observação:
+        O status resumido de submissão aparece somente na tela principal
+        de eventos. Aqui ficam apenas as datas importantes do evento,
+        separadas por categoria e com aviso destacado quando houver trilhas,
+        tracks ou modalidades específicas.
         """
 
         dates_widget = self.query_one("#important_dates_list", Static)
 
         with sqlite3.connect(event_services.database_path) as connection:
             repository = EventImportantDatesRepository(connection)
-            important_dates = repository.find_by_event_id(self.event_id)
+            important_dates = repository.get_display_dates_by_event_id(self.event_id)
 
         if not important_dates:
             dates_widget.update(
-                "Nenhuma data importante encontrada ainda. Cadastre um link oficial para permitir a busca automática."
+                "Nenhuma data importante confiável foi encontrada para este evento."
             )
             return
 
-        formatted_dates = []
+        grouped_dates: dict[str, list[dict]] = {}
 
         for item in important_dates:
-            confidence_percent = int(item["confidence"] * 100)
-            status = "confirmada" if item["is_confirmed"] else "precisa de confirmação"
-            time_text = f" às {item['time']}" if item["time"] else ""
-            checked_text = self._format_datetime(item["last_checked_at"])
+            grouped_dates.setdefault(item["category_label"], []).append(item)
 
-            formatted_dates.append(
-                f"• {item['title']}: {self._format_date(item['date'])}{time_text} "
-                f"({confidence_percent}% de confiança, {status})\n"
-                f"  Fonte: {item['source_url'] or 'não informada'}\n"
-                f"  Atualizado em: {checked_text}"
+        group_order = [
+            "Submissões",
+            "Pós-submissão",
+            "Evento",
+            "Outras datas",
+        ]
+
+        formatted_sections: list[str] = []
+
+        for group_name in group_order:
+            group_items = grouped_dates.get(group_name)
+
+            if not group_items:
+                continue
+
+            section_lines = [group_name.upper()]
+
+            for item in group_items:
+                time_text = f" às {item['time']}" if item["time"] else ""
+
+                section_lines.append(
+                    f"• {item['title']}: {self._format_date(item['date'])}{time_text}"
+                )
+
+            formatted_sections.append("\n".join(section_lines))
+
+        source_url = important_dates[0].get("source_url") or "não informada"
+        checked_text = self._format_datetime(
+            important_dates[0].get("last_checked_at")
+        )
+
+        final_sections = formatted_sections.copy()
+
+        if ImportantDatesPolicy.has_track_specific_dates(
+            important_dates,
+            source_url,
+        ):
+            final_sections.insert(
+                0,
+                ImportantDatesPolicy.get_track_specific_dates_notice(),
             )
 
-        dates_widget.update("\n\n".join(formatted_dates))
+        footer = (
+            f"Fonte oficial: {source_url}\n"
+            f"Atualizado em: {checked_text}"
+        )
+
+        final_sections.append(footer)
+
+        dates_widget.update("\n\n".join(final_sections))
 
     def _format_date(self, iso_date: str) -> str:
+        """Formata data do formato ISO (AAAA-MM-DD) para o formato brasileiro (DD/MM/AAAA)."""
         year, month, day = iso_date.split("-")
         return f"{day}/{month}/{year}"
 
     def _format_datetime(self, iso_datetime: str | None) -> str:
+        """Formata data e hora do formato ISO para o formato brasileiro, ou retorna um texto padrão se a data for nula ou inválida."""
         if not iso_datetime:
             return "não informado"
 
@@ -348,6 +422,7 @@ class EventDetailsView(Screen):
             return iso_datetime
 
     async def reload_event_social_data(self) -> None:
+        """Recarrega os dados sociais do evento, incluindo status de presença, favoritos e atividades extras."""
         await self.reload_favorite_button()
         await self.reload_presence_button()
         await self.reload_social_summary()
@@ -356,6 +431,7 @@ class EventDetailsView(Screen):
         await self.reload_activity_checkboxes()
 
     async def reload_favorite_button(self) -> None:
+        """Atualiza o botão de favorito com base no status atual do evento para o usuário."""
         try:
             container = self.query_one("#favorite_button_container")
         except Exception:
@@ -381,6 +457,7 @@ class EventDetailsView(Screen):
             )
 
     async def reload_presence_button(self) -> None:
+        """Atualiza o botão de presença com base no status atual do evento para o usuário."""
         try:
             container = self.query_one("#presence_button_container")
         except Exception:
@@ -406,6 +483,7 @@ class EventDetailsView(Screen):
             )
 
     async def reload_social_summary(self) -> None:
+        """Atualiza o resumo social do evento, incluindo contagem de presença confirmada e favoritos."""
         total_presence = event_participation_service.count_confirmed_presence(
             self.event_id
         )
@@ -423,6 +501,7 @@ class EventDetailsView(Screen):
         )
 
     async def reload_friends_presence(self) -> None:
+        """Atualiza a lista de amigos com presença confirmada no evento."""
         container = self.query_one("#friends_presence_container")
         await container.remove_children()
 
@@ -449,6 +528,7 @@ class EventDetailsView(Screen):
             )
 
     async def reload_friends_favorites(self) -> None:
+        """Atualiza a lista de amigos que favoritaram o evento."""
         container = self.query_one("#friends_favorites_container")
         await container.remove_children()
 
@@ -548,6 +628,7 @@ class EventDetailsView(Screen):
         )
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Trata cliques nos botões da tela de detalhes do evento, direcionando para a função de tratamento correspondente a cada ação."""
         if event.button.id == "button_favorite_event":
             await self.handle_favorite_button()
             return
@@ -563,6 +644,10 @@ class EventDetailsView(Screen):
         if event.button.id == "button_return":
             self.app.pop_screen()
             return
+        
+        if event.button.id == "home_button":
+            while self.app.screen is not self.app.screen_stack[2]:
+                self.app.pop_screen()
 
     async def handle_favorite_button(self) -> None:
         """

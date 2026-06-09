@@ -18,21 +18,6 @@ def drop_ranking_tables(cursor: sqlite3.Cursor) -> None:
     cursor.execute("DROP TABLE IF EXISTS user_event_ranking;")
     cursor.execute("DROP TABLE IF EXISTS event_ranking_actions;")
 
-
-def _table_has_column(
-    cursor: sqlite3.Cursor,
-    table_name: str,
-    column_name: str,
-) -> bool:
-    """
-    Verifica se uma tabela possui determinada coluna.
-    """
-    cursor.execute(f"PRAGMA table_info({table_name});")
-    columns = cursor.fetchall()
-
-    return any(column[1] == column_name for column in columns)
-
-
 def create_ranking_tables(
     db_path: Path | str | None = None,
     reset: bool = False,
