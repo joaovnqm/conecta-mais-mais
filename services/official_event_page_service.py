@@ -2,7 +2,6 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-
 class OfficialEventPageService:
     """
     Serviço responsável por acessar a página oficial do evento.
