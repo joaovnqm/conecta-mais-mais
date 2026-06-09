@@ -14,7 +14,7 @@ Nessa interface, o usuário pode filtrar os eventos por interesse, visualizar a 
     <td align="center">
       <img src=".idea/assets/tela-eventos-1.png" alt="Tela de eventos com filtro por interesse" width="350"/>
       <br>
-      <strong>Filtro de eventos por interesse</strong>
+      <strong>Menu principal</strong>
     </td>
     <td align="center">
       <img src=".idea/assets/tela-eventos-2.png" alt="Tela de eventos com lista completa e botão voltar" width="350"/>
