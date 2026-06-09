@@ -2,7 +2,6 @@ import html
 import re
 from datetime import datetime
 
-
 class ImportantDatesExtractor:
     """
     Extrai datas importantes em português e inglês.

@@ -69,317 +69,395 @@ class ImportantDatesPolicy:
         """
         Datas confiáveis para páginas conhecidas.
 
-        Quando a URL é conhecida, preferimos datas curadas para evitar que
-        o extrator gere datas duplicadas, genéricas ou incorretas.
+        Correção aplicada:
+        - eventos com páginas que misturam datas antigas riscadas e datas novas
+          passam a usar curadoria por URL;
+        - isso evita que o extrator pegue o primeiro prazo antigo encontrado no HTML;
+        - quando há múltiplas trilhas, o título mantém o sufixo com a modalidade.
         """
 
         url = (source_url or "").lower()
 
-        if "bracis.sbc.org.br/2026/eniac" in url:
+        # SBC / eventos nacionais -------------------------------------------------
+        if "sbsi.sbc.org.br/2026/chamada-pesquisa" in url:
             return [
-                cls._manual_date(
-                    "Submissão de artigos",
-                    "2026-06-08",
-                    source_url,
-                    0.98,
-                ),
-                cls._manual_date(
-                    "Notificação aos autores",
-                    "2026-07-20",
-                    source_url,
-                    0.95,
-                ),
-                cls._manual_date(
-                    "Envio da versão final",
-                    "2026-08-24",
-                    source_url,
-                    0.95,
-                ),
+                cls._manual_date("Submissão de resumos",
+                                 "2025-09-29", source_url, 0.98),
+                cls._manual_date("Submissão de artigos",
+                                 "2025-09-29", source_url, 0.98),
+                cls._manual_date("Notificação aos autores",
+                                 "2025-12-01", source_url, 0.95),
+                cls._manual_date("Submissão de rebuttal",
+                                 "2025-12-08", source_url, 0.95),
+                cls._manual_date("Notificação final",
+                                 "2025-12-19", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-02-09", source_url, 0.95),
             ]
 
-        if "bracis.sbc.org.br/2026/bracis" in url:
+        if "cbsoft.sbc.org.br/2026" in url and "sbes" in url:
             return [
-                cls._manual_date(
-                    "Submissão de resumos",
-                    "2026-04-27",
-                    source_url,
-                    0.98,
-                ),
-                cls._manual_date(
-                    "Submissão de artigos",
-                    "2026-05-04",
-                    source_url,
-                    0.98,
-                ),
-                cls._manual_date(
-                    "Notificação aos autores",
-                    "2026-06-08",
-                    source_url,
-                    0.95,
-                ),
-                cls._manual_date(
-                    "Envio da versão final",
-                    "2026-06-29",
-                    source_url,
-                    0.95,
-                ),
+                cls._manual_date("Submissão de resumos",
+                                 "2026-04-27", source_url, 0.98),
+                cls._manual_date("Submissão de artigos",
+                                 "2026-05-04", source_url, 0.98),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-06-16", source_url, 0.95),
+                cls._manual_date("Submissão de rebuttal",
+                                 "2026-06-24", source_url, 0.95),
+                cls._manual_date("Notificação final",
+                                 "2026-07-03", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-07-17", source_url, 0.95),
             ]
 
-        if "aaai.org/conference/aaai/aaai-26" in url:
+        if "cbsoft.sbc.org.br/2026" in url and "sbcars" in url:
             return [
-                cls._manual_date(
-                    "Abertura do sistema OpenReview para cadastro de autores",
-                    "2025-06-16",
-                    source_url,
-                    0.95,
-                ),
-                cls._manual_date(
-                    "Abertura do sistema OpenReview para envio de artigos",
-                    "2025-06-25",
-                    source_url,
-                    0.95,
-                ),
-                cls._manual_date(
-                    "Submissão de resumos",
-                    "2025-07-25",
-                    source_url,
-                    0.98,
-                ),
-                cls._manual_date(
-                    "Submissão de artigos",
-                    "2025-08-01",
-                    source_url,
-                    0.98,
-                ),
-                cls._manual_date(
-                    "Material suplementar e código",
-                    "2025-08-04",
-                    source_url,
-                    0.95,
-                ),
-                cls._manual_date(
-                    "Notificação da fase 1",
-                    "2025-09-15",
-                    source_url,
-                    0.95,
-                ),
-                cls._manual_date(
-                    "Início da janela de feedback dos autores",
-                    "2025-10-07",
-                    source_url,
-                    0.95,
-                ),
-                cls._manual_date(
-                    "Fim da janela de feedback dos autores",
-                    "2025-10-13",
-                    source_url,
-                    0.95,
-                ),
-                cls._manual_date(
-                    "Notificação final de aceite ou rejeição",
-                    "2025-11-08",
-                    source_url,
-                    0.95,
-                ),
-                cls._manual_date(
-                    "Envio dos arquivos finais camera-ready",
-                    "2025-11-16",
-                    source_url,
-                    0.95,
-                ),
-                cls._manual_date(
-                    "Início do evento",
-                    "2026-01-20",
-                    source_url,
-                    0.90,
-                ),
-                cls._manual_date(
-                    "Fim do evento",
-                    "2026-01-27",
-                    source_url,
-                    0.90,
-                ),
+                cls._manual_date("Submissão de resumos",
+                                 "2026-06-19", source_url, 0.98),
+                cls._manual_date("Submissão de artigos",
+                                 "2026-06-26", source_url, 0.98),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-08-03", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-08-10", source_url, 0.95),
+            ]
+
+        if "cbsoft.sbc.org.br/2026" in url and "sast" in url:
+            return [
+                cls._manual_date("Submissão de resumos",
+                                 "2026-06-22", source_url, 0.98),
+                cls._manual_date("Submissão de artigos",
+                                 "2026-06-29", source_url, 0.98),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-07-31", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-08-07", source_url, 0.95),
             ]
 
         if "sbbd.org.br/2026/trilha-principal" in url:
             return [
                 # Artigos completos
                 cls._manual_date(
-                    "Submissão de resumos — Artigos completos",
-                    "2026-03-20",
-                    source_url,
-                    0.98,
-                ),
+                    "Submissão de resumos — Artigos completos", "2026-03-20", source_url, 0.98),
                 cls._manual_date(
-                    "Submissão de artigos — Artigos completos",
-                    "2026-03-29",
-                    source_url,
-                    0.98,
-                ),
+                    "Submissão de artigos — Artigos completos", "2026-03-29", source_url, 0.98),
                 cls._manual_date(
-                    "Notificação aos autores — Artigos completos",
-                    "2026-05-11",
-                    source_url,
-                    0.95,
-                ),
+                    "Notificação aos autores — Artigos completos", "2026-05-07", source_url, 0.95),
                 cls._manual_date(
-                    "Submissão de rebuttal — Artigos completos",
-                    "2026-05-18",
-                    source_url,
-                    0.95,
-                ),
+                    "Submissão de rebuttal — Artigos completos", "2026-05-17", source_url, 0.95),
                 cls._manual_date(
-                    "Notificação final — Artigos completos",
-                    "2026-06-03",
-                    source_url,
-                    0.95,
-                ),
+                    "Notificação final — Artigos completos", "2026-05-27", source_url, 0.95),
                 cls._manual_date(
-                    "Envio da versão final — Artigos completos",
-                    "2026-06-14",
-                    source_url,
-                    0.95,
-                ),
+                    "Envio da versão final — Artigos completos", "2026-06-07", source_url, 0.95),
 
                 # Artigos curtos
                 cls._manual_date(
-                    "Submissão de resumos — Artigos curtos",
-                    "2026-05-15",
-                    source_url,
-                    0.98,
-                ),
+                    "Submissão de resumos — Artigos curtos", "2026-04-23", source_url, 0.98),
                 cls._manual_date(
-                    "Submissão de artigos — Artigos curtos",
-                    "2026-05-15",
-                    source_url,
-                    0.98,
-                ),
+                    "Submissão de artigos — Artigos curtos", "2026-04-30", source_url, 0.98),
                 cls._manual_date(
-                    "Notificação aos autores — Artigos curtos",
-                    "2026-06-04",
-                    source_url,
-                    0.95,
-                ),
+                    "Notificação aos autores — Artigos curtos", "2026-06-04", source_url, 0.95),
                 cls._manual_date(
-                    "Envio da versão final — Artigos curtos",
-                    "2026-06-18",
-                    source_url,
-                    0.95,
-                ),
+                    "Envio da versão final — Artigos curtos", "2026-06-18", source_url, 0.95),
             ]
+
+        if "bracis.sbc.org.br/2026/bracis" in url:
+            return [
+                cls._manual_date("Submissão de resumos",
+                                 "2026-04-27", source_url, 0.98),
+                cls._manual_date("Submissão de artigos",
+                                 "2026-05-04", source_url, 0.98),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-06-01", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-06-29", source_url, 0.95),
+            ]
+
+        if "bracis.sbc.org.br/2026/eniac" in url:
+            return [
+                cls._manual_date("Submissão de artigos",
+                                 "2026-06-22", source_url, 0.98),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-08-03", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-08-24", source_url, 0.95),
+            ]
+
+        if "bracis.sbc.org.br/2026/kdmile" in url:
+            return [
+                cls._manual_date("Submissão de artigos",
+                                 "2026-06-08", source_url, 0.98),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-07-20", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-08-28", source_url, 0.95),
+            ]
+
+        if "bracis.sbc.org.br/2026/stil" in url:
+            return [
+                cls._manual_date("Submissão de artigos",
+                                 "2026-04-20", source_url, 0.98),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-06-15", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-07-01", source_url, 0.95),
+            ]
+
+        if "webmedia.org.br" in url:
+            return [
+                cls._manual_date("Submissão de resumos",
+                                 "2026-06-07", source_url, 0.95),
+                cls._manual_date("Submissão de artigos",
+                                 "2026-06-14", source_url, 0.95),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-08-07", source_url, 0.90),
+            ]
+
+        if "ci2s-enterprise.com.ar/2025/12/16/1st-call-for-papers-on-the-29th-workshop-on-requirements-engineering" in url:
+            return [
+                cls._manual_date(
+                    "Submissão de resumos — Regular Research Track", "2026-03-09", source_url, 0.98),
+                cls._manual_date(
+                    "Submissão de artigos — Regular Research Track", "2026-03-16", source_url, 0.98),
+                cls._manual_date(
+                    "Submissão de resumos — Master's and Doctoral Track", "2026-03-31", source_url, 0.95),
+                cls._manual_date(
+                    "Submissão de artigos — Master's and Doctoral Track", "2026-04-06", source_url, 0.95),
+                cls._manual_date(
+                    "Submissão de resumos — Industry/Tools/Journal First Track", "2026-04-06", source_url, 0.95),
+                cls._manual_date(
+                    "Submissão de artigos — Industry/Tools/Journal First Track", "2026-04-13", source_url, 0.95),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-05-11", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-05-30", source_url, 0.95),
+                cls._manual_date(
+                    "Submissão de resumos — Student Poster Track", "2026-05-18", source_url, 0.95),
+                cls._manual_date(
+                    "Submissão de artigos — Student Poster Track", "2026-05-25", source_url, 0.95),
+                cls._manual_date(
+                    "Notificação aos autores — Student Poster Track", "2026-06-22", source_url, 0.95),
+                cls._manual_date(
+                    "Envio da versão final — Student Poster Track", "2026-07-20", source_url, 0.95),
+            ]
+
+        if "csbc.sbc.org.br/2026/brasnam" in url:
+            return [
+                cls._manual_date("Submissão de artigos",
+                                 "2026-03-30", source_url, 0.98),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-05-04", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-05-18", source_url, 0.95),
+                cls._manual_date("Início do evento",
+                                 "2026-07-19", source_url, 0.90),
+                cls._manual_date(
+                    "Fim do evento", "2026-07-23", source_url, 0.90),
+            ]
+
+        if "erbd2026.dv.utfpr.edu.br" in url:
+            return [
+                cls._manual_date("Submissão de artigos",
+                                 "2026-03-06", source_url, 0.98),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-04-01", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-04-14", source_url, 0.95),
+                cls._manual_date("Início do evento",
+                                 "2026-04-22", source_url, 0.90),
+                cls._manual_date(
+                    "Fim do evento", "2026-04-24", source_url, 0.90),
+            ]
+
+        if "sbbd.org.br/2026/wtdbd" in url:
+            return []
+
+        # Eventos internacionais -----------------------------------------------
+        if "conf.researchr.org/dates/icse-2026" in url:
+            return [
+                cls._manual_date("Submissão de resumos",
+                                 "2025-07-11", source_url, 0.95),
+                cls._manual_date("Submissão de artigos",
+                                 "2025-07-18", source_url, 0.95),
+                cls._manual_date("Notificação aos autores",
+                                 "2025-10-17", source_url, 0.90),
+                cls._manual_date("Envio da versão final",
+                                 "2026-01-16", source_url, 0.90),
+                cls._manual_date("Início do evento",
+                                 "2026-04-12", source_url, 0.90),
+                cls._manual_date(
+                    "Fim do evento", "2026-04-18", source_url, 0.90),
+            ]
+
+        if "conf.researchr.org/dates/fse-2026" in url or "conf.researchr.org/home/fse-2026" in url:
+            return [
+                cls._manual_date("Submissão de resumos",
+                                 "2025-09-04", source_url, 0.95),
+                cls._manual_date("Submissão de artigos",
+                                 "2025-09-11", source_url, 0.95),
+                cls._manual_date("Notificação aos autores",
+                                 "2025-12-22", source_url, 0.90),
+                cls._manual_date("Envio da versão final",
+                                 "2026-04-23", source_url, 0.90),
+                cls._manual_date("Início do evento",
+                                 "2026-07-05", source_url, 0.90),
+                cls._manual_date(
+                    "Fim do evento", "2026-07-09", source_url, 0.90),
+            ]
+
+        if "conf.researchr.org/dates/ease-2026" in url or "conf.researchr.org/home/ease-2026" in url:
+            return [
+                cls._manual_date("Submissão de resumos",
+                                 "2026-01-16", source_url, 0.95),
+                cls._manual_date("Submissão de artigos",
+                                 "2026-01-23", source_url, 0.95),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-03-13", source_url, 0.90),
+                cls._manual_date("Envio da versão final",
+                                 "2026-04-30", source_url, 0.90),
+                cls._manual_date("Início do evento",
+                                 "2026-06-09", source_url, 0.90),
+                cls._manual_date(
+                    "Fim do evento", "2026-06-12", source_url, 0.90),
+            ]
+
+        if "conf.researchr.org/dates/re-2026" in url:
+            return [
+                cls._manual_date("Envio da versão final",
+                                 "2026-06-08", source_url, 0.90),
+                cls._manual_date("Submissão de artigos — Workshops",
+                                 "2026-05-25", source_url, 0.90),
+                cls._manual_date(
+                    "Notificação aos autores — Workshops", "2026-06-22", source_url, 0.90),
+                cls._manual_date("Envio da versão final — Workshops",
+                                 "2026-07-02", source_url, 0.90),
+                cls._manual_date("Início do evento",
+                                 "2026-08-18", source_url, 0.90),
+            ]
+
+        if "conf.researchr.org/dates/saner-2026" in url or "conf.researchr.org/home/saner-2026" in url:
+            return [
+                cls._manual_date("Submissão de resumos",
+                                 "2025-10-09", source_url, 0.95),
+                cls._manual_date("Submissão de artigos",
+                                 "2025-10-16", source_url, 0.95),
+                cls._manual_date("Notificação aos autores",
+                                 "2025-12-09", source_url, 0.90),
+                cls._manual_date("Envio da versão final",
+                                 "2026-01-09", source_url, 0.90),
+                cls._manual_date("Início do evento",
+                                 "2026-03-17", source_url, 0.90),
+                cls._manual_date(
+                    "Fim do evento", "2026-03-20", source_url, 0.90),
+            ]
+
+        if "conf.researchr.org/home/issta-2026" in url or "conf.researchr.org/dates/issta-2026" in url:
+            return []
 
         if "vldb.org/2026/important-dates" in url:
             return [
+                cls._manual_date("Abertura das submissões",
+                                 "2025-03-23", source_url, 0.98),
+                cls._manual_date("Submissão de artigos",
+                                 "2026-03-01", source_url, 0.98),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-04-15", source_url, 0.90),
+                cls._manual_date("Início do evento",
+                                 "2026-08-31", source_url, 0.90),
                 cls._manual_date(
-                    "Abertura das submissões",
-                    "2025-03-23",
-                    source_url,
-                    0.98,
-                ),
-                cls._manual_date(
-                    "Submissão de artigos",
-                    "2026-03-01",
-                    source_url,
-                    0.98,
-                ),
-                cls._manual_date(
-                    "Notificação aos autores",
-                    "2026-04-15",
-                    source_url,
-                    0.90,
-                ),
+                    "Fim do evento", "2026-09-04", source_url, 0.90),
             ]
 
         if "icde2026.github.io/important-dates" in url:
             return [
                 cls._manual_date(
-                    "Submissão de artigos — Research Track 1º round",
-                    "2025-06-18",
-                    source_url,
-                    0.98,
-                ),
+                    "Submissão de artigos — Research Track 1º round", "2025-06-18", source_url, 0.98),
                 cls._manual_date(
-                    "Submissão de artigos — Research Track 2º round",
-                    "2025-10-27",
-                    source_url,
-                    0.98,
-                ),
+                    "Submissão de artigos — Research Track 2º round", "2025-10-27", source_url, 0.98),
                 cls._manual_date(
-                    "Submissão de artigos — Industry and Application Track",
-                    "2025-10-27",
-                    source_url,
-                    0.98,
-                ),
+                    "Notificação aos autores — Research Track", "2026-02-23", source_url, 0.95),
                 cls._manual_date(
-                    "Submissão de artigos — Demonstrations",
-                    "2025-11-01",
-                    source_url,
-                    0.95,
-                ),
+                    "Envio da versão final — Research Track", "2026-03-06", source_url, 0.95),
                 cls._manual_date(
-                    "Submissão de artigos — Workshop Proposals",
-                    "2025-09-15",
-                    source_url,
-                    0.95,
-                ),
+                    "Submissão de artigos — Industry and Application Track", "2025-10-27", source_url, 0.98),
                 cls._manual_date(
-                    "Submissão de artigos — Tutorials",
-                    "2025-11-11",
-                    source_url,
-                    0.95,
-                ),
+                    "Submissão de artigos — Demonstrations", "2025-11-01", source_url, 0.95),
                 cls._manual_date(
-                    "Submissão de artigos — TKDE Poster",
-                    "2025-12-09",
-                    source_url,
-                    0.95,
-                ),
+                    "Submissão de artigos — Workshop Proposals", "2025-09-15", source_url, 0.95),
+                cls._manual_date("Submissão de artigos — Tutorials",
+                                 "2025-11-11", source_url, 0.95),
                 cls._manual_date(
-                    "Submissão de artigos — Ph.D. Symposium",
-                    "2026-02-01",
-                    source_url,
-                    0.95,
-                ),
+                    "Submissão de artigos — TKDE Poster", "2025-12-09", source_url, 0.95),
                 cls._manual_date(
-                    "Submissão de artigos — Lightning Talks",
-                    "2025-11-14",
-                    source_url,
-                    0.95,
-                ),
+                    "Submissão de artigos — Ph.D. Symposium", "2026-02-01", source_url, 0.95),
                 cls._manual_date(
-                    "Submissão de artigos — Data Engineering Future Technologies",
-                    "2025-11-09",
-                    source_url,
-                    0.95,
-                ),
+                    "Submissão de artigos — Data Engineering Future Technologies", "2025-11-09", source_url, 0.95),
+            ]
+
+        if "edbticdt2026.github.io" in url:
+            return []
+
+        if "aaai.org/conference/aaai/aaai-26" in url:
+            return [
+                cls._manual_date(
+                    "Abertura do sistema OpenReview para cadastro de autores", "2025-06-16", source_url, 0.95),
+                cls._manual_date(
+                    "Abertura do sistema OpenReview para envio de artigos", "2025-06-25", source_url, 0.95),
+                cls._manual_date("Submissão de resumos",
+                                 "2025-07-25", source_url, 0.98),
+                cls._manual_date("Submissão de artigos",
+                                 "2025-08-01", source_url, 0.98),
+                cls._manual_date("Material suplementar e código",
+                                 "2025-08-04", source_url, 0.95),
+                cls._manual_date("Notificação da fase 1",
+                                 "2025-09-15", source_url, 0.95),
+                cls._manual_date(
+                    "Início da janela de feedback dos autores", "2025-10-07", source_url, 0.95),
+                cls._manual_date(
+                    "Fim da janela de feedback dos autores", "2025-10-13", source_url, 0.95),
+                cls._manual_date(
+                    "Notificação final de aceite ou rejeição", "2025-11-08", source_url, 0.95),
+                cls._manual_date(
+                    "Envio dos arquivos finais camera-ready", "2025-11-16", source_url, 0.95),
+                cls._manual_date("Início do evento",
+                                 "2026-01-20", source_url, 0.90),
+                cls._manual_date(
+                    "Fim do evento", "2026-01-27", source_url, 0.90),
+            ]
+
+        if "2026.ijcai.org/important-dates" in url:
+            return [
+                cls._manual_date("Submissão de resumos",
+                                 "2026-01-12", source_url, 0.98),
+                cls._manual_date("Submissão de artigos",
+                                 "2026-01-19", source_url, 0.98),
+                cls._manual_date("Notificação da fase 1",
+                                 "2026-03-04", source_url, 0.95),
+                cls._manual_date("Resposta dos autores",
+                                 "2026-04-10", source_url, 0.95),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-04-29", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-05-20", source_url, 0.95),
+                cls._manual_date("Início do evento",
+                                 "2026-08-15", source_url, 0.90),
+                cls._manual_date(
+                    "Fim do evento", "2026-08-21", source_url, 0.90),
             ]
 
         if "icml.cc/conferences/2026/callforpapers" in url:
             return [
-                cls._manual_date(
-                    "Abertura das submissões",
-                    "2026-01-08",
-                    source_url,
-                    0.98,
-                ),
-                cls._manual_date(
-                    "Submissão de resumos",
-                    "2026-01-23",
-                    source_url,
-                    0.98,
-                ),
-                cls._manual_date(
-                    "Submissão de artigos",
-                    "2026-01-28",
-                    source_url,
-                    0.98,
-                ),
-                cls._manual_date(
-                    "Notificação aos autores",
-                    "2026-04-30",
-                    source_url,
-                    0.95,
-                ),
+                cls._manual_date("Abertura das submissões",
+                                 "2026-01-08", source_url, 0.98),
+                cls._manual_date("Submissão de resumos",
+                                 "2026-01-23", source_url, 0.98),
+                cls._manual_date("Submissão de artigos",
+                                 "2026-01-28", source_url, 0.98),
+                cls._manual_date("Notificação aos autores",
+                                 "2026-04-30", source_url, 0.95),
+                cls._manual_date("Envio da versão final",
+                                 "2026-05-28", source_url, 0.95),
             ]
 
         return []
