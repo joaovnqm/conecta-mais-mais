@@ -6,17 +6,63 @@ from database.repositories.user_repository import user_services
 
 
 class RankingRepository:
-    def __init__(self, db_path: str | Path | None = None) -> None:
-        if db_path is None:
-            root_dir = Path(__file__).resolve().parents[2]
-            db_path = root_dir / "conecta++.db"
+    def __init__(self, database_path: str = "conecta++.db"):
+        self.database_path = database_path
+        self.connection = sqlite3.connect(self.database_path)
+        self.connection.execute("PRAGMA foreign_keys = ON")
+        self.cursor = self.connection.cursor()
+        self._create_table()
 
-        self.db_path = str(db_path)
+    def create_table(self) -> None:
+        self.cursor.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS event_ranking_actions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                event_id INTEGER NOT NULL,
+                action_type TEXT NOT NULL,
+                points INTEGER NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, event_id, action_type)
+            );
 
-    def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+            CREATE TABLE IF NOT EXISTS user_event_ranking (
+                user_id INTEGER PRIMARY KEY,
+                total_points INTEGER NOT NULL DEFAULT 0,
+                current_level TEXT NOT NULL DEFAULT 'Recém-chegado',
+                events_attended INTEGER NOT NULL DEFAULT 0,
+                certificates_received INTEGER NOT NULL DEFAULT 0,
+                presentations_done INTEGER NOT NULL DEFAULT 0,
+                last_updated TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS user_event_achievements (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                achievement_name TEXT NOT NULL,
+                achievement_description TEXT,
+                unlocked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, achievement_name)
+            );
+
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_event_ranking_actions_unique
+            ON event_ranking_actions(user_id, event_id, action_type);
+
+            CREATE INDEX IF NOT EXISTS idx_event_ranking_actions_user_id
+            ON event_ranking_actions(user_id);
+
+            CREATE INDEX IF NOT EXISTS idx_event_ranking_actions_event_id
+            ON event_ranking_actions(event_id);
+
+            CREATE INDEX IF NOT EXISTS idx_event_ranking_actions_action_type
+            ON event_ranking_actions(action_type);
+
+            CREATE INDEX IF NOT EXISTS idx_user_event_ranking_total_points
+            ON user_event_ranking(total_points DESC);
+            """
+        )
+
+        self.connection.commit()
 
     def get_ranking(self, limit: int = 50) -> list[dict[str, Any]]:
         """
