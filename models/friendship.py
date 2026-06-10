@@ -14,6 +14,7 @@ class Friend:
     email: str
     username: str
     linkedin_url: Optional[str] = None
+    github_url: Optional[str] = None
 
 @dataclass
 class FriendRequest:

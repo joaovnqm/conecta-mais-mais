@@ -185,19 +185,27 @@ Input {
         await self.reload_friends()
         await self.reload_blocked_users()
 
-    def _build_friend_text(self, name: str, email: str, linkedin_url: str | None) -> Text:
+    def _build_friend_text(self, name: str, email: str, linkedin_url: str | None, github_url: str | None) -> Text:
         """
         Monta o texto exibido em 'Meus amigos':
         """
-        friend_text = Text(f"{name} - {email} - ")
+        friend_text = Text(f"{name} - {email} \n")
 
         if linkedin_url:
             friend_text.append(
-                "LinkedIn",
+                "LinkedIn \n",
                 style=f"link {linkedin_url} underline"
             )
         else:
-            friend_text.append("LinkedIn não informado")
+            friend_text.append("LinkedIn não informado \n")
+
+        if github_url:
+            friend_text.append(
+                "GitHub",
+                style=f"link {github_url} underline"
+            )
+        else:
+            friend_text.append("GitHub não informado \n")
 
         return friend_text
 
@@ -263,13 +271,13 @@ Input {
             name = friend.name
             email = friend.email
             linkedin_url = friend.linkedin_url
-
+            github_url = friend.github_url
             row = Horizontal(classes="friend_row")
             await container.mount(row)
 
             await row.mount(
                 Static(
-                    self._build_friend_text(name, email, linkedin_url),
+                    self._build_friend_text(name, email, linkedin_url, github_url),
                     classes="person_text"
                 )
             )
@@ -331,12 +339,22 @@ Input {
         message = self.query_one("#message", Static)
 
         if event.button.id == "button_send_request":
-            username = self.query_one("#friend_username", Input).value
+            identifier = self.query_one("#friend_username", Input).value.strip()
 
-            success, response_message = friendship_services.send_friend_request_by_username(
-                self.user_id,
-                username
-            )
+            if not identifier:
+                message.update("Digite um username ou e-mail.")
+                return
+
+            if "@" in identifier:
+                success, response_message = friendship_services.send_friend_request(
+                    self.user_id,
+                    identifier
+                )
+            else:
+                success, response_message = friendship_services.send_friend_request_by_username(
+                    self.user_id,
+                    identifier
+                )
 
             message.update(response_message)
 

@@ -167,6 +167,7 @@ class EditSocialEventView(Screen):
 
             if success:
                 self.app.pop_screen()
+                self.app.pop_screen()
                 self.app.notify(message)
             else:
                 response.update(message)

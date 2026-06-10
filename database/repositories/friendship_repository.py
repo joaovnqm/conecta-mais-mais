@@ -82,7 +82,8 @@ class FriendshipServices:
                 name,
                 email,
                 username,
-                linkedin_url
+                linkedin_url,
+                github_url
             FROM users
             WHERE email = ?
             """,
@@ -99,7 +100,8 @@ class FriendshipServices:
             "name": user[1],
             "email": user[2],
             "username": user[3],
-            "linkedin_url": user[4]
+            "linkedin_url": user[4] or "",
+            "github_url": user[5] or ""
         }
 
     def find_user_by_username(self, username: str) -> Optional[dict]:
@@ -115,7 +117,8 @@ class FriendshipServices:
                 name,
                 email,
                 username,
-                linkedin_url
+                linkedin_url,
+                github_url
             FROM users
             WHERE LOWER(username) = LOWER(?)
             """,
@@ -132,7 +135,8 @@ class FriendshipServices:
             "name": user[1],
             "email": user[2],
             "username": user[3],
-            "linkedin_url": user[4]
+            "linkedin_url": user[4] or "",
+            "github_url": user[5] or ""
         }
 
     def _create_or_update_friend_request(
@@ -372,7 +376,8 @@ class FriendshipServices:
                 u.name,
                 u.email,
                 u.username,
-                u.linkedin_url
+                u.linkedin_url,
+                u.github_url
             FROM friendships f
             JOIN users u
             ON u.user_id = CASE
@@ -394,7 +399,8 @@ class FriendshipServices:
                 name=row[1],
                 email=row[2],
                 username=row[3] or "",
-                linkedin_url=row[4]
+                linkedin_url=row[4] or "",
+                github_url=row[5] or ""
             )
             for row in friends
         ]
@@ -541,7 +547,8 @@ class FriendshipServices:
                 u.name,
                 u.email,
                 u.username,
-                u.linkedin_url
+                u.linkedin_url,
+                u.github_url
             FROM friendships f
             JOIN users u
             ON u.user_id = CASE
@@ -564,7 +571,8 @@ class FriendshipServices:
                 name=row[1],
                 email=row[2],
                 username=row[3] or "",
-                linkedin_url=row[4]
+                linkedin_url=row[4] or "",
+                github_url=row[5] or ""
             )
             for row in blocked_users
         ]
