@@ -142,10 +142,12 @@ class EventsView(Screen):
     CSS = EVENTS_PAGE_CSS
 
     def __init__(self, user_id: int):
+        """Inicializa a tela de eventos para um usuário específico."""
         super().__init__()
         self.user_id = user_id
 
     def compose(self) -> ComposeResult:
+        """Estrutura a tela de eventos, buscando os eventos e interesses do usuário."""
         events = event_services.check_events_by_interests(self.user_id)
         interests = interest_services.check_user_interests(self.user_id)
 

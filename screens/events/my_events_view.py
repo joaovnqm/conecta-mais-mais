@@ -80,10 +80,12 @@ class MyEventsView(Screen):
     CSS = MY_EVENTS_PAGE_CSS
 
     def __init__(self, user_id: int):
+        """Inicializa a tela de meus eventos para um usuário específico."""
         super().__init__()
         self.user_id = user_id
     
     def compose(self) -> ComposeResult:
+        """Compõe a interface da tela de meus eventos, exibindo os eventos criados pelo usuário e os botões de navegação."""
         events = event_services.check_events_by_user(self.user_id)
         with Center():
             with VerticalScroll(id="main_box"):

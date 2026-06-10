@@ -2,9 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input, Label
 from textual.containers import Center, VerticalScroll, Horizontal
-
 from database.repositories.event_repository import event_services
-
 
 EDIT_SOCIAL_EVENT_PAGE_CSS = """
 Screen {
@@ -94,6 +92,7 @@ class EditSocialEventView(Screen):
     CSS = EDIT_SOCIAL_EVENT_PAGE_CSS
 
     def __init__(self, event_id: int):
+        """Inicializa a tela de edição de evento social."""
         super().__init__()
         self.event_id = event_id
 

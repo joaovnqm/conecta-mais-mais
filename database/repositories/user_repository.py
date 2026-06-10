@@ -1,5 +1,4 @@
 import sqlite3
-
 from models.user import User
 from utils.security import security_utils_service
 from utils.validations import validation_services
@@ -11,6 +10,7 @@ class UserServices:
     """
 
     def __init__(self, database_path: str = "conecta++.db"):
+        """Inicializa o repositório de usuários, garantindo que a tabela necessária exista no banco de dados."""
         self.database_path = database_path
         self.connection = sqlite3.connect(self.database_path)
         self.connection.execute("PRAGMA foreign_keys = ON")

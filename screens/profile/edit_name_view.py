@@ -99,10 +99,12 @@ class EditNameView(Screen):
     CSS = EDIT_PROFILE_CSS
 
     def __init__(self, user_id: int):
+        """Inicializa a tela de edição de nome."""
         super().__init__()
         self.user_id = user_id
 
     def compose(self) -> ComposeResult:
+        """Composição da tela de edição de nome."""
         profile = user_services.get_user_profile(self.user_id)
 
         name = ""
@@ -181,12 +183,14 @@ class EditNameView(Screen):
                 )
 
     def _set_invalid_if_needed(self, input_widget: Input, is_invalid: bool) -> None:
+        """Adiciona ou remove a classe "invalid" do widget de input com base na validade do valor."""
         if is_invalid:
             input_widget.add_class("invalid")
         else:
             input_widget.remove_class("invalid")
 
     def on_input_changed(self, event: Input.Changed) -> None:
+        """Lida com as mudanças no valor dos widgets de input."""
         if event.input.id == "new_name":
             value = event.input.value.strip()
 
@@ -224,6 +228,7 @@ class EditNameView(Screen):
             )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Lida com os eventos de clique nos botões "Salvar alterações" e "Voltar"."""
         response = self.query_one("#message", Static)
 
         if event.button.id == "button_save":
@@ -235,6 +240,7 @@ class EditNameView(Screen):
             return
 
     def _handle_save(self, response: Static) -> None:
+        """Lida com a lógica de validação e atualização dos dados do perfil quando o botão "Salvar alterações" é pressionado."""
         name_input = self.query_one("#new_name", Input)
         username_input = self.query_one("#username", Input)
         linkedin_input = self.query_one("#linkedin_url", Input)

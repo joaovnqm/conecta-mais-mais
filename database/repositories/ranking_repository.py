@@ -1,12 +1,11 @@
 from pathlib import Path
 import sqlite3
 from typing import Any
-
 from database.repositories.user_repository import user_services
-
 
 class RankingRepository:
     def __init__(self, database_path: str = "conecta++.db"):
+        """Inicializa o repositório de ranking, garantindo que as tabelas necessárias existam no banco de dados."""
         self.database_path = database_path
         self.connection = sqlite3.connect(self.database_path)
         self.connection.row_factory = sqlite3.Row
@@ -15,6 +14,7 @@ class RankingRepository:
         self._create_table()
 
     def _create_table(self) -> None:
+        """Cria as tabelas necessárias para o sistema de ranking, incluindo: ações de ranking, ranking dos usuários e conquistas."""
         self.cursor.executescript(
             """
             CREATE TABLE IF NOT EXISTS event_ranking_actions (
@@ -203,11 +203,8 @@ class RankingRepository:
         self.connection.commit()
         return True
 
-    def get_total_points(
-        self,
-        user_id: int,
-        conn: sqlite3.Connection | None = None,
-    ) -> int:
+    def get_total_points(self, user_id: int, conn: sqlite3.Connection | None = None) -> int:
+        """Retorna o total de pontos de um usuário, ou 0 se o usuário não tiver pontos registrados."""
         close_connection = False
 
         if conn is None:
@@ -235,6 +232,8 @@ class RankingRepository:
 
     @staticmethod
     def get_level_by_points(points: int) -> str:
+        """Retorna o nível do usuário com base na quantidade total de pontos acumulados, seguindo uma hierarquia de níveis que vai desde 
+        "Recém-chegado" até "Lendário"""
         if points >= 5000:
             return "Lendário"
         if points >= 3000:

@@ -2,9 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, VerticalScroll, Horizontal
-
 from database.repositories.event_repository import event_services
-
 
 CREATE_SOCIAL_EVENT_PAGE_CSS = """
 Screen {
@@ -88,10 +86,13 @@ class CreateSocialEventView(Screen):
     CSS = CREATE_SOCIAL_EVENT_PAGE_CSS
 
     def __init__(self, user_id: int):
+        """Inicializa a tela de criação de eventos sociais, recebendo o ID do usuário logado para associar o evento criado a ele."""
         super().__init__()
         self.user_id = user_id
 
     def compose(self) -> ComposeResult:
+        """Função que compõe a interface da tela de criação de eventos sociais. Ela cria os campos de entrada para as informações do 
+        evento, os botões para criar o evento e voltar, e um campo para exibir mensagens de erro ou sucesso."""
         with Center():
             with VerticalScroll(id="main_box"):
                 with Horizontal(id="top_bar"):
@@ -116,6 +117,8 @@ class CreateSocialEventView(Screen):
                 yield Button("Voltar", id="button_return", variant="primary")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Função que lida com os eventos de clique nos botões da tela. Ela verifica qual botão foi clicado, coleta os dados dos campos 
+        de entrada e chama o serviço de criação de evento social."""
         if event.button.id == "button_create_event":
             event_name = self.query_one("#event_name", Input).value
             event_description = self.query_one(

@@ -172,6 +172,7 @@ class EventDetailsView(Screen):
     CSS = EVENT_DETAILS_VIEW
 
     def __init__(self, user_id: int, event_id: int):
+        """Inicializa a tela de detalhes do evento com o ID do usuário e do evento, além de preparar o repositório de ranking para futuras atualizações de pontos."""
         super().__init__()
         self.user_id = int(user_id)
         self.event_id = int(event_id)
@@ -650,10 +651,7 @@ class EventDetailsView(Screen):
                 self.app.pop_screen()
 
     async def handle_favorite_button(self) -> None:
-        """
-        Favoritar não gera pontos no ranking.
-        """
-
+        """Favoritar não gera pontos no ranking."""
         if favorite_events_services.check_favorite_event(self.user_id, self.event_id):
             success, message = favorite_events_services.remove_from_favorite_event(
                 self.user_id,
@@ -671,10 +669,7 @@ class EventDetailsView(Screen):
             await self.reload_event_social_data()
 
     async def handle_presence_button(self) -> None:
-        """
-        Confirma ou cancela presença do usuário no evento.
-        """
-
+        """Confirma ou cancela presença do usuário no evento."""
         if event_participation_service.check_presence(self.user_id, self.event_id):
             success, message = event_participation_service.cancel_presence(
                 self.user_id,
@@ -720,10 +715,7 @@ class EventDetailsView(Screen):
         await self.reload_event_social_data()
 
     async def handle_certificate_emission(self) -> None:
-        """
-        Emite certificado e registra pontuação no ranking.
-        """
-
+        """Emite certificado e registra pontuação no ranking."""
         event_object = event_services.check_event(self.event_id)
         user = user_services.check_user(self.user_id)
 
@@ -759,10 +751,7 @@ class EventDetailsView(Screen):
         await self.reload_event_social_data()
 
     def _get_selected_extra_activities(self) -> list[dict[str, str]]:
-        """
-        Retorna as atividades extras marcadas pelo usuário.
-        """
-
+        """Retorna as atividades extras marcadas pelo usuário."""
         selected_activities: list[dict[str, str]] = []
 
         for checkbox in self.query(".activities"):
@@ -784,18 +773,11 @@ class EventDetailsView(Screen):
 
         return selected_activities
 
-    def _register_ranking_points_for_presence(
-        self,
-        selected_extra_activities: list[dict[str, str]],
-    ) -> str:
-        """
-        Registra pontos da presença e das atividades extras.
-        """
-
+    def _register_ranking_points_for_presence(self, selected_extra_activities: list[dict[str, str]]) -> str:
+        """Registra pontos da presença e das atividades extras."""
         gained_points = 0
         registered_labels: list[str] = []
         duplicated_labels: list[str] = []
-
         presence_was_registered = self.ranking_repository.add_points_once(
             user_id=self.user_id,
             event_id=self.event_id,
@@ -839,10 +821,7 @@ class EventDetailsView(Screen):
         return ""
 
     def _send_event_to_calendar(self) -> None:
-        """
-        Envia o evento confirmado para o calendário do usuário.
-        """
-
+        """Envia o evento confirmado para o calendário do usuário."""
         try:
             user = user_services.check_user(self.user_id)
             event_object = event_services.check_event(self.event_id)

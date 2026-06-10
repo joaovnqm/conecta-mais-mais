@@ -69,6 +69,7 @@ class MainPageView(Screen):
                 yield Button("Amigos", id="button_friends")
                 yield Button("Logout", id="button_logout", variant="error")
 
+    # Atualiza a mensagem de boas-vindas com o nome do usuário sempre que a tela for exibida
     def on_screen_resume(self) -> None:
         user_data = user_services.get_user_profile(self.user_id)
         name = user_data.name

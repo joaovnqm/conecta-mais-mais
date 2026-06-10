@@ -4,7 +4,6 @@ from textual.screen import Screen
 from textual.widgets import Button, DataTable, Static
 from database.repositories.ranking_repository import RankingRepository
 
-
 RANKING_PAGE_CSS = """
 Screen {
     align: center middle;
@@ -91,10 +90,12 @@ class RankingView(Screen):
     CSS = RANKING_PAGE_CSS
 
     def __init__(self) -> None:
+        """Inicializa a tela de ranking, criando uma instância do repositório de ranking para acessar os dados necessários para exibir o ranking dos usuários."""
         super().__init__()
         self.repository = RankingRepository()
 
     def compose(self) -> ComposeResult:
+        """Define a estrutura da tela de ranking, incluindo o título, descrição, níveis de progressão e a tabela de ranking dos usuários."""
         with Center():
             with VerticalScroll(id="main_box"):
                 with Horizontal(id="top_bar"):
@@ -124,6 +125,7 @@ class RankingView(Screen):
                 yield Button("Voltar", id="button_return", variant="primary")
 
     def on_mount(self) -> None:
+        """Carrega os dados do ranking quando a tela é montada."""
         self.load_ranking()
 
     def load_ranking(self) -> None:

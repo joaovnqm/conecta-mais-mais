@@ -91,10 +91,12 @@ class ProfileView(Screen):
     CSS = PROFILE_CSS
 
     def __init__(self, user_id: int):
+        """Inicializa a tela de perfil do usuário."""
         super().__init__()
         self.user_id = user_id
 
     def compose(self) -> ComposeResult:
+        """Composição da tela de perfil, exibindo os dados do usuário e as ações disponíveis para gerenciamento do perfil."""
         profile = user_services.get_user_profile(self.user_id)
 
         with Center():
@@ -219,6 +221,7 @@ class ProfileView(Screen):
         )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Gerencia os eventos de clique nos botões da tela de perfil."""
         if event.button.id == "button_edit_name":
             self.app.push_screen(EditNameView(self.user_id))
 

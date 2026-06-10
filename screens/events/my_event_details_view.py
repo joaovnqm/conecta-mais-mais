@@ -109,11 +109,13 @@ class MyEventDetailsView(Screen):
     CSS = MY_EVENT_DETAILS_VIEW
 
     def __init__(self, event_id: int, user_id: int):
+        """Inicializa a tela de detalhes do evento criado pelo usuário."""
         super().__init__()
         self.event_id = event_id
         self.user_id = user_id
 
     def compose(self) -> ComposeResult:
+        """Estrutura a interface da tela de detalhes do evento criado pelo usuário."""
         event = event_services.check_event(self.event_id)
         total_presence = event_participation_service.count_confirmed_presence(
             self.event_id)
@@ -196,14 +198,17 @@ class MyEventDetailsView(Screen):
                 yield Button("Voltar", id="button_return", variant="primary")
 
     async def on_mount(self) -> None:
+        """Carrega as datas importantes e os dados sociais do evento ao montar a tela."""
         self.load_important_dates()
         await self.reload_event_social_data()
 
     async def on_screen_resume(self) -> None:
+        """Recarrega as datas importantes e os dados sociais do evento ao retornar para a tela."""
         self.load_important_dates()
         await self.reload_event_social_data()
 
     def load_important_dates(self) -> None:
+        """Carrega as datas importantes do evento e atualiza a interface."""
         dates_widget = self.query_one("#important_dates_list", Static)
 
         with sqlite3.connect(event_services.database_path) as connection:
@@ -234,10 +239,12 @@ class MyEventDetailsView(Screen):
         dates_widget.update("\n\n".join(formatted_dates))
 
     def _format_date(self, iso_date: str) -> str:
+        """Formata uma data no formato ISO (YYYY-MM-DD) para o formato DD/MM/YYYY."""
         year, month, day = iso_date.split("-")
         return f"{day}/{month}/{year}"
 
     def _format_datetime(self, iso_datetime: str | None) -> str:
+        """Formata uma data e hora no formato ISO (YYYY-MM-DDTHH:MM:SS) para o formato DD/MM/YYYY às HH:MM."""
         if not iso_datetime:
             return "não informado"
 
@@ -248,11 +255,13 @@ class MyEventDetailsView(Screen):
             return iso_datetime
 
     async def reload_event_social_data(self) -> None:
+        """Recarrega os dados sociais do evento, incluindo o resumo social, a presença dos amigos e os favoritos dos amigos."""
         await self.reload_social_summary()
         await self.reload_friends_presence()
         await self.reload_friends_favorites()
 
     async def reload_social_summary(self) -> None:
+        """Recarrega o resumo social do evento."""
         total_presence = event_participation_service.count_confirmed_presence(
             self.event_id
         )
@@ -270,6 +279,7 @@ class MyEventDetailsView(Screen):
         )
 
     async def reload_friends_presence(self) -> None:
+        """Recarrega a lista de amigos que confirmaram presença no evento."""
         container = self.query_one("#friends_presence_container")
         await container.remove_children()
 
@@ -296,6 +306,7 @@ class MyEventDetailsView(Screen):
             )
 
     async def reload_friends_favorites(self) -> None:
+        """Recarrega a lista de amigos que favoritaram o evento."""
         container = self.query_one("#friends_favorites_container")
         await container.remove_children()
 
@@ -322,6 +333,7 @@ class MyEventDetailsView(Screen):
             )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Trata os eventos de clique nos botões da tela, permitindo editar, excluir o evento ou navegar para a tela inicial."""
         if event.button.id == "button_edit_event":
             self.app.push_screen(EditSocialEventView(self.event_id))
 

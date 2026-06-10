@@ -44,6 +44,9 @@ class DeleteSocialEventView(Screen):
         self.event_id = event_id
 
     def compose(self) -> ComposeResult:
+        """Essa função é responsável por compor a interface do usuário para a tela de confirmação de exclusão de evento social. 
+        Ela cria uma caixa centralizada com um título, uma mensagem de confirmação e dois botões: um para confirmar a exclusão e outro 
+        para cancelar e voltar à tela anterior."""
         with Center():
             with Vertical(id="confirm_box"):
                 yield Static("Deletar evento", id="title")
@@ -55,6 +58,7 @@ class DeleteSocialEventView(Screen):
                 yield Button("Não, voltar", id="button_return")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Está função é chamada quando um botão é pressionado. Ela verifica qual botão foi pressionado e executa a ação correspondente."""
         if event.button.id == "button_confirm_delete":
             success, message = event_services.delete_event(self.event_id)
             

@@ -80,6 +80,7 @@ class EmailService:
             smtp.send_message(msg)
 
     def send_email_with_attachment(self, user_email: str, subject: str, body: str, certificate_bytes: bytes, event_name: str) -> None:
+        """Envia um e-mail com um certificado em PDF anexado."""
         remetente = os.getenv("APP_EMAIL")
         password_app = os.getenv("APP_EMAIL_PASSWORD")
 
@@ -102,6 +103,7 @@ class EmailService:
             smtp.send_message(msg)
 
     def send_email_with_calendar_attachment(self, user_email: str, subject: str, body: str, calendar_bytes: bytes, event_name: str) -> None:
+        """Envia um e-mail com um arquivo de calendário em formato .ics anexado."""
         remetente = os.getenv("APP_EMAIL")
         password_app = os.getenv("APP_EMAIL_PASSWORD")
 

@@ -3,11 +3,10 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Input
 from textual.containers import Center, VerticalScroll, Horizontal, Vertical
-
 from database.repositories.friendship_repository import friendship_services
 
-
 class FriendsView(Screen):
+    """Tela de gerenciamento de amigos, onde o usuário pode visualizar suas conexões sociais, aceitar ou recusar solicitações pendentes, remover amigos existentes e bloquear usuários indesejados."""
     CSS = """
 Screen {
     align: center middle;
@@ -131,6 +130,7 @@ Input {
         self.user_id = user_id
 
     def compose(self) -> ComposeResult:
+        """Define a estrutura visual da tela de amigos, organizando as seções de solicitações pendentes, amigos e bloqueados, além de um campo para adicionar novos amigos por username."""
         with Center():
             with VerticalScroll(id="friends_box"):
                 yield Static("Amigos", id="title")
@@ -172,12 +172,15 @@ Input {
                 yield Button("Voltar", id="button_back", variant="primary")
 
     async def on_mount(self) -> None:
+        """Recarrega os dados sociais ao montar a tela, garantindo que as informações estejam atualizadas."""
         await self.reload_social_data()
 
     async def on_screen_resume(self) -> None:
+        """Recarrega os dados sociais ao retornar para a tela, garantindo que as informações estejam atualizadas."""
         await self.reload_social_data()
 
     async def reload_social_data(self) -> None:
+        """Recarrega todas as seções sociais (solicitações pendentes, amigos e bloqueados) para refletir o estado atual do usuário."""
         await self.reload_pending_requests()
         await self.reload_friends()
         await self.reload_blocked_users()
@@ -199,6 +202,7 @@ Input {
         return friend_text
 
     async def reload_pending_requests(self) -> None:
+        """Recarrega a lista de solicitações pendentes, exibindo opções para aceitar ou recusar."""
         container = self.query_one("#requests_container")
         await container.remove_children()
 
@@ -242,6 +246,7 @@ Input {
             )
 
     async def reload_friends(self) -> None:
+        """Recarrega a lista de amigos, exibindo opções para remoção ou bloqueio."""
         container = self.query_one("#friends_container")
         await container.remove_children()
 
@@ -288,6 +293,7 @@ Input {
             )
 
     async def reload_blocked_users(self) -> None:
+        """Recarrega a lista de usuários bloqueados, exibindo opções para desbloqueio."""
         container = self.query_one("#blocked_container")
         await container.remove_children()
 
@@ -321,6 +327,7 @@ Input {
             )
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Gerencia as ações de cada botão presente na tela, identificando-os pelo ID."""
         message = self.query_one("#message", Static)
 
         if event.button.id == "button_send_request":
