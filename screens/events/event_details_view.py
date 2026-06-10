@@ -115,6 +115,11 @@ Screen {
     color: limegreen 90%;
 }
 
+.language_buttons {
+    width: 100%;
+    height: auto;
+}
+
 #important_dates_list {
     color: $text-muted;
     margin-top: 1;
@@ -127,13 +132,23 @@ Screen {
     margin-bottom: 0;
 }
 
-#button_return,
-#button_certificate_emission {
+#button_return {
     width: 100%;
     margin-top: 1;
 }
-"""
 
+.language_buttons {
+    width: 100%;
+    height: auto;
+    content-align: center middle;
+}
+
+.language_buttons Button {
+    width: 1fr;
+    margin: 1;
+    content-align: center middle;
+}
+"""
 
 RANKING_POINTS = {
     "presence_confirmed": 15,
@@ -278,13 +293,21 @@ class EventDetailsView(Screen):
                     if user_confirmed_presence and not is_social_event:
                         with Vertical(classes="section_card"):
                             yield Static(
-                                "Você participou deste evento, envie o seu certificado de participação para o seu e-mail através do botão abaixo."
+                                "Você participou deste evento, envie o seu certificado de participação para o " \
+                                "seu e-mail através do botão abaixo. Você pode emitir o certificado em português ou em inglês. \n"
                             )
-                            yield Button(
-                                "Emitir Certificado",
-                                id="button_certificate_emission",
-                                variant="success",
-                            )
+                            
+                            with Horizontal(classes="language_buttons"):
+                                yield Button(
+                                    "Emitir Certificado em Português",
+                                    id="button_certificate_emission_portuguese",
+                                    variant="success",
+                                )
+                                yield Button(
+                                    "Emitir Certificado em Inglês",
+                                    id="button_certificate_emission_english",
+                                    variant="success",
+                                )
 
                     else:
                         with Vertical(classes="section_card"):
@@ -638,8 +661,12 @@ class EventDetailsView(Screen):
             await self.handle_presence_button()
             return
 
-        elif event.button.id == "button_certificate_emission":
-            await self.handle_certificate_emission()
+        elif event.button.id == "button_certificate_emission_portuguese":
+            await self.handle_certificate_emission(lang="pt")
+            return
+
+        elif event.button.id == "button_certificate_emission_english":
+            await self.handle_certificate_emission(lang="en")
             return
 
         elif event.button.id == "button_return":
@@ -714,8 +741,8 @@ class EventDetailsView(Screen):
 
         await self.reload_event_social_data()
 
-    async def handle_certificate_emission(self) -> None:
-        """Emite certificado e registra pontuação no ranking."""
+    async def handle_certificate_emission(self, lang: str = "pt") -> None:
+        """Emite certificado (idioma `lang`) e registra pontuação no ranking."""
         event_object = event_services.check_event(self.event_id)
         user = user_services.check_user(self.user_id)
 
@@ -730,6 +757,7 @@ class EventDetailsView(Screen):
                 self.user_id,
                 self.event_id,
             ),
+            lang=lang,
         )
 
         was_registered = self.ranking_repository.add_points_once(
@@ -743,6 +771,7 @@ class EventDetailsView(Screen):
             self.app.notify(
                 f"Certificado emitido. +{RANKING_POINTS['certificate_presence']} pontos adicionados ao ranking."
             )
+            
         else:
             self.app.notify(
                 "Certificado emitido. A pontuação desse certificado já havia sido registrada."
