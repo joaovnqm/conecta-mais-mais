@@ -1,30 +1,12 @@
 from dataclasses import dataclass
-import sqlite3
 from typing import Callable, List
-
 from database.repositories.ranking_repository import RankingRepository
+from models.badges import Badge, UserStats as _UserStats
 
-
-@dataclass
-class Badge:
-    id: str
-    name: str
-    icon: str
-    description: str
-
-
-@dataclass
-class _Stats:
-    events_attended: int = 0
-    presentations_done: int = 0
-    workshops_done: int = 0
-    total_points: int = 0
-
-
-def _get_user_stats(user_id: int) -> _Stats:
-    repo = RankingRepository()
-    # read from user_event_ranking
-    row = repo.cursor.execute(
+def _get_user_stats(user_id: int) -> _UserStats:
+    """Obtém as estatísticas relevantes para calcular as badges de um usuário."""
+    repository = RankingRepository()
+    row = repository.cursor.execute(
         """
         SELECT events_attended, presentations_done, total_points
         FROM user_event_ranking
@@ -33,15 +15,14 @@ def _get_user_stats(user_id: int) -> _Stats:
         (user_id,),
     ).fetchone()
 
-    stats = _Stats()
+    stats = _UserStats()
 
     if row:
         stats.events_attended = int(row[0] or 0)
         stats.presentations_done = int(row[1] or 0)
         stats.total_points = int(row[2] or 0)
 
-    # count workshop actions from event_ranking_actions
-    workshop_count = repo.cursor.execute(
+    workshop_count = repository.cursor.execute(
         """
         SELECT COUNT(*)
         FROM event_ranking_actions
@@ -57,7 +38,7 @@ def _get_user_stats(user_id: int) -> _Stats:
     return stats
 
 
-# Lista de badges e suas condições. A condição recebe um objeto _Stats.
+# Lista de badges e suas condições (contem função lambda para verificar se a badge está desbloqueada com base nas estatísticas do usuário).
 BADGES: List[dict[str, object]] = [
     {
         "id": "first_event",
@@ -133,8 +114,8 @@ BADGES: List[dict[str, object]] = [
         "id": "influencer",
         "name": "Influenciador Acadêmico",
         "icon": "⭐",
-        "description": "Acumulou 1000 pontos no ranking",
-        "condition": lambda s: s.total_points >= 1000,
+        "description": "Acumulou 10000 pontos no ranking",
+        "condition": lambda s: s.total_points >= 10000,
     },
 ]
 
@@ -142,26 +123,16 @@ BADGES: List[dict[str, object]] = [
 def get_user_badges(user_id: int) -> List[Badge]:
     """Retorna a lista de badges conquistados pelo usuário."""
     stats = _get_user_stats(user_id)
-
     unlocked: List[Badge] = []
 
     for badge in BADGES:
-        condition: Callable[[ _Stats ], bool] = badge["condition"]
+        condition: Callable[[ _UserStats ], bool] = badge["condition"]
         try:
             if condition(stats):
-                unlocked.append(
-                    Badge(
-                        id=badge["id"],
-                        name=badge["name"],
-                        icon=badge["icon"],
-                        description=badge.get("description", ""),
-                    )
-                )
+                unlocked.append(Badge(id=badge["id"], name=badge["name"], icon=badge["icon"], description=badge.get("description", "")))
+
         except Exception:
-            # segurança: se a condição falhar, não trava a aplicação
+
             continue
 
     return unlocked
-
-
-# serviço pronto para ser importado como `from services.badges import get_user_badges`

@@ -9,7 +9,7 @@ from screens.profile.edit_name_view import EditNameView
 from screens.profile.change_password_view import ChangePasswordView
 from screens.profile.delete_account_view import DeleteAccountView
 from screens.profile.change_interests_view import ChangeInterestView
-from services.badges import get_user_badges
+from services.badges_services import get_user_badges
 from screens.profile.badges_view import BadgesView
 
 
@@ -147,7 +147,7 @@ class ProfileView(Screen):
                     
                     with Vertical(classes="section_card"):
                         yield Static("Conquistas (Badges)", classes="section_title")
-                        yield Static("Aqui estão as badges que você conquistou até agora. Continue participando para desbloquear mais!", classes="subtitle")
+                        yield Static("Aqui estão as badges que você conquistou até agora. Continue participando para desbloquear mais! \n", classes="subtitle")
                         badges_list = get_user_badges(self.user_id)
                         badges_text = " ".join([b.icon for b in badges_list]) or "Nenhuma badge conquistada ainda."
                         yield Static(badges_text, id="badges_value", classes="profile_value badge_icons")

@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.containers import Center, VerticalScroll, Horizontal, Vertical
 from textual.widgets import Static, Button
 
-from services.badges import BADGES, get_user_badges
+from services.badges_services import BADGES, get_user_badges
 
 
 BADGES_CSS = """
