@@ -275,12 +275,6 @@ class FriendshipServices:
             for row in requests
         ]
 
-    def list_pending_request(self, user_id: int) -> List[FriendRequest]:
-        """
-        Alias para compatibilidade com chamadas antigas.
-        """
-        return self.list_pending_requests(user_id)
-
     def accept_friend_request(
         self,
         current_user_id: int,
