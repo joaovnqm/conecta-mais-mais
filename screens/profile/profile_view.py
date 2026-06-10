@@ -9,6 +9,8 @@ from screens.profile.edit_name_view import EditNameView
 from screens.profile.change_password_view import ChangePasswordView
 from screens.profile.delete_account_view import DeleteAccountView
 from screens.profile.change_interests_view import ChangeInterestView
+from services.badges import get_user_badges
+from screens.profile.badges_view import BadgesView
 
 
 PROFILE_CSS = """
@@ -80,6 +82,17 @@ Screen {
     color: $text-muted;
     margin-top: 1;
 }
+
+.badges_container {
+    width: 100%;
+    height: auto;
+    margin-top: 1;
+}
+
+.badge_icons {
+    color: $text-muted;
+    margin-top: 0;
+}
 """
 
 
@@ -131,7 +144,19 @@ class ProfileView(Screen):
                         yield Static(self._build_linkedin_text(profile.linkedin_url), id="linkedin_value", classes="profile_value")
                         yield Static("GitHub:", classes="profile_label")
                         yield Static(self._build_github_text(profile.github_url), id="github_value", classes="profile_value")
-
+                    
+                    with Vertical(classes="section_card"):
+                        yield Static("Conquistas (Badges)", classes="section_title")
+                        yield Static("Aqui estão as badges que você conquistou até agora. Continue participando para desbloquear mais!", classes="subtitle")
+                        badges_list = get_user_badges(self.user_id)
+                        badges_text = " ".join([b.icon for b in badges_list]) or "Nenhuma badge conquistada ainda."
+                        yield Static(badges_text, id="badges_value", classes="profile_value badge_icons")
+                        yield Button(
+                            "Ver todas as badges",
+                            id="button_view_all_badges",
+                            classes="profile_action",
+                            variant="primary",
+                        )
                     with Vertical(classes="section_card"):
                         yield Static("Ações do perfil", classes="section_title")
                         yield Button(
@@ -207,18 +232,13 @@ class ProfileView(Screen):
 
         self.query_one("#name_value", Static).update(profile.name)
         self.query_one("#email_value", Static).update(profile.email)
+        self.query_one("#username_value", Static).update(profile.username or "Username não informado.")
+        self.query_one("#linkedin_value", Static).update(self._build_linkedin_text(profile.linkedin_url))
+        self.query_one("#github_value", Static).update(self._build_github_text(profile.github_url))
 
-        self.query_one("#username_value", Static).update(
-            profile.username or "Username não informado."
-        )
-
-        self.query_one("#linkedin_value", Static).update(
-            self._build_linkedin_text(profile.linkedin_url)
-        )
-
-        self.query_one("#github_value", Static).update(
-            self._build_github_text(profile.github_url)
-        )
+        badges_list = get_user_badges(self.user_id)
+        badges_text = " ".join([b.icon for b in badges_list]) or "Nenhuma badge conquistada ainda."
+        self.query_one("#badges_value", Static).update(badges_text)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Gerencia os eventos de clique nos botões da tela de perfil."""
@@ -230,6 +250,9 @@ class ProfileView(Screen):
 
         elif event.button.id == "button_change_interests":
             self.app.push_screen(ChangeInterestView(self.user_id))
+
+        elif event.button.id == "button_view_all_badges":
+            self.app.push_screen(BadgesView(self.user_id))
 
         elif event.button.id == "button_delete_account":
             self.app.push_screen(DeleteAccountView(self.user_id))
