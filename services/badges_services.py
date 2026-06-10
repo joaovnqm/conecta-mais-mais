@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Callable, List
 from database.repositories.ranking_repository import RankingRepository
 from models.badges import Badge, UserStats as _UserStats
 
@@ -39,8 +38,7 @@ def _get_user_stats(user_id: int) -> _UserStats:
 
 
 # Lista de badges e suas condições (contem função lambda para verificar se a badge está desbloqueada com base nas estatísticas do usuário).
-BADGES: List[dict[str, object]] = [
-    {
+BADGES = [{
         "id": "first_event",
         "name": "Primeiro Evento",
         "icon": "🎉",
@@ -119,19 +117,13 @@ BADGES: List[dict[str, object]] = [
     },
 ]
 
-
-def get_user_badges(user_id: int) -> List[Badge]:
+def get_user_badges(user_id: int) -> Badge:
     """Retorna a lista de badges conquistados pelo usuário."""
     stats = _get_user_stats(user_id)
-    unlocked: List[Badge] = []
-
+    unlocked: Badge = []
     for badge in BADGES:
-        condition: Callable[[ _UserStats ], bool] = badge["condition"]
-        try:
-            if condition(stats):
-                unlocked.append(Badge(id=badge["id"], name=badge["name"], icon=badge["icon"], description=badge.get("description", "")))
-
-        except Exception:
-            continue
+        condition = badge["condition"]
+        if condition(stats):
+            unlocked.append(Badge(id=badge["id"], name=badge["name"], icon=badge["icon"], description=badge.get("description", "")))
 
     return unlocked
