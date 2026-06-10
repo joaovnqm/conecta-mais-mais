@@ -107,7 +107,7 @@ BADGES: List[dict[str, object]] = [
         "id": "engaged",
         "name": "Engajado na Comunidade",
         "icon": "❤️",
-        "description": "Favoritou 20 eventos (placeholder)",
+        "description": "Favoritou 20 eventos",
         "condition": lambda s: s.events_attended >= 20,
     },
     {
@@ -132,7 +132,6 @@ def get_user_badges(user_id: int) -> List[Badge]:
                 unlocked.append(Badge(id=badge["id"], name=badge["name"], icon=badge["icon"], description=badge.get("description", "")))
 
         except Exception:
-
             continue
 
     return unlocked
