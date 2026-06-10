@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from database.repositories.ranking_repository import RankingRepository
+from database.repositories.ranking_repository import ranking_repository_services
 from models.badges import Badge, UserStats as _UserStats
 
 def _get_user_stats(user_id: int) -> _UserStats:
     """Obtém as estatísticas relevantes para calcular as badges de um usuário."""
-    repository = RankingRepository()
+    repository = ranking_repository_services
     row = repository.cursor.execute(
         """
         SELECT events_attended, presentations_done, total_points

@@ -9,7 +9,7 @@ from services.important_dates_policy import ImportantDatesPolicy
 from database.repositories.event_repository import event_services
 from database.repositories.user_repository import user_services
 from database.repositories.interest_repository import interest_services
-from database.repositories.ranking_repository import RankingRepository
+from database.repositories.ranking_repository import ranking_repository_services
 from services.favorite_events import favorite_events_services
 from database.repositories.event_participation import event_participation_service
 from services.event_certificate import certificate_service
@@ -176,7 +176,7 @@ class EventDetailsView(Screen):
         super().__init__()
         self.user_id = int(user_id)
         self.event_id = int(event_id)
-        self.ranking_repository = RankingRepository()
+        self.ranking_repository = ranking_repository_services
 
     def compose(self) -> ComposeResult:
         """Composição da tela de detalhes do evento."""

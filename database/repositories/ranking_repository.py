@@ -4,6 +4,8 @@ from typing import Any
 from database.repositories.user_repository import user_services
 
 class RankingRepository:
+    """Repositório responsável por gerenciar o sistema de ranking de usuários com base em suas participações e atividades."""
+    
     def __init__(self, database_path: str = "conecta++.db"):
         """Inicializa o repositório de ranking, garantindo que as tabelas necessárias existam no banco de dados."""
         self.database_path = database_path
@@ -249,3 +251,84 @@ class RankingRepository:
             return "Participante"
 
         return "Recém-chegado"
+
+    def remove_event_points(self, user_id: int, event_id: int) -> bool:
+        """
+        Remove todos os registros de pontuação associados a um determinado `user_id` e `event_id`,
+        atualizando o total de pontos e contadores relevantes no `user_event_ranking`.
+        """
+        cursor = self.connection.cursor()
+        rows = cursor.execute(
+            "SELECT action_type, points FROM event_ranking_actions WHERE user_id = ? AND event_id = ?;",
+            (user_id, event_id),
+        ).fetchall()
+
+        if not rows:
+            return False
+        
+        total_deduct = sum(int(row[1]) for row in rows)
+        presence_count = sum(1 for row in rows if row[0] == "presence_confirmed")
+        certificate_count = sum(1 for row in rows if row[0] == "certificate_presence")
+        presentation_count = sum(1 for row in rows if row[0] == "lecture_presentation")
+        current_total = self.get_total_points(user_id, self.connection)
+        new_total = current_total - total_deduct
+        if new_total < 0:
+            new_total = 0
+
+        new_level = self.get_level_by_points(new_total)
+        cursor.execute(
+            """
+            INSERT INTO user_event_ranking (user_id, total_points, current_level)
+            VALUES (?, ?, ?)
+            ON CONFLICT(user_id)
+            DO UPDATE SET
+                total_points = ?,
+                current_level = ?,
+                last_updated = CURRENT_TIMESTAMP;
+            """,
+            (user_id, new_total, new_level, new_total, new_level),
+        )
+
+        if presence_count:
+            cursor.execute(
+                """
+                UPDATE user_event_ranking
+                SET events_attended = CASE WHEN events_attended >= ? THEN events_attended - ? ELSE 0 END
+                WHERE user_id = ?;
+                """,
+                (presence_count, presence_count, user_id),
+            )
+
+        if certificate_count:
+            cursor.execute(
+                """
+                UPDATE user_event_ranking
+                SET certificates_received = CASE WHEN certificates_received >= ? THEN certificates_received - ? ELSE 0 END
+                WHERE user_id = ?;
+                """,
+                (certificate_count, certificate_count, user_id),
+            )
+
+        if presentation_count:
+            cursor.execute(
+                """
+                UPDATE user_event_ranking
+                SET presentations_done = CASE WHEN presentations_done >= ? THEN presentations_done - ? ELSE 0 END
+                WHERE user_id = ?;
+                """,
+                (presentation_count, presentation_count, user_id),
+            )
+
+        cursor.execute(
+            """
+            DELETE FROM event_ranking_actions
+            WHERE user_id = ?
+            AND event_id = ?;
+            """,
+            (user_id, event_id),
+        )
+
+        self.connection.commit()
+        return True
+    
+ranking_repository_services = RankingRepository()

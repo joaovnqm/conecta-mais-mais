@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.containers import Center, Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Button, DataTable, Static
-from database.repositories.ranking_repository import RankingRepository
+from database.repositories.ranking_repository import ranking_repository_services
 
 RANKING_PAGE_CSS = """
 Screen {
@@ -92,7 +92,7 @@ class RankingView(Screen):
     def __init__(self) -> None:
         """Inicializa a tela de ranking, criando uma instância do repositório de ranking para acessar os dados necessários para exibir o ranking dos usuários."""
         super().__init__()
-        self.repository = RankingRepository()
+        self.repository = ranking_repository_services
 
     def compose(self) -> ComposeResult:
         """Define a estrutura da tela de ranking, incluindo o título, descrição, níveis de progressão e a tabela de ranking dos usuários."""

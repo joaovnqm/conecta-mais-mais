@@ -1,4 +1,5 @@
 import sqlite3
+from database.repositories.ranking_repository import ranking_repository_services
 
 
 class EventParticipationService:
@@ -7,6 +8,7 @@ class EventParticipationService:
     """
 
     def __init__(self, database_path: str = "conecta++.db"):
+        """Inicializa o serviço, garantindo que as tabelas necessárias existam."""
         self.database_path = database_path
         self.connection = sqlite3.connect(self.database_path)
         self.connection.execute("PRAGMA foreign_keys = ON")
@@ -14,6 +16,7 @@ class EventParticipationService:
         self._create_table()
 
     def _create_table(self) -> None:
+        """Cria as tabelas `event_participants` e `favorite_events` se não existirem."""
         self.cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS event_participants (
@@ -92,8 +95,12 @@ class EventParticipationService:
             return False, "Você ainda não confirmou presença neste evento."
 
         self.connection.commit()
-
-        return True, "Presença desmarcada com sucesso."
+        removed = ranking_repository_services.remove_event_points(user_id, event_id)
+        if removed:
+            return True, "Presença desmarcada com sucesso. Pontuação do evento removida do ranking."
+            
+        else:
+            return True, "Presença desmarcada com sucesso. Nenhuma pontuação encontrada para remoção."
 
     def check_presence(self, user_id: int, event_id: int) -> bool:
         """

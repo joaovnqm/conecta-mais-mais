@@ -1,8 +1,6 @@
 import asyncio
 import sqlite3
-
 from textual.app import App
-
 from database.repositories.important_dates_schema import important_dates_repository
 from screens.auth.login_view import LoginView
 from services.background_important_dates_updater import BackgroundImportantDatesUpdater
