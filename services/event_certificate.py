@@ -57,10 +57,19 @@ class Certificate:
         pdf.setFont("Helvetica", 32)
         pdf.drawCentredString(width / 2, 320, participated_text)
 
-        pdf.setFont("Helvetica-Bold", 30)
-        pdf.drawCentredString(width / 2, 270, event_name)
+        if len(event_name) <= 50:
+            pdf.setFont("Helvetica-Bold", 29)
+            pdf.drawCentredString(width / 2, 270, event_name)
 
-        pdf.setFont("Helvetica", 24)
+        elif len(event_name) <= 70:
+            pdf.setFont("Helvetica-Bold", 26)
+            pdf.drawCentredString(width / 2, 270, event_name)
+
+        else:
+            pdf.setFont("Helvetica-Bold", 23)
+            pdf.drawCentredString(width / 2, 270, event_name)
+
+        pdf.setFont("Helvetica", 21)
         if len(activities) > 1:
             pdf.drawCentredString(width / 2, 230, activities_title_plural)
             y_position = 210
