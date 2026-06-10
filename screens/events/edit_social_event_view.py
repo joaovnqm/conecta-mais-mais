@@ -176,7 +176,5 @@ class EditSocialEventView(Screen):
             self.app.pop_screen()
 
         elif event.button.id == "home_button":
-            self.app.pop_screen()
-            self.app.pop_screen()
-            self.app.pop_screen()
-            self.app.pop_screen()
+            while self.app.screen is not self.app.screen_stack[2]:
+                self.app.pop_screen()

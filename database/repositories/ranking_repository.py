@@ -206,11 +206,6 @@ class RankingRepository:
     def get_total_points(self, user_id: int, conn: sqlite3.Connection | None = None) -> int:
         """Retorna o total de pontos de um usuário, ou 0 se o usuário não tiver pontos registrados."""
         close_connection = False
-
-        if conn is None:
-            conn = self._connect()
-            close_connection = True
-
         try:
             row = conn.execute(
                 """

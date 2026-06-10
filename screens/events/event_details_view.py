@@ -634,19 +634,19 @@ class EventDetailsView(Screen):
             await self.handle_favorite_button()
             return
 
-        if event.button.id == "button_presence_event":
+        elif event.button.id == "button_presence_event":
             await self.handle_presence_button()
             return
 
-        if event.button.id == "button_certificate_emission":
+        elif event.button.id == "button_certificate_emission":
             await self.handle_certificate_emission()
             return
 
-        if event.button.id == "button_return":
+        elif event.button.id == "button_return":
             self.app.pop_screen()
             return
         
-        if event.button.id == "home_button":
+        elif event.button.id == "home_button":
             while self.app.screen is not self.app.screen_stack[2]:
                 self.app.pop_screen()
 
