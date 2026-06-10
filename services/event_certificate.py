@@ -14,13 +14,24 @@ class Certificate:
         """Gerar um certificado de participação em PDF com base nas informações fornecidas.
         Suporta `lang='pt'` (padrão) ou `lang='en'` para gerar texto em inglês.
         """
-        activities = activities[0].split(";")
+        activities = [activity.strip() for activity in activities]
         template_path = "assets/certificate_template.png"
         buffer = BytesIO()
         pdf = canvas.Canvas(buffer, pagesize=landscape(A4))
         width, height = landscape(A4)
         background = ImageReader(template_path)
         pdf.drawImage(background, 0, 0, width=width, height=height)
+
+        translations = {
+            "Presença": "Presence",
+            "Publicação de Artigo": "Article Publication",
+            "Apresentação de Palestra": "Lecture Presentation",
+            "Minicurso": "Mini-course",
+            "Workshop": "Workshop",
+        }
+
+        if lang == "en":
+            activities = [translations.get(a, a) for a in activities]
 
         # Textos em português ou inglês conforme `lang`
         if lang == "en":
