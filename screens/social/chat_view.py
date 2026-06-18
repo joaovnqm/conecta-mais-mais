@@ -22,18 +22,23 @@ Screen {
     width: 100%;
     height: auto;
     layout: grid;
-    grid-size: 3;
-    grid-columns: 6 1fr 6;
-    margin-bottom: 1;
+    grid-size: 4;
+    grid-columns: 6 2 14 1fr;
+}
+
+#home_button {
+    width: 8;
+    height: 3;
 }
 
 #back_button {
     width: 8;
     height: 3;
+    padding: 0 2
 }
 
 #top_title {
-    content-align: center middle;
+    content-align: right middle;
     height: 3;
     text-style: bold;
 }
@@ -44,30 +49,33 @@ Screen {
     border: round $primary;
     padding: 1;
     background: $surface;
-    margin-bottom: 1;
 }
 
 .message_bubble {
     width: 100%;
+    layout: grid;
+    grid-size: 2;
+    grid-columns: 1fr 8;
     height: auto;
-    min-height: 2;
-    margin-bottom: 1;
 }
 
 .bubble_sent {
     content-align: right middle;
     color: $primary;
     text-style: bold;
+    height: auto;
 }
 
 .bubble_received {
     content-align: left middle;
     color: $text;
+    height: auto;
 }
 
 .bubble_time {
     color: $text-muted;
     content-align: right middle;
+    padding: 0 1
 }
 
 .empty_chat {
@@ -83,6 +91,7 @@ Screen {
     grid-size: 2;
     grid-columns: 1fr 12;
     height: 3;
+    margin-top: 1;
 }
 
 #message_input {
@@ -99,7 +108,6 @@ Screen {
     min-height: 1;
     color: $error;
     content-align: center middle;
-    margin-top: 1;
 }
 """
 
@@ -132,8 +140,10 @@ class ConversationView(Screen):
         with Center():
             with Vertical(id="main_box"):
                 with Horizontal(id="top_bar"):
-                    yield Button("←", id="back_button", variant="primary")
-                    yield Static(self.partner_name, id="top_title")
+                    yield Button("🏠", id="home_button", variant="primary")
+                    yield Static("")
+                    yield Button("Voltar", id="back_button", variant="primary")
+                    yield Static(f"Conversa com: {self.partner_name}", id="top_title")
                     yield Static("")
 
                 with VerticalScroll(id="messages_container"):
@@ -169,7 +179,7 @@ class ConversationView(Screen):
         messages = message_services.get_conversation(self.user_id, self.partner_id)
         if not messages:
             await container.mount(
-                Static("Nenhuma mensagem ainda. Diga olá! 👋", classes="empty_chat")
+                Static("Nenhuma mensagem ainda. Diga olá!", classes="empty_chat")
             )
             return
 
@@ -192,8 +202,8 @@ class ConversationView(Screen):
         prefix = "Você" if is_sent else self.partner_name
         bubble_class = "bubble_sent" if is_sent else "bubble_received"
         content_text = f"{prefix}: {message.content}"
-        return Vertical(
-            Static(content_text, classes=f"message_bubble {bubble_class}"),
+        return Horizontal(
+            Static(content_text, classes=bubble_class),
             Static(time_str, classes="bubble_time"),
             classes="message_bubble",
         )
@@ -201,7 +211,11 @@ class ConversationView(Screen):
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         """Gerencia os cliques nos botões da tela de conversa."""
         status = self.query_one("#status_message", Static)
-        if event.button.id == "back_button":
+        if event.button.id == "home_button":
+            while self.app.screen is not self.app.screen_stack[2]:
+                self.app.pop_screen()
+
+        elif event.button.id == "back_button":
             self.app.pop_screen()
 
         elif event.button.id == "send_button":

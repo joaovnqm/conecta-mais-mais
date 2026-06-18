@@ -202,7 +202,8 @@ class ChatsView(Screen):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Gerencia os cliques nos botões da tela de conversas."""
         if event.button.id == "home_button":
-            self.app.pop_screen()
+            while self.app.screen is not self.app.screen_stack[2]:
+                self.app.pop_screen()
 
         elif event.button.id == "new_conversation_button":
             self.app.push_screen(NewConversationView(self.user_id))
