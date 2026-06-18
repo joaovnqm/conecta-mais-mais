@@ -25,7 +25,7 @@ Screen {
     height: auto;
     layout: grid;
     grid-size: 3;
-    grid-columns: 6 1fr 20;
+    grid-columns: 6 1fr auto;
     margin-bottom: 1;
 }
 
@@ -49,6 +49,10 @@ Screen {
     height: auto;
 }
 
+#static_1 {
+    margin-bottom: 1;
+}
+
 .main_subtitle {
     content-align: center middle;
     color: $text-muted;
@@ -60,9 +64,8 @@ Screen {
     layout: grid;
     grid-size: 2;
     grid-columns: 1fr 10;
-    height: auto;
-    min-height: 5;
-    margin-bottom: 1;
+    height: 6;
+    min-height: 3;
     border: round $primary;
     padding: 0 1;
     background: $surface;
@@ -71,51 +74,47 @@ Screen {
 .conversation_info {
     width: 100%;
     height: auto;
-    padding: 1 0;
 }
 
 .conversation_partner {
     text-style: bold;
-    height: auto;
+    height: 1;
     min-height: 1;
 }
 
 .conversation_preview {
     color: $text-muted;
-    height: auto;
+    height: 1;
     min-height: 1;
 }
 
 .conversation_time {
     color: $text-muted;
-    height: auto;
+    height: 1;
     min-height: 1;
 }
 
 .unread_badge {
     color: $success;
     text-style: bold;
-    height: auto;
+    height: 1;
     min-height: 1;
 }
 
 .open_chat_button {
     width: 10;
     height: 3;
-    margin: 1 0;
 }
 
 #button_return {
     width: 100%;
-    margin-top: 2;
+    margin-top: 1;
 }
 """
-
 
 class ChatsView(Screen):
     """
     Tela de listagem de conversas do usuário logado.
-
     Exibe:
     - botão de início (🏠) e botão para iniciar nova conversa na barra superior;
     - lista de conversas ativas, com nome do parceiro, prévia da última
@@ -132,29 +131,22 @@ class ChatsView(Screen):
 
     def compose(self) -> ComposeResult:
         """Monta a estrutura visual inicial da tela de conversas."""
-
         conversations = message_services.get_user_conversations(self.user_id)
-
         with Center():
             with VerticalScroll(id="main_box"):
                 with Horizontal(id="top_bar"):
                     yield Button("🏠", id="home_button", variant="primary")
                     yield Static("Conversas", id="top_title")
-                    yield Button(
-                        "✉ Nova",
-                        id="new_conversation_button",
-                        variant="success",
-                    )
+                    yield Button("Nova Conversa", id="new_conversation_button", variant="success")
 
+                yield Static("Selecione a conversa abaixo.", id="static_1")
                 with VerticalScroll(id="conversations_container"):
                     if conversations:
                         for conversation in conversations:
                             yield self._build_conversation_row(conversation)
+
                     else:
-                        yield Static(
-                            "Nenhuma conversa ainda. Clique em '✉ Nova' para começar!",
-                            classes="main_subtitle",
-                        )
+                        yield Static("Nenhuma conversa ainda. Clique em 'Nova Conversa' para começar!", classes="main_subtitle")
 
                 yield Button("Voltar", id="button_return", variant="primary")
 
@@ -164,24 +156,15 @@ class ChatsView(Screen):
 
     async def _reload_conversations(self) -> None:
         """Atualiza o container de conversas com os dados mais recentes."""
-
         container = self.query_one("#conversations_container")
         await container.remove_children()
-
         conversations = message_services.get_user_conversations(self.user_id)
-
         if conversations:
             for conversation in conversations:
-                await container.mount(
-                    self._build_conversation_row(conversation)
-                )
+                await container.mount(self._build_conversation_row(conversation))
+
         else:
-            await container.mount(
-                Static(
-                    "Nenhuma conversa ainda. Clique em '✉ Nova' para começar!",
-                    classes="main_subtitle",
-                )
-            )
+            await container.mount(Static("Nenhuma conversa ainda. Clique em '✉ Nova' para começar!", classes="main_subtitle"))
 
     def _build_conversation_row(self, conversation) -> Horizontal:
         """
@@ -192,7 +175,6 @@ class ChatsView(Screen):
         - contador de não lidas (se houver);
         - botão para abrir a conversa.
         """
-
         preview_text = conversation.last_message or "Sem mensagens ainda."
         if len(preview_text) > 55:
             preview_text = preview_text[:52] + "..."
@@ -212,22 +194,10 @@ class ChatsView(Screen):
             Static(conversation.partner_name, classes="conversation_partner"),
             Static(preview_text, classes="conversation_preview"),
             Static(time_text, classes="conversation_time"),
-            Static(unread_text, classes="unread_badge"),
-            classes="conversation_info",
-        )
+            Static(unread_text, classes="unread_badge"), classes="conversation_info")
 
-        open_button = Button(
-            "Abrir",
-            id=f"chat_{conversation.partner_id}",
-            classes="open_chat_button",
-            variant="primary",
-        )
-
-        return Horizontal(
-            info_column,
-            open_button,
-            classes="conversation_row",
-        )
+        open_button = Button("Abrir", id=f"chat_{conversation.partner_id}", classes="open_chat_button", variant="primary")
+        return Horizontal(info_column, open_button, classes="conversation_row")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Gerencia os cliques nos botões da tela de conversas."""
@@ -242,13 +212,6 @@ class ChatsView(Screen):
 
         elif event.button.id and event.button.id.startswith("chat_"):
             partner_id = int(event.button.id.split("_")[1])
-
             conversations = message_services.get_user_conversations(self.user_id)
-            partner_name = next(
-                (c.partner_name for c in conversations if c.partner_id == partner_id),
-                f"Usuário #{partner_id}",
-            )
-
-            self.app.push_screen(
-                ConversationView(self.user_id, partner_id, partner_name)
-            )
+            partner_name = next((c.partner_name for c in conversations if c.partner_id == partner_id), f"Usuário #{partner_id}")
+            self.app.push_screen(ConversationView(self.user_id, partner_id, partner_name))

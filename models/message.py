@@ -1,12 +1,10 @@
 from dataclasses import dataclass
 from typing import Optional
 
-
 @dataclass
 class Message:
     """
     Representa uma mensagem trocada entre dois usuários no sistema de chat.
-
     Atributos:
     - message_id: identificador único da mensagem (None antes de ser salva).
     - sender_id: ID do usuário que enviou a mensagem.
@@ -23,15 +21,12 @@ class Message:
     sent_at: Optional[str] = None
     is_read: int = 0
 
-
 @dataclass
 class Conversation:
     """
     Representa o resumo de uma conversa entre o usuário logado e outro usuário.
-
     Utilizada na listagem de conversas ativas, exibindo o parceiro,
     a última mensagem e a contagem de mensagens não lidas.
-
     Atributos:
     - partner_id: ID do usuário parceiro na conversa.
     - partner_name: nome do parceiro.

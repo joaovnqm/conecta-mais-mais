@@ -103,25 +103,20 @@ Screen {
 }
 """
 
-
 class ConversationView(Screen):
     """
     Tela de conversa individual entre o usuário logado e um parceiro.
-
     Exibe:
     - histórico completo de mensagens em ordem cronológica;
     - campo de texto e botão para enviar novas mensagens;
     - mensagens enviadas destacadas à direita, recebidas à esquerda.
-
     As mensagens recebidas são marcadas como lidas ao abrir esta tela.
     """
-
     CSS = CONVERSATION_PAGE_CSS
 
     def __init__(self, user_id: int, partner_id: int, partner_name: str) -> None:
         """
         Inicializa a tela de conversa.
-
         Parâmetros:
         - user_id: ID do usuário logado.
         - partner_id: ID do parceiro de conversa.
@@ -134,7 +129,6 @@ class ConversationView(Screen):
 
     def compose(self) -> ComposeResult:
         """Monta a estrutura visual da tela de conversa."""
-
         with Center():
             with Vertical(id="main_box"):
                 with Horizontal(id="top_bar"):
@@ -160,30 +154,22 @@ class ConversationView(Screen):
 
     async def on_mount(self) -> None:
         """Carrega o histórico e marca mensagens recebidas como lidas."""
-
         message_services.mark_conversation_as_read(self.user_id, self.partner_id)
         await self._reload_messages()
 
     async def on_screen_resume(self) -> None:
         """Recarrega as mensagens ao retornar para esta tela."""
-
         message_services.mark_conversation_as_read(self.user_id, self.partner_id)
         await self._reload_messages()
 
     async def _reload_messages(self) -> None:
         """Limpa e repopula o container de mensagens com o histórico atualizado."""
-
         container = self.query_one("#messages_container")
         await container.remove_children()
-
         messages = message_services.get_conversation(self.user_id, self.partner_id)
-
         if not messages:
             await container.mount(
-                Static(
-                    "Nenhuma mensagem ainda. Diga olá! 👋",
-                    classes="empty_chat",
-                )
+                Static("Nenhuma mensagem ainda. Diga olá! 👋", classes="empty_chat")
             )
             return
 
@@ -195,22 +181,17 @@ class ConversationView(Screen):
     def _build_message_bubble(self, message) -> Vertical:
         """
         Monta o widget de exibição de uma mensagem.
-
         Mensagens enviadas pelo usuário logado aparecem em azul (direita).
         Mensagens recebidas aparecem em texto padrão (esquerda).
         """
-
         is_sent = message.sender_id == self.user_id
-
         time_str = ""
         if message.sent_at and len(message.sent_at) >= 16:
             time_str = message.sent_at[11:16]
 
         prefix = "Você" if is_sent else self.partner_name
         bubble_class = "bubble_sent" if is_sent else "bubble_received"
-
         content_text = f"{prefix}: {message.content}"
-
         return Vertical(
             Static(content_text, classes=f"message_bubble {bubble_class}"),
             Static(time_str, classes="bubble_time"),
@@ -219,9 +200,7 @@ class ConversationView(Screen):
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         """Gerencia os cliques nos botões da tela de conversa."""
-
         status = self.query_one("#status_message", Static)
-
         if event.button.id == "back_button":
             self.app.pop_screen()
 
@@ -230,7 +209,6 @@ class ConversationView(Screen):
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         """Envia a mensagem ao pressionar Enter no campo de texto."""
-
         if event.input.id == "message_input":
             status = self.query_one("#status_message", Static)
             await self._send_message(status)
@@ -238,13 +216,10 @@ class ConversationView(Screen):
     async def _send_message(self, status: Static) -> None:
         """
         Valida e envia a mensagem digitada pelo usuário.
-
         Atualiza a tela com a nova mensagem ao enviar com sucesso.
         """
-
         input_widget = self.query_one("#message_input", Input)
         content = input_widget.value.strip()
-
         if not content:
             status.update("Digite uma mensagem antes de enviar.")
             return
@@ -261,5 +236,4 @@ class ConversationView(Screen):
 
         input_widget.value = ""
         status.update("")
-
         await self._reload_messages()
