@@ -1,3 +1,4 @@
+import threading, asyncio, time
 from textual.app import ComposeResult
 from textual.containers import Center, Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
@@ -134,6 +135,8 @@ class ConversationView(Screen):
         self.user_id = user_id
         self.partner_id = partner_id
         self.partner_name = partner_name
+        # ID da última mensagem exibida (usado para atualizações incrementais)
+        self._last_message_id = 0
 
     def compose(self) -> ComposeResult:
         """Monta a estrutura visual da tela de conversa."""
@@ -166,26 +169,77 @@ class ConversationView(Screen):
         """Carrega o histórico e marca mensagens recebidas como lidas."""
         message_services.mark_conversation_as_read(self.user_id, self.partner_id)
         await self._reload_messages()
+        loop = asyncio.get_event_loop()
+        self._refresh_running = True
+
+        def _periodic():
+            while getattr(self, "_refresh_running", False):
+                time.sleep(3)
+                try:
+                    asyncio.run_coroutine_threadsafe(self._reload_messages(), loop)
+                
+                except Exception:
+                    pass
+
+        self._refresh_thread = threading.Thread(target=_periodic, daemon=True)
+        self._refresh_thread.start()
 
     async def on_screen_resume(self) -> None:
         """Recarrega as mensagens ao retornar para esta tela."""
         message_services.mark_conversation_as_read(self.user_id, self.partner_id)
         await self._reload_messages()
 
+    async def on_unmount(self) -> None:
+        """Para a thread de atualização periódica ao desmontar a tela."""
+        self._refresh_running = False
+
     async def _reload_messages(self) -> None:
-        """Limpa e repopula o container de mensagens com o histórico atualizado."""
+        """Adiciona apenas as mensagens novas ao container, sem remontar tudo.
+
+        Estratégia:
+        - Busca todas as mensagens ordenadas cronologicamente.
+        - Se o container estiver vazio ou contiver apenas o rótulo de carregando, monta tudo.
+        - Caso contrário, monta somente mensagens com `message_id` maior que
+          `self._last_message_id`.
+        """
         container = self.query_one("#messages_container")
-        await container.remove_children()
         messages = message_services.get_conversation(self.user_id, self.partner_id)
+
         if not messages:
-            await container.mount(
-                Static("Nenhuma mensagem ainda. Diga olá!", classes="empty_chat")
-            )
+            # Se não há mensagens e o container está vazio, mostra texto de vazio
+            children = list(container.children)
+            if not children or any(getattr(c, "id", None) == "loading_label" for c in children):
+                await container.remove_children()
+                await container.mount(
+                    Static("Nenhuma mensagem ainda. Diga olá!", classes="empty_chat")
+                )
+
+            self._last_message_id = 0
             return
 
-        for message in messages:
+        # Se container está vazio ou mostra apenas o loading_label, montamos tudo
+        children = list(container.children)
+        is_initial = not children or any(getattr(c, "id", None) == "loading_label" for c in children)
+
+        if is_initial:
+            await container.remove_children()
+            for message in messages:
+                await container.mount(self._build_message_bubble(message))
+
+            self._last_message_id = messages[-1].message_id
+            container.scroll_end(animate=False)
+            return
+
+        # Caso incremental: adiciona somente mensagens novas
+        new_messages = [m for m in messages if m.message_id > getattr(self, "_last_message_id", 0)]
+        if not new_messages:
+            return
+
+        for message in new_messages:
             await container.mount(self._build_message_bubble(message))
 
+        # atualiza last id para o maior exibido
+        self._last_message_id = max(self._last_message_id, new_messages[-1].message_id)
         container.scroll_end(animate=False)
 
     def _build_message_bubble(self, message) -> Vertical:
