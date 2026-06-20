@@ -1,19 +1,24 @@
 import sqlite3
 from datetime import datetime
 from textual.app import ComposeResult
+from textual.containers import Center, Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
-from textual.widgets import Static, Button, Checkbox
-from textual.containers import Center, VerticalScroll, Vertical, Horizontal
-from database.repositories.event_important_dates_repository import EventImportantDatesRepository
-from services.important_dates_policy import ImportantDatesPolicy
+from textual.widgets import Button, Checkbox, Static
+from database.repositories.event_feedback_repository import event_feedback_service
+from database.repositories.event_important_dates_repository import (
+    EventImportantDatesRepository)
+from database.repositories.event_participation import event_participation_service
 from database.repositories.event_repository import event_services
-from database.repositories.user_repository import user_services
 from database.repositories.interest_repository import interest_services
 from database.repositories.ranking_repository import ranking_repository_services
-from services.favorite_events import favorite_events_services
-from database.repositories.event_participation import event_participation_service
-from services.event_certificate import certificate_service
+from database.repositories.user_repository import user_services
+from screens.events.event_feedback_view import EventFeedbackView
 from services.add_event_to_calendar import calendar_service
+from services.event_certificate import certificate_service
+from services.favorite_events import favorite_events_services
+from services.important_dates_policy import ImportantDatesPolicy
+from utils.event_feedback_format import format_feedback_summary
+
 
 EVENT_DETAILS_VIEW = """
 Screen {
@@ -74,8 +79,9 @@ Screen {
 #favorite_button_container,
 #presence_button_container,
 #activities_container,
+#feedback_button_container,
 #friends_presence_container,
-#friends_favorites_container{
+#friends_favorites_container {
     width: 100%;
     height: auto;
     margin: 0;
@@ -118,6 +124,13 @@ Screen {
 .language_buttons {
     width: 100%;
     height: auto;
+    content-align: center middle;
+}
+
+.language_buttons Button {
+    width: 1fr;
+    margin: 1;
+    content-align: center middle;
 }
 
 #important_dates_list {
@@ -126,7 +139,8 @@ Screen {
 }
 
 #button_favorite_event,
-#button_presence_event {
+#button_presence_event,
+#button_feedback_event {
     width: 100%;
     margin-top: 1;
     margin-bottom: 0;
@@ -136,19 +150,8 @@ Screen {
     width: 100%;
     margin-top: 1;
 }
-
-.language_buttons {
-    width: 100%;
-    height: auto;
-    content-align: center middle;
-}
-
-.language_buttons Button {
-    width: 1fr;
-    margin: 1;
-    content-align: center middle;
-}
 """
+
 
 RANKING_POINTS = {
     "presence_confirmed": 15,
@@ -179,22 +182,27 @@ ACTIVITY_OPTIONS = {
     },
 }
 
+
 class EventDetailsView(Screen):
     """
     Tela responsável por exibir detalhes do evento e permitir ações sociais.
     """
-
     CSS = EVENT_DETAILS_VIEW
 
     def __init__(self, user_id: int, event_id: int):
-        """Inicializa a tela de detalhes do evento com o ID do usuário e do evento, além de preparar o repositório de ranking para futuras atualizações de pontos."""
+        """
+        Inicializa a tela de detalhes do evento.
+        Guarda o usuário logado, o evento aberto e o repositório de ranking.
+        """
         super().__init__()
         self.user_id = int(user_id)
         self.event_id = int(event_id)
         self.ranking_repository = ranking_repository_services
 
     def compose(self) -> ComposeResult:
-        """Composição da tela de detalhes do evento."""
+        """
+        Monta a interface da tela de detalhes do evento.
+        """
         event = event_services.check_event(self.event_id)
         creator_name = user_services.check_user_name(event.creator_id)
         interests = interest_services.check_event_interests(event.event_id)
@@ -205,13 +213,15 @@ class EventDetailsView(Screen):
         total_favorites = event_participation_service.count_favorites(
             self.event_id
         )
+        feedback_summary = event_feedback_service.get_feedback_summary(
+            self.event_id
+        )
 
         event_date_object = (
             datetime.strptime(event.date, "%d-%m-%Y").date()
             if event.date
             else None
         )
-
         today = datetime.now().date()
 
         with Center():
@@ -234,7 +244,8 @@ class EventDetailsView(Screen):
 
                     yield Static("Local:", classes="info_label")
                     yield Static(
-                        event.event_location or "O local do evento ainda não está disponível.",
+                        event.event_location
+                        or "O local do evento ainda não está disponível.",
                         classes="info_value",
                     )
 
@@ -275,6 +286,7 @@ class EventDetailsView(Screen):
                         yield Vertical(id="favorite_button_container")
                         yield Vertical(id="presence_button_container")
                         yield Vertical(id="activities_container")
+                        yield Vertical(id="feedback_button_container")
 
                 else:
                     user_confirmed_presence = event_participation_service.check_presence(
@@ -293,10 +305,11 @@ class EventDetailsView(Screen):
                     if user_confirmed_presence and not is_social_event:
                         with Vertical(classes="section_card"):
                             yield Static(
-                                "Você participou deste evento, envie o seu certificado de participação para o " \
-                                "seu e-mail através do botão abaixo. Você pode emitir o certificado em português ou em inglês. \n"
+                                "Você participou deste evento, envie o seu certificado "
+                                "de participação para o seu e-mail através do botão abaixo. "
+                                "Você pode emitir o certificado em português ou em inglês.\n"
                             )
-                            
+
                             with Horizontal(classes="language_buttons"):
                                 yield Button(
                                     "Emitir Certificado em Português",
@@ -309,10 +322,27 @@ class EventDetailsView(Screen):
                                     variant="success",
                                 )
 
-                    else:
+                    elif not user_confirmed_presence:
                         with Vertical(classes="section_card"):
                             yield Static(
-                                "Esse evento já aconteceu. Não é mais possível confirmar presença ou favoritar o evento, mas você pode conferir o resumo social e as datas importantes cadastradas."
+                                "Esse evento já aconteceu. Não é mais possível confirmar "
+                                "presença ou favoritar o evento, mas você pode conferir "
+                                "o resumo social e as datas importantes cadastradas.",
+                                classes="info_value",
+                            )
+
+                    if user_confirmed_presence:
+                        with Vertical(classes="section_card"):
+                            yield Static("Feedback do evento", classes="section_title")
+                            yield Static(
+                                "Você confirmou presença neste evento. Registre sua avaliação, "
+                                "comentário, sugestões e destaques.",
+                                classes="info_value",
+                            )
+                            yield Button(
+                                "Avaliar Evento",
+                                id="button_feedback_event",
+                                variant="success",
                             )
 
                 with Vertical(classes="section_card"):
@@ -330,6 +360,12 @@ class EventDetailsView(Screen):
                         classes="social_text",
                     )
 
+                    yield Static(
+                        format_feedback_summary(feedback_summary),
+                        id="feedback_count",
+                        classes="social_text",
+                    )
+
                 with Vertical(classes="section_card"):
                     yield Static("Amigos que vão", classes="section_title")
                     yield Vertical(id="friends_presence_container")
@@ -341,31 +377,29 @@ class EventDetailsView(Screen):
                 yield Button("Voltar", id="button_return", variant="primary")
 
     async def on_mount(self) -> None:
-        """Carrega as datas importantes e os dados sociais do evento ao montar a tela."""
+        """
+        Carrega datas importantes e dados sociais ao montar a tela.
+        """
         self.load_important_dates()
         await self.reload_event_social_data()
 
     async def on_screen_resume(self) -> None:
-        """Atualiza as datas importantes e os dados sociais do evento ao retornar para a tela."""
+        """
+        Atualiza dados quando o usuário retorna para esta tela.
+        """
         self.load_important_dates()
         await self.reload_event_social_data()
 
     def load_important_dates(self) -> None:
         """
         Carrega datas importantes limpas e organizadas por categoria.
-
-        Observação:
-        O status resumido de submissão aparece somente na tela principal
-        de eventos. Aqui ficam apenas as datas importantes do evento,
-        separadas por categoria e com aviso destacado quando houver trilhas,
-        tracks ou modalidades específicas.
         """
-
         dates_widget = self.query_one("#important_dates_list", Static)
 
         with sqlite3.connect(event_services.database_path) as connection:
             repository = EventImportantDatesRepository(connection)
-            important_dates = repository.get_display_dates_by_event_id(self.event_id)
+            important_dates = repository.get_display_dates_by_event_id(
+                self.event_id)
 
         if not important_dates:
             dates_widget.update(
@@ -426,16 +460,19 @@ class EventDetailsView(Screen):
         )
 
         final_sections.append(footer)
-
         dates_widget.update("\n\n".join(final_sections))
 
     def _format_date(self, iso_date: str) -> str:
-        """Formata data do formato ISO (AAAA-MM-DD) para o formato brasileiro (DD/MM/AAAA)."""
+        """
+        Formata data ISO AAAA-MM-DD para DD/MM/AAAA.
+        """
         year, month, day = iso_date.split("-")
         return f"{day}/{month}/{year}"
 
     def _format_datetime(self, iso_datetime: str | None) -> str:
-        """Formata data e hora do formato ISO para o formato brasileiro, ou retorna um texto padrão se a data for nula ou inválida."""
+        """
+        Formata data e hora ISO para o padrão brasileiro.
+        """
         if not iso_datetime:
             return "não informado"
 
@@ -446,16 +483,21 @@ class EventDetailsView(Screen):
             return iso_datetime
 
     async def reload_event_social_data(self) -> None:
-        """Recarrega os dados sociais do evento, incluindo status de presença, favoritos e atividades extras."""
+        """
+        Recarrega status de favorito, presença, resumo social, amigos e atividades extras.
+        """
         await self.reload_favorite_button()
         await self.reload_presence_button()
+        await self.reload_feedback_button()
         await self.reload_social_summary()
         await self.reload_friends_presence()
         await self.reload_friends_favorites()
         await self.reload_activity_checkboxes()
 
     async def reload_favorite_button(self) -> None:
-        """Atualiza o botão de favorito com base no status atual do evento para o usuário."""
+        """
+        Atualiza o botão de favorito.
+        """
         try:
             container = self.query_one("#favorite_button_container")
         except Exception:
@@ -471,17 +513,20 @@ class EventDetailsView(Screen):
                     variant="default",
                 )
             )
-        else:
-            await container.mount(
-                Button(
-                    "★ Favoritar evento",
-                    id="button_favorite_event",
-                    variant="warning",
-                )
+            return
+
+        await container.mount(
+            Button(
+                "★ Favoritar evento",
+                id="button_favorite_event",
+                variant="warning",
             )
+        )
 
     async def reload_presence_button(self) -> None:
-        """Atualiza o botão de presença com base no status atual do evento para o usuário."""
+        """
+        Atualiza o botão de presença.
+        """
         try:
             container = self.query_one("#presence_button_container")
         except Exception:
@@ -497,22 +542,47 @@ class EventDetailsView(Screen):
                     variant="error",
                 )
             )
-        else:
-            await container.mount(
-                Button(
-                    "Confirmar presença",
-                    id="button_presence_event",
-                    variant="success",
-                )
+            return
+
+        await container.mount(
+            Button(
+                "Confirmar presença",
+                id="button_presence_event",
+                variant="success",
             )
+        )
+
+    async def reload_feedback_button(self) -> None:
+        """Mostra o botão de feedback quando o usuário tem presença confirmada no evento."""
+        try:
+            container = self.query_one("#feedback_button_container")
+        except Exception:
+            return
+
+        await container.remove_children()
+
+        if not event_participation_service.check_presence(self.user_id, self.event_id):
+            return
+
+        await container.mount(
+            Button(
+                "Avaliar Evento",
+                id="button_feedback_event",
+                variant="success",
+            )
+        )
 
     async def reload_social_summary(self) -> None:
-        """Atualiza o resumo social do evento, incluindo contagem de presença confirmada e favoritos."""
+        """
+        Atualiza contagem de presença, favoritos e média dos feedbacks.
+        """
         total_presence = event_participation_service.count_confirmed_presence(
             self.event_id
         )
-
         total_favorites = event_participation_service.count_favorites(
+            self.event_id
+        )
+        feedback_summary = event_feedback_service.get_feedback_summary(
             self.event_id
         )
 
@@ -524,8 +594,14 @@ class EventDetailsView(Screen):
             f"Pessoas que favoritaram: {total_favorites}"
         )
 
+        self.query_one("#feedback_count", Static).update(
+            format_feedback_summary(feedback_summary)
+        )
+
     async def reload_friends_presence(self) -> None:
-        """Atualiza a lista de amigos com presença confirmada no evento."""
+        """
+        Atualiza lista de amigos com presença confirmada.
+        """
         container = self.query_one("#friends_presence_container")
         await container.remove_children()
 
@@ -552,7 +628,9 @@ class EventDetailsView(Screen):
             )
 
     async def reload_friends_favorites(self) -> None:
-        """Atualiza a lista de amigos que favoritaram o evento."""
+        """
+        Atualiza lista de amigos que favoritaram o evento.
+        """
         container = self.query_one("#friends_favorites_container")
         await container.remove_children()
 
@@ -580,13 +658,11 @@ class EventDetailsView(Screen):
 
     async def reload_activity_checkboxes(self) -> None:
         """
-        Atualiza o container de atividades extras.
+        Atualiza os checkboxes de atividades extras.
 
         Os checkboxes só aparecem antes da confirmação de presença.
-        Depois que o usuário confirma presença, as atividades ficam salvas
-        em event_participation_service.confirm_presence().
+        Depois que o usuário confirma presença, as atividades ficam salvas.
         """
-
         try:
             container = self.query_one("#activities_container")
         except Exception:
@@ -652,33 +728,42 @@ class EventDetailsView(Screen):
         )
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Trata cliques nos botões da tela de detalhes do evento, direcionando para a função de tratamento correspondente a cada ação."""
+        """
+        Trata cliques nos botões da tela.
+        """
         if event.button.id == "button_favorite_event":
             await self.handle_favorite_button()
             return
 
-        elif event.button.id == "button_presence_event":
+        if event.button.id == "button_presence_event":
             await self.handle_presence_button()
             return
 
-        elif event.button.id == "button_certificate_emission_portuguese":
+        if event.button.id == "button_feedback_event":
+            self.app.push_screen(EventFeedbackView(
+                self.user_id, self.event_id))
+            return
+
+        if event.button.id == "button_certificate_emission_portuguese":
             await self.handle_certificate_emission(lang="pt")
             return
 
-        elif event.button.id == "button_certificate_emission_english":
+        if event.button.id == "button_certificate_emission_english":
             await self.handle_certificate_emission(lang="en")
             return
 
-        elif event.button.id == "button_return":
+        if event.button.id == "button_return":
             self.app.pop_screen()
             return
-        
-        elif event.button.id == "home_button":
+
+        if event.button.id == "home_button":
             while self.app.screen is not self.app.screen_stack[2]:
                 self.app.pop_screen()
 
     async def handle_favorite_button(self) -> None:
-        """Favoritar não gera pontos no ranking."""
+        """
+        Favorita ou remove o evento dos favoritos.
+        """
         if favorite_events_services.check_favorite_event(self.user_id, self.event_id):
             success, message = favorite_events_services.remove_from_favorite_event(
                 self.user_id,
@@ -696,7 +781,9 @@ class EventDetailsView(Screen):
             await self.reload_event_social_data()
 
     async def handle_presence_button(self) -> None:
-        """Confirma ou cancela presença do usuário no evento."""
+        """
+        Confirma ou cancela presença do usuário no evento.
+        """
         if event_participation_service.check_presence(self.user_id, self.event_id):
             success, message = event_participation_service.cancel_presence(
                 self.user_id,
@@ -742,7 +829,9 @@ class EventDetailsView(Screen):
         await self.reload_event_social_data()
 
     async def handle_certificate_emission(self, lang: str = "pt") -> None:
-        """Emite certificado (idioma `lang`) e registra pontuação no ranking."""
+        """
+        Emite certificado no idioma informado e registra pontos no ranking.
+        """
         event_object = event_services.check_event(self.event_id)
         user = user_services.check_user(self.user_id)
 
@@ -769,9 +858,9 @@ class EventDetailsView(Screen):
 
         if was_registered:
             self.app.notify(
-                f"Certificado emitido. +{RANKING_POINTS['certificate_presence']} pontos adicionados ao ranking."
+                f"Certificado emitido. +{RANKING_POINTS['certificate_presence']} "
+                "pontos adicionados ao ranking."
             )
-            
         else:
             self.app.notify(
                 "Certificado emitido. A pontuação desse certificado já havia sido registrada."
@@ -780,7 +869,9 @@ class EventDetailsView(Screen):
         await self.reload_event_social_data()
 
     def _get_selected_extra_activities(self) -> list[dict[str, str]]:
-        """Retorna as atividades extras marcadas pelo usuário."""
+        """
+        Retorna as atividades extras marcadas pelo usuário.
+        """
         selected_activities: list[dict[str, str]] = []
 
         for checkbox in self.query(".activities"):
@@ -802,11 +893,17 @@ class EventDetailsView(Screen):
 
         return selected_activities
 
-    def _register_ranking_points_for_presence(self, selected_extra_activities: list[dict[str, str]]) -> str:
-        """Registra pontos da presença e das atividades extras."""
+    def _register_ranking_points_for_presence(
+        self,
+        selected_extra_activities: list[dict[str, str]],
+    ) -> str:
+        """
+        Registra pontos da presença e das atividades extras.
+        """
         gained_points = 0
         registered_labels: list[str] = []
         duplicated_labels: list[str] = []
+
         presence_was_registered = self.ranking_repository.add_points_once(
             user_id=self.user_id,
             event_id=self.event_id,
@@ -850,7 +947,9 @@ class EventDetailsView(Screen):
         return ""
 
     def _send_event_to_calendar(self) -> None:
-        """Envia o evento confirmado para o calendário do usuário."""
+        """
+        Envia o evento confirmado para o calendário do usuário.
+        """
         try:
             user = user_services.check_user(self.user_id)
             event_object = event_services.check_event(self.event_id)
