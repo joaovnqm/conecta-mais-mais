@@ -9,8 +9,7 @@ from database.repositories.event_repository import event_services
 from database.repositories.interest_repository import interest_services
 from screens.events.event_details_view import EventDetailsView
 
-
-EVENTS_PAGE_CSS = """
+EXPIRED_EVENTS_PAGE_CSS = """
 Screen {
     align: center middle;
     background: $surface;
@@ -34,8 +33,8 @@ Screen {
     width: 100%;
     height: auto;
     layout: grid;
-    grid-size: 3;
-    grid-columns: 8 1fr 18;
+    grid-size: 2;
+    grid-columns: 8 1fr;
     margin-bottom: 1;
 }
 
@@ -48,11 +47,6 @@ Screen {
     content-align: center middle;
     height: 3;
     text-style: bold;
-}
-
-#expired_events_button {
-    width: 100%;
-    height: 3;
 }
 
 #events_container {
@@ -130,55 +124,50 @@ Screen {
 }
 """
 
-class EventsView(Screen):
+class ExpiredEventsView(Screen):
     """
-    Tela de listagem de eventos.
+    Tela de listagem de eventos de T.I. que já passaram.
     Exibe:
     - busca por nome do evento;
     - filtro por interesse;
-    - lista de eventos disponíveis;
+    - lista de eventos cuja data já passou;
     - status de submissão de resumos/artigos quando a data for simples;
     - aviso para consultar o site oficial quando houver trilhas, tracks,
       modalidades ou múltiplas datas de submissão.
+    O botão "🏠" leva diretamente à página principal, independente da
+    profundidade de navegação até esta tela.
     """
-
-    CSS = EVENTS_PAGE_CSS
+    CSS = EXPIRED_EVENTS_PAGE_CSS
 
     def __init__(self, user_id: int):
-        """Inicializa a tela de eventos para um usuário específico."""
+        """Inicializa a tela de eventos expirados para um usuário específico."""
         super().__init__()
         self.user_id = user_id
 
     def compose(self) -> ComposeResult:
-        """Estrutura a tela de eventos, buscando os eventos e interesses do usuário."""
+        """Estrutura a tela de eventos expirados, buscando os eventos e interesses do usuário."""
         events = event_services.check_events_by_interests(self.user_id)
-        events = self._filter_upcoming_events(events)
+        events = self._filter_expired_events(events)
         interests = interest_services.check_user_interests(self.user_id)
-        select_options = [("Todos os Eventos", "all_events")] + [
-            (interest.name, interest.name)
-            for interest in interests
-            if interest.name != "Social"
-        ]
-
+        select_options = [("Todos os Eventos", "all_events")] + [(interest.name, interest.name) for interest in interests if interest.name != "Social"]
         with Center():
             with VerticalScroll(id="main_box"):
                 with Horizontal(id="top_bar"):
                     yield Button("🏠", id="home_button", variant="primary")
-                    yield Static("Eventos Disponíveis", id="top_title")
-                    yield Button("Expirados", id="expired_events_button", variant="warning")
+                    yield Static("Eventos Expirados", id="top_title")
 
                 yield Static("Buscar evento:")
                 yield Input(placeholder="Insira o nome do evento...", id="search_event")
                 yield Static("Filtrar por interesse:")
                 yield Select(select_options, value="all_events", allow_blank=False)
-                yield Static("Clique em algum evento abaixo para saber mais.", classes="main_subtitle")
+                yield Static("Eventos que já aconteceram. Clique em algum evento abaixo para saber mais.", classes="main_subtitle")
                 with VerticalScroll(id="events_container"):
                     if events:
                         for event in events:
                             yield self._build_event_row(event)
                     
                     else:
-                        yield Static("Nenhum evento encontrado.", classes="main_subtitle")
+                        yield Static("Nenhum evento expirado encontrado.", classes="main_subtitle")
 
                 yield Button("Voltar", id="button_return", variant="primary")
 
@@ -188,6 +177,7 @@ class EventsView(Screen):
         """
         if event.button.has_class("event_buttons"):
             button_id = event.button.id or ""
+
             if "_" not in button_id:
                 return
 
@@ -200,10 +190,6 @@ class EventsView(Screen):
         elif event.button.id == "home_button":
             while self.app.screen is not self.app.screen_stack[2]:
                 self.app.pop_screen()
-
-        elif event.button.id == "expired_events_button":
-            from screens.events.expired_events_view import ExpiredEventsView
-            self.app.push_screen(ExpiredEventsView(self.user_id))
 
     async def on_input_changed(self, event: Input.Changed) -> None:
         """
@@ -221,7 +207,7 @@ class EventsView(Screen):
     async def _apply_filters(self) -> None:
         """
         Aplica filtro por interesse e busca por nome, mantendo apenas
-        eventos que ainda irão acontecer.
+        eventos cuja data já passou.
         """
         select_widget = self.query_one(Select)
         input_widget = self.query_one("#search_event", Input)
@@ -229,21 +215,21 @@ class EventsView(Screen):
         search_term = input_widget.value.lower().strip()
         if selected_interest == "all_events":
             result = event_services.check_events_by_interests(self.user_id)
+        
         else:
             result = event_services.check_events_by_interest(selected_interest)
 
-        result = self._filter_upcoming_events(result)
+        result = self._filter_expired_events(result)
         if search_term and result:
             result = [event for event in result if search_term in event.name.lower()]
 
         await self.update_events_on_screen(result)
 
-    def _filter_upcoming_events(self, events: list) -> list:
+    def _filter_expired_events(self, events: list) -> list:
         """
-        Remove da lista os eventos cuja data já passou. Eventos sem data
-        definida são mantidos, pois ainda podem vir a acontecer.
+        Mantém na lista apenas os eventos cuja data já passou.
         """
-        return [event for event in events if not event_services.is_event_expired(event.date)]
+        return [event for event in events if event_services.is_event_expired(event.date)]
 
     async def update_events_on_screen(self, result) -> None:
         """
@@ -253,8 +239,8 @@ class EventsView(Screen):
         await container.remove_children()
         if not result:
             await container.mount(
-                Static("Eventos com filtros selecionados não disponíveis no momento.", classes="main_subtitle"))
-           
+                Static("Eventos expirados com filtros selecionados não disponíveis no momento.", classes="main_subtitle"))
+            
             return
 
         for event in result:
@@ -289,12 +275,7 @@ class EventsView(Screen):
         status_widgets = []
         for status in statuses:
             status_name = status.get("status", "unknown")
-            status_text = (
-                status.get("short_message")
-                or status.get("message")
-                or "⚪ Sem submissão publicada"
-            )
-
+            status_text = (status.get("short_message") or status.get("message") or "⚪ Sem submissão publicada")
             css_class = self._get_submission_status_class(status_name)
             status_widgets.append(
                 Static(
@@ -303,10 +284,7 @@ class EventsView(Screen):
                 )
             )
 
-        return Vertical(
-            *status_widgets,
-            classes="submission_badges",
-        )
+        return Vertical(*status_widgets, classes="submission_badges")
 
     def _get_submission_statuses_safe(self, event_id: int) -> list[dict[str, Any]]:
         """

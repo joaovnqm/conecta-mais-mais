@@ -7,6 +7,7 @@ from screens.social.friends_view import FriendsView
 from screens.events.favorite_events_list_view import FavoriteEventsList
 from screens.events.events_general_view import EventsGeneralView
 from screens.ranking.ranking_view import RankingView
+from screens.social.chats_view import ChatsView
 from utils.validations import validation_services
 from database.repositories.user_repository import user_services
 
@@ -67,6 +68,7 @@ class MainPageView(Screen):
                 yield Button("Eventos Favoritados", id="button_favorite_events")
                 yield Button("Ranking de Eventos", id="ranking_button")
                 yield Button("Amigos", id="button_friends")
+                yield Button("Chat", id="button_chat")
                 yield Button("Logout", id="button_logout", variant="error")
 
     # Atualiza a mensagem de boas-vindas com o nome do usuário sempre que a tela for exibida
@@ -105,6 +107,9 @@ class MainPageView(Screen):
 
         elif event.button.id == "button_friends":
             self.app.push_screen(FriendsView(self.user_id))
+
+        elif event.button.id == "button_chat":
+            self.app.push_screen(ChatsView(self.user_id))
 
         elif event.button.id == "button_logout":
             self.app.push_screen(LoginView())
