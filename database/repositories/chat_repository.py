@@ -1,5 +1,6 @@
 import sqlite3
 from typing import List, Optional
+from datetime import datetime
 from models.message import Conversation, Message
 
 class MessageServices:
@@ -55,25 +56,20 @@ class MessageServices:
         if not content:
             return None
 
+        # usa o horário local do computador para `sent_at`
+        sent_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         self.cursor.execute(
             """
-            INSERT INTO messages (sender_id, receiver_id, content)
-            VALUES (?, ?, ?)
+            INSERT INTO messages (sender_id, receiver_id, content, sent_at)
+            VALUES (?, ?, ?, ?)
             """,
-            (sender_id, receiver_id, content),
+            (sender_id, receiver_id, content, sent_at),
         )
 
         self.connection.commit()
         message_id = self.cursor.lastrowid
-        self.cursor.execute(
-            """
-            SELECT sent_at FROM messages WHERE message_id = ?
-            """,
-            (message_id,),
-        )
 
-        row = self.cursor.fetchone()
-        sent_at = row[0] if row else None
         return Message(
             message_id = message_id,
             sender_id = sender_id,

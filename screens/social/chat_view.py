@@ -237,6 +237,7 @@ class ConversationView(Screen):
 
         for message in new_messages:
             await container.mount(self._build_message_bubble(message))
+            message_services.mark_conversation_as_read(self.user_id, self.partner_id)
 
         # atualiza last id para o maior exibido
         self._last_message_id = max(self._last_message_id, new_messages[-1].message_id)
