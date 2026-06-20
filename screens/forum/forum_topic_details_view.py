@@ -135,7 +135,7 @@ Screen {
 
 class ForumTopicDetailsView(Screen):
     """
-    Tela de detalhes do tópico do forum
+    Tela de detalhes do tópico do fórum.
     """
 
     CSS = FORUM_TOPIC_DETAILS_CSS
@@ -152,21 +152,30 @@ class ForumTopicDetailsView(Screen):
             with VerticalScroll(id="main_box"):
                 with Horizontal(id="top_bar"):
                     yield Button("🏠", id="home_button", variant="primary")
-                    yield Static("Tópico do Fórum", id="top_tile")
+                    yield Static("Tópico do Fórum", id="top_title")
                     yield Static("")
 
                 if topic is None:
                     with Vertical(classes="section_card"):
-                        yield Static("Tópico não encontrado", classes="empty_state")
-                        yield Button("Voltar", id="button_return", variant="primary")
-                        return
+                        yield Static(
+                            "Tópico não encontrado.",
+                            classes="empty_state",
+                        )
+
+                    yield Button("Voltar", id="button_return", variant="primary")
+                    return
+
+                author_username = topic["author_username"] or "sem_username"
 
                 with Vertical(classes="section_card"):
-                    yield Static(topic['title'], classes="section_title")
+                    yield Static(topic["title"], classes="section_title")
+
                     yield Static("Descrição", classes="info_label")
                     yield Static(topic["description"], classes="info_value")
+
                     yield Static("Autor:", classes="info_label")
-                    yield Static(f"{topic['author_name']} - @{topic['author_username'] or 'sem_username'}", classes="info_value")
+                    yield Static(f"{topic['author_name']} - @{author_username}", classes="info_value")
+
                     yield Static("Criado em", classes="info_label")
                     yield Static(topic["created_at"], classes="info_value")
 
@@ -180,13 +189,16 @@ class ForumTopicDetailsView(Screen):
 
                 with Vertical(classes="section_card"):
                     yield Static("Comentar", classes="section_title")
-                    yield Input(id="input_comment", placeholder="Escreva o seu comentário...")
+
+                    yield Input(id="input_comment", placeholder="Escreva seu comentário...")
+
                     yield Button("Comentar", id="button_add_comment", variant="success")
 
                 with Vertical(classes="section_card comments_card"):
                     yield Static("Comentários", classes="section_title")
                     yield Vertical(id="comments_container")
-                    yield Button("Voltar", id="button_return", variant="primary")
+
+                yield Button("Voltar", id="button_return", variant="primary")
 
     async def on_mount(self) -> None:
         await self.reload_topic_data()
@@ -201,7 +213,7 @@ class ForumTopicDetailsView(Screen):
 
     async def reload_summary(self) -> None:
         """
-        Atualiza contadores do tópico
+        Atualiza os contadores do tópico.
         """
         try:
             summary_widget = self.query_one("#topic_summary", Static)
@@ -209,15 +221,16 @@ class ForumTopicDetailsView(Screen):
             return
 
         counts = forum_service.get_topic_counts(self.topic_id)
+
         summary_widget.update(
             f"Likes: {counts['total_likes']}\n"
             f"Comentários: {counts['total_comments']}\n"
-            f"Salvos: {counts['total_saves']}\n"
+            f"Salvos: {counts['total_saves']}"
         )
 
     async def reload_actions(self) -> None:
         """
-        Atualiza os botões de ação do tópico
+        Atualiza os botões de ação do tópico.
         """
         try:
             container = self.query_one("#actions_container")
@@ -238,7 +251,6 @@ class ForumTopicDetailsView(Screen):
         is_author = topic["author_id"] == self.user_id
 
         profile_row = Horizontal(classes="action_row")
-
         await container.mount(profile_row)
 
         await profile_row.mount(
@@ -246,7 +258,6 @@ class ForumTopicDetailsView(Screen):
             Button("Adicionar amigo", id="button_add_friend", variant="success", disabled=is_author))
 
         social_row = Horizontal(classes="action_row")
-
         await container.mount(social_row)
 
         await social_row.mount(
@@ -259,7 +270,7 @@ class ForumTopicDetailsView(Screen):
 
     async def reload_comments(self) -> None:
         """
-        Atualiza a lista de comentários
+        Atualiza a lista de comentários do tópico.
         """
         try:
             container = self.query_one("#comments_container")
@@ -271,13 +282,20 @@ class ForumTopicDetailsView(Screen):
         await container.remove_children()
 
         if not comments:
-            await container.mount(Static("Nenhum comentário neste tópico.", classes="empty_state comment_item"))
+            await container.mount(
+                Static("Nenhum comentário neste tópico.", classes="empty_state comment_item"))
             return
 
         for comment in comments:
             username = comment["author_username"] or "sem_username"
 
-            await container.mount(Static(f"{comment['author_name']} - @{username}\n"f"{comment['content']}", classes="social_text comment_item"))
+            await container.mount(
+                Static(
+                    f"{comment['author_name']} - @{username}\n"
+                    f"{comment['content']}",
+                    classes="social_text comment_item",
+                )
+            )
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id or ""
@@ -290,6 +308,10 @@ class ForumTopicDetailsView(Screen):
             await self.add_friend()
             return
 
+        if button_id == "button_add_comment":
+            await self.add_comment()
+            return
+
         if button_id == "button_toggle_like":
             await self.toggle_like()
             return
@@ -299,8 +321,12 @@ class ForumTopicDetailsView(Screen):
             return
 
         if button_id == "button_report_topic":
-            self.app.push_screen(ReportForumTopicView(
-                user_id=self.user_id, topic_id=self.topic_id))
+            self.app.push_screen(
+                ReportForumTopicView(
+                    user_id=self.user_id,
+                    topic_id=self.topic_id,
+                )
+            )
             return
 
         if button_id == "button_return":
@@ -310,33 +336,48 @@ class ForumTopicDetailsView(Screen):
         if button_id == "home_button":
             while self.app.screen is not self.app.screen_stack[2]:
                 self.app.pop_screen()
+            return
 
     async def open_public_profile(self) -> None:
+        """
+        Abre o perfil público do autor do tópico.
+        """
         topic = forum_service.get_topic(self.topic_id)
 
         if topic is None:
-            self.app.notify("Tópico não encontrado", severity="error")
+            self.app.notify("Tópico não encontrado.", severity="error")
             return
 
         self.app.push_screen(PublicProfileView(
             viewer_id=self.user_id, profile_user_id=topic["author_id"]))
 
     async def add_friend(self) -> None:
+        """
+        Envia solicitação de amizade para o autor do tópico.
+        """
         topic = forum_service.get_topic(self.topic_id)
 
         if topic is None:
-            self.app.notify("Tópico não encontrado", severity="error")
+            self.app.notify("Tópico não encontrado.", severity="error")
             return
-        success, message = friendship_services.send_friend_request_by_user_id(
-            requester_id=self.user_id, target_id=topic["author_id"])
+
+        success, message = friendship_services.send_friend_request_by_user_id(requester_id=self.user_id,
+                                                                              target_id=topic["author_id"],
+                                                                              )
+
         self.app.notify(message)
 
         if success:
             await self.reload_actions()
 
     async def toggle_like(self) -> None:
+        """
+        Curte ou remove curtida do tópico.
+        """
         success, message = forum_service.toggle_like(
-            topic_id=self.topic_id, user_id=self.user_id)
+            topic_id=self.topic_id,
+            user_id=self.user_id,
+        )
 
         self.app.notify(message)
 
@@ -345,21 +386,38 @@ class ForumTopicDetailsView(Screen):
             await self.reload_actions()
 
     async def toggle_save(self) -> None:
+        """
+        Salva ou remove o tópico dos salvos.
+        """
         success, message = forum_service.toggle_save(
-            topic_id=self.topic_id, user_id=self.user_id)
+            topic_id=self.topic_id,
+            user_id=self.user_id,
+        )
+
         self.app.notify(message)
 
         if success:
             await self.reload_summary()
             await self.reload_actions()
 
-    async def add_comments(self) -> None:
+    async def add_comment(self) -> None:
+        """
+        Publica um comentário no tópico e atualiza a tela imediatamente.
+        """
         comment_input = self.query_one("#input_comment", Input)
+
         success, message = forum_service.add_comment(
-            topic_id=self.topic_id, author_id=self.user_id, content=comment_input.value)
+            topic_id=self.topic_id,
+            author_id=self.user_id,
+            content=comment_input.value,
+        )
+
         self.app.notify(message)
 
-        if success:
-            comment_input.value = ""
-            await self.reload_summary()
-            await self.reload_actions()
+        if not success:
+            return
+
+        comment_input.value = ""
+
+        await self.reload_summary()
+        await self.reload_comments()
