@@ -1,11 +1,13 @@
 from textual.app import ComposeResult
-from textual.screen import Screen
-from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
-from screens.events.events_view import EventsView
-from screens.events.events_social_view import EventsSocialView
+from textual.screen import Screen
+from textual.widgets import Button, Static
 from screens.events.create_social_event_view import CreateSocialEventView
+from screens.events.events_social_view import EventsSocialView
+from screens.events.events_view import EventsView
+from screens.events.favorite_events_list_view import FavoriteEventsList
 from screens.events.my_events_view import MyEventsView
+from screens.ranking.ranking_view import RankingView
 
 EVENTS_GENERAL_CSS = """
 Screen {
@@ -27,11 +29,18 @@ Screen {
     margin-bottom: 1;
 }
 
+.subtitle {
+    content-align: center middle;
+    color: $text-muted;
+    margin-bottom: 1;
+}
+
 Button {
     width: 100%;
     margin-top: 1;
 }
 """
+
 
 class EventsGeneralView(Screen):
     """
@@ -39,24 +48,27 @@ class EventsGeneralView(Screen):
     a página dos diversos tipos de eventos, além de eventos sociais (criados por amigos) e de criar eventos sociais. O botão de voltar também está presente.
     """
     CSS = EVENTS_GENERAL_CSS
-    
+
     # Inicializa a tela principal com os dados do usuário autenticado
     def __init__(self, user_id: int, user_name: str):
         super().__init__()
         self.user_name = user_name
         self.user_id = user_id
-    
+
     # Monta a tela principal após o login
     def compose(self) -> ComposeResult:
         with Center():
             with Vertical(id="main_box"):
                 yield Static("Eventos", id="main_title")
+                yield Static("Escolha uma opção relacionada aos eventos", classes="subtitle")
                 yield Button("Eventos de T.I.", id="button_ti")
                 yield Button("Eventos Sociais", id="button_social")
                 yield Button("Criar Evento Social", id="button_create_social_event")
                 yield Button("Meus Eventos", id="button_my_events")
+                yield Button("Eventos favoritados", id="button_favorite_events")
+                yield Button("Ranking de Eventos", id="button_ranking_events")
                 yield Button("Voltar", id="button_return", variant="primary")
-    
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """
         Função que lida com os eventos de clique nos botões da tela principal. Ela verifica qual botão foi clicado, e executa a ação 
@@ -67,7 +79,7 @@ class EventsGeneralView(Screen):
         convide seus amigos.
         - Se for o botão de voltar, a tela anterior é exibida.
         """
-        
+
         if event.button.id == "button_ti":
             self.app.push_screen(EventsView(self.user_id))
 
@@ -79,6 +91,12 @@ class EventsGeneralView(Screen):
 
         elif event.button.id == "button_my_events":
             self.app.push_screen(MyEventsView(self.user_id))
+
+        elif event.button.id == "button_favorite_events":
+            self.app.push_screen(FavoriteEventsList(self.user_id))
+
+        elif event.button.id == "button_ranking_events":
+            self.app.push_scren(RankingView())
 
         elif event.button.id == "button_return":
             self.app.pop_screen()
