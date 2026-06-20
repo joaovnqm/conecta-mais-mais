@@ -4,6 +4,7 @@ from textual.screen import Screen
 from textual.widgets import Button, Static
 from database.repositories.user_repository import user_services
 from screens.events.events_general_view import EventsGeneralView
+from screens.forum.forum_view import ForumView
 from screens.profile.profile_view import ProfileView
 from screens.social.chats_view import ChatsView
 from screens.social.friends_view import FriendsView
@@ -29,7 +30,7 @@ Screen {
     margin-bottom: 1;
 }
 
-.main_subtitle{
+.main_subtitle {
     content-align: center middle;
     color: $text-muted;
     margin-bottom: 1;
@@ -44,45 +45,42 @@ Button {
 
 class MainPageView(Screen):
     """
-    Tela principal exibida após o login. Possui: Perfil, Eventos, Amigos, Chat e Logout
+    Tela principal exibida após o login.
     """
+
     CSS = MAIN_PAGE_CSS
 
-    # Inicializa a tela principal com os dados do usuário autenticado
     def __init__(self, user_id: int, user_name: str):
         super().__init__()
+        self.user_id = int(user_id)
         self.user_name = validation_services.normalize_name(user_name)
-        self.user_id = user_id
 
-    # Monta a tela principal após o login
     def compose(self) -> ComposeResult:
         with Center():
             with Vertical(id="main_box"):
                 yield Static("Main Page", id="main_title")
+
                 yield Static(f"Bem-vindo(a), {self.user_name}!", classes="main_subtitle", id="name")
+
                 yield Button("Meu perfil", id="button_profile")
                 yield Button("Eventos", id="button_events")
+                yield Button("Fórum", id="button_forum")
                 yield Button("Amigos", id="button_friends")
                 yield Button("Chat", id="button_chat")
                 yield Button("Logout", id="button_logout", variant="error")
 
-    # Atualiza a mensagem de boas-vindas com o nome do usuário sempre que a tela for exibida
     def on_screen_resume(self) -> None:
         user_data = user_services.get_user_profile(self.user_id)
+
+        if user_data is None:
+            return
+
         self.user_name = validation_services.normalize_name(user_data.name)
+
         self.query_one("#name", Static).update(
-            f"Bem vindo(a), {self.user_name}!")
+            f"Bem-vindo(a), {self.user_name}!")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """
-        Função que lida com os eventos de clique nos botões da tela principal. Ela verifica qual botão foi clicado, e executa a ação 
-        correspondente:
-        - Se for o botão de perfil, ela navega para a tela de perfil do usuário.
-        - Se for o botão de eventos, ela navega para a tela de eventos gerais, onde o usuário pode escolher entre eventos de diferentes áreas e
-        eventos sociais.
-        - Se for o botão de logout, ela navega para a tela de login e reseta os campos do formulário de login para 
-        facilitar uma nova tentativa de login.
-        """
         from screens.auth.login_view import LoginView
 
         if event.button.id == "button_profile":
@@ -91,6 +89,9 @@ class MainPageView(Screen):
         elif event.button.id == "button_events":
             self.app.push_screen(EventsGeneralView(
                 self.user_id, self.user_name))
+
+        elif event.button.id == "button_forum":
+            self.app.push_screen(ForumView(self.user_id))
 
         elif event.button.id == "button_friends":
             self.app.push_screen(FriendsView(self.user_id))
@@ -102,5 +103,6 @@ class MainPageView(Screen):
             self.app.push_screen(LoginView())
 
             current_screen = self.app.screen
+
             if hasattr(current_screen, "reset_form"):
                 current_screen.reset_form()
