@@ -1,14 +1,17 @@
 import sqlite3
 from datetime import datetime
 from textual.app import ComposeResult
+from textual.containers import Center, Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
-from textual.widgets import Static, Button
-from textual.containers import Center, Vertical, VerticalScroll, Horizontal
-from database.repositories.event_important_dates_repository import EventImportantDatesRepository
+from textual.widgets import Button, Static
+from database.repositories.event_feedback_repository import event_feedback_service
+from database.repositories.event_important_dates_repository import (
+    EventImportantDatesRepository)
+from database.repositories.event_participation import event_participation_service
 from database.repositories.event_repository import event_services
 from screens.events.delete_social_event_view import DeleteSocialEventView
 from screens.events.edit_social_event_view import EditSocialEventView
-from database.repositories.event_participation import event_participation_service
+from utils.event_feedback_format import format_feedback_summary, format_stars
 
 
 MY_EVENT_DETAILS_VIEW = """
@@ -61,7 +64,8 @@ Screen {
 }
 
 #friends_presence_container,
-#friends_favorites_container {
+#friends_favorites_container,
+#feedbacks_container {
     width: 100%;
     height: auto;
     margin: 0;
@@ -104,23 +108,48 @@ Screen {
 class MyEventDetailsView(Screen):
     """
     Tela de detalhes do evento criado pelo usuário.
+
+    Aqui o criador visualiza:
+    - informações do evento;
+    - datas importantes;
+    - resumo social;
+    - amigos que confirmaram presença;
+    - amigos que favoritaram;
+    - feedbacks recebidos;
+    - ações de editar e excluir.
     """
 
     CSS = MY_EVENT_DETAILS_VIEW
 
     def __init__(self, event_id: int, user_id: int):
-        """Inicializa a tela de detalhes do evento criado pelo usuário."""
+        """
+        Inicializa a tela de detalhes do evento criado pelo usuário.
+
+        event_id:
+            ID do evento que será exibido.
+
+        user_id:
+            ID do usuário logado, usado para buscar amigos relacionados ao evento.
+        """
         super().__init__()
-        self.event_id = event_id
-        self.user_id = user_id
+        self.event_id = int(event_id)
+        self.user_id = int(user_id)
 
     def compose(self) -> ComposeResult:
-        """Estrutura a interface da tela de detalhes do evento criado pelo usuário."""
+        """
+        Estrutura a interface da tela de detalhes do evento criado pelo usuário.
+        """
         event = event_services.check_event(self.event_id)
+
         total_presence = event_participation_service.count_confirmed_presence(
-            self.event_id)
+            self.event_id
+        )
         total_favorites = event_participation_service.count_favorites(
-            self.event_id)
+            self.event_id
+        )
+        feedback_summary = event_feedback_service.get_feedback_summary(
+            self.event_id
+        )
 
         with Center():
             with VerticalScroll(id="main_box"):
@@ -128,8 +157,11 @@ class MyEventDetailsView(Screen):
                     yield Button("🏠", id="home_button", variant="primary")
                     yield Static(f"Evento: {event.name}", id="top_title")
                     yield Static("")
+
                 yield Static(
-                    "Veja as informações do seu evento criado. Você pode editar ou excluir o evento usando os botões abaixo."
+                    "Veja as informações do seu evento criado. "
+                    "Você pode editar ou excluir o evento usando os botões abaixo.",
+                    classes="info_value",
                 )
 
                 with Vertical(classes="section_card"):
@@ -140,46 +172,55 @@ class MyEventDetailsView(Screen):
 
                     yield Static("Local:", classes="info_label")
                     yield Static(
-                        event.event_location or "O local do evento ainda não está disponível.",
-                        classes="info_value"
+                        event.event_location
+                        or "O local do evento ainda não está disponível.",
+                        classes="info_value",
                     )
 
                     yield Static("Data:", classes="info_label")
                     yield Static(
                         event.date or "A data do evento ainda não está disponível.",
-                        classes="info_value"
+                        classes="info_value",
                     )
 
                     yield Static("Hora:", classes="info_label")
                     yield Static(
                         event.hour or "A hora do evento ainda não foi divulgada.",
-                        classes="info_value"
+                        classes="info_value",
                     )
 
                     yield Static("Fonte oficial:", classes="info_label")
                     yield Static(
                         event.official_url or "Nenhum link oficial cadastrado.",
-                        classes="info_value"
+                        classes="info_value",
                     )
 
                 with Vertical(classes="section_card"):
                     yield Static("Datas importantes", classes="section_title")
                     yield Static(
                         "Carregando datas importantes...",
-                        id="important_dates_list"
+                        id="important_dates_list",
                     )
 
                 with Vertical(classes="section_card"):
                     yield Static("Resumo social", classes="section_title")
+
                     yield Static(
                         f"Pessoas com presença confirmada: {total_presence}",
                         id="presence_count",
-                        classes="social_text"
+                        classes="social_text",
                     )
+
                     yield Static(
                         f"Pessoas que favoritaram: {total_favorites}",
                         id="favorite_count",
-                        classes="social_text"
+                        classes="social_text",
+                    )
+
+                    yield Static(
+                        format_feedback_summary(feedback_summary),
+                        id="feedback_count",
+                        classes="social_text",
                     )
 
                 with Vertical(classes="section_card"):
@@ -191,24 +232,38 @@ class MyEventDetailsView(Screen):
                     yield Vertical(id="friends_favorites_container")
 
                 with Vertical(classes="section_card"):
+                    yield Static("Feedbacks recebidos", classes="section_title")
+                    yield Vertical(id="feedbacks_container")
+
+                with Vertical(classes="section_card"):
                     yield Static("Ações do evento:", classes="section_title")
                     yield Button("Editar Evento", id="button_edit_event")
-                    yield Button("Excluir Evento", id="button_delete_event", variant="error")
+                    yield Button(
+                        "Excluir Evento",
+                        id="button_delete_event",
+                        variant="error",
+                    )
 
                 yield Button("Voltar", id="button_return", variant="primary")
 
     async def on_mount(self) -> None:
-        """Carrega as datas importantes e os dados sociais do evento ao montar a tela."""
+        """
+        Carrega as datas importantes e os dados sociais do evento ao montar a tela.
+        """
         self.load_important_dates()
         await self.reload_event_social_data()
 
     async def on_screen_resume(self) -> None:
-        """Recarrega as datas importantes e os dados sociais do evento ao retornar para a tela."""
+        """
+        Recarrega os dados quando o usuário retorna para esta tela.
+        """
         self.load_important_dates()
         await self.reload_event_social_data()
 
     def load_important_dates(self) -> None:
-        """Carrega as datas importantes do evento e atualiza a interface."""
+        """
+        Carrega as datas importantes do evento e atualiza a interface.
+        """
         dates_widget = self.query_one("#important_dates_list", Static)
 
         with sqlite3.connect(event_services.database_path) as connection:
@@ -217,7 +272,8 @@ class MyEventDetailsView(Screen):
 
         if not important_dates:
             dates_widget.update(
-                "Nenhuma data importante encontrada ainda. Cadastre um link oficial para permitir a busca automática."
+                "Nenhuma data importante encontrada ainda. "
+                "Cadastre um link oficial para permitir a busca automática."
             )
             return
 
@@ -225,7 +281,11 @@ class MyEventDetailsView(Screen):
 
         for item in important_dates:
             confidence_percent = int(item["confidence"] * 100)
-            status = "confirmada" if item["is_confirmed"] else "precisa de confirmação"
+            status = (
+                "confirmada"
+                if item["is_confirmed"]
+                else "precisa de confirmação"
+            )
             time_text = f" às {item['time']}" if item["time"] else ""
             checked_text = self._format_datetime(item["last_checked_at"])
 
@@ -239,12 +299,16 @@ class MyEventDetailsView(Screen):
         dates_widget.update("\n\n".join(formatted_dates))
 
     def _format_date(self, iso_date: str) -> str:
-        """Formata uma data no formato ISO (YYYY-MM-DD) para o formato DD/MM/YYYY."""
+        """
+        Formata data ISO YYYY-MM-DD para DD/MM/YYYY.
+        """
         year, month, day = iso_date.split("-")
         return f"{day}/{month}/{year}"
 
     def _format_datetime(self, iso_datetime: str | None) -> str:
-        """Formata uma data e hora no formato ISO (YYYY-MM-DDTHH:MM:SS) para o formato DD/MM/YYYY às HH:MM."""
+        """
+        Formata data e hora ISO para DD/MM/YYYY às HH:MM.
+        """
         if not iso_datetime:
             return "não informado"
 
@@ -255,18 +319,30 @@ class MyEventDetailsView(Screen):
             return iso_datetime
 
     async def reload_event_social_data(self) -> None:
-        """Recarrega os dados sociais do evento, incluindo o resumo social, a presença dos amigos e os favoritos dos amigos."""
+        """
+        Recarrega todos os dados sociais exibidos nesta tela.
+        """
         await self.reload_social_summary()
         await self.reload_friends_presence()
         await self.reload_friends_favorites()
+        await self.reload_feedbacks()
 
     async def reload_social_summary(self) -> None:
-        """Recarrega o resumo social do evento."""
+        """
+        Atualiza o resumo social do evento.
+
+        Inclui:
+        - total de presenças;
+        - total de favoritos;
+        - média dos feedbacks.
+        """
         total_presence = event_participation_service.count_confirmed_presence(
             self.event_id
         )
-
         total_favorites = event_participation_service.count_favorites(
+            self.event_id
+        )
+        feedback_summary = event_feedback_service.get_feedback_summary(
             self.event_id
         )
 
@@ -278,21 +354,27 @@ class MyEventDetailsView(Screen):
             f"Pessoas que favoritaram: {total_favorites}"
         )
 
+        self.query_one("#feedback_count", Static).update(
+            format_feedback_summary(feedback_summary)
+        )
+
     async def reload_friends_presence(self) -> None:
-        """Recarrega a lista de amigos que confirmaram presença no evento."""
+        """
+        Recarrega a lista de amigos que confirmaram presença no evento.
+        """
         container = self.query_one("#friends_presence_container")
         await container.remove_children()
 
         friends = event_participation_service.list_friends_confirmed_presence(
             self.user_id,
-            self.event_id
+            self.event_id,
         )
 
         if not friends:
             await container.mount(
                 Static(
                     "Nenhum amigo confirmou presença neste evento.",
-                    classes="empty_state"
+                    classes="empty_state",
                 )
             )
             return
@@ -301,25 +383,27 @@ class MyEventDetailsView(Screen):
             await container.mount(
                 Static(
                     f"{friend['name']} - @{friend['username']}",
-                    classes="social_text"
+                    classes="social_text",
                 )
             )
 
     async def reload_friends_favorites(self) -> None:
-        """Recarrega a lista de amigos que favoritaram o evento."""
+        """
+        Recarrega a lista de amigos que favoritaram o evento.
+        """
         container = self.query_one("#friends_favorites_container")
         await container.remove_children()
 
         friends = event_participation_service.list_friends_favorited_event(
             self.user_id,
-            self.event_id
+            self.event_id,
         )
 
         if not friends:
             await container.mount(
                 Static(
                     "Nenhum amigo favoritou este evento.",
-                    classes="empty_state"
+                    classes="empty_state",
                 )
             )
             return
@@ -328,12 +412,49 @@ class MyEventDetailsView(Screen):
             await container.mount(
                 Static(
                     f"{friend['name']} - @{friend['username']}",
-                    classes="social_text"
+                    classes="social_text",
+                )
+            )
+
+    async def reload_feedbacks(self) -> None:
+        """
+        Recarrega os feedbacks recebidos no evento.
+
+        Esta função é exclusiva da tela do criador do evento.
+        O usuário comum avalia pela EventFeedbackView.
+        O criador visualiza aqui as avaliações recebidas.
+        """
+        container = self.query_one("#feedbacks_container")
+        feedbacks = event_feedback_service.list_event_feedbacks(self.event_id)
+
+        await container.remove_children()
+
+        if not feedbacks:
+            await container.mount(
+                Static(
+                    "Este evento ainda não recebeu feedbacks.",
+                    classes="empty_state",
+                )
+            )
+            return
+
+        for feedback in feedbacks:
+            comment = feedback["comment"] or "Sem comentário textual."
+            username = feedback["username"] or "sem_username"
+
+            await container.mount(
+                Static(
+                    f"{format_stars(feedback['rating'])} · "
+                    f"{feedback['user_name']} - @{username}\n"
+                    f"{comment}",
+                    classes="social_text",
                 )
             )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Trata os eventos de clique nos botões da tela, permitindo editar, excluir o evento ou navegar para a tela inicial."""
+        """
+        Trata os cliques nos botões da tela.
+        """
         if event.button.id == "button_edit_event":
             self.app.push_screen(EditSocialEventView(self.event_id))
 
