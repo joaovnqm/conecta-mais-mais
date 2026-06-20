@@ -9,6 +9,8 @@ from screens.profile.profile_view import ProfileView
 from screens.social.chats_view import ChatsView
 from screens.social.friends_view import FriendsView
 from utils.validations import validation_services
+from database.repositories.forum_repository import forum_service
+from screens.forum.forum_moderation_view import ForumModerationView
 
 MAIN_PAGE_CSS = """
 Screen {
@@ -65,6 +67,8 @@ class MainPageView(Screen):
                 yield Button("Meu perfil", id="button_profile")
                 yield Button("Eventos", id="button_events")
                 yield Button("Fórum", id="button_forum")
+                if forum_service.is_user_admin(self.user_id):
+                    yield Button("Moderação", id="button_forum_moderation")
                 yield Button("Amigos", id="button_friends")
                 yield Button("Chat", id="button_chat")
                 yield Button("Logout", id="button_logout", variant="error")
@@ -92,6 +96,9 @@ class MainPageView(Screen):
 
         elif event.button.id == "button_forum":
             self.app.push_screen(ForumView(self.user_id))
+
+        elif event.button.id == "button_forum_moderation":
+            self.app.push_screen(ForumModerationView(self.user_id))
 
         elif event.button.id == "button_friends":
             self.app.push_screen(FriendsView(self.user_id))
