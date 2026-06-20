@@ -76,6 +76,13 @@ Screen {
     margin-top: 1;
 }
 
+#feedbacks_container {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+}
+
 #rating_buttons {
     width: 100%;
     height: auto;
@@ -131,8 +138,6 @@ class EventFeedbackView(Screen):
             self.event_id
         )
 
-        feedbacks = event_feedback_service.list_event_feedbacks(self.event_id)
-
         if user_feedback:
             self.selected_rating = user_feedback["rating"]
 
@@ -146,15 +151,12 @@ class EventFeedbackView(Screen):
                 )
 
                 with Vertical(classes="section_card"):
-                    yield Static("Sua avaliação", classes="section_title")
-
                     if not has_presence:
                         yield Static(
                             "Você precisa confirmar presença neste evento antes de avaliar.",
                             classes="empty_state",
                         )
                     else:
-                        yield Static("Nota:", classes="info_label")
                         yield Static(
                             self._get_rating_label(),
                             id="rating_label",
@@ -192,32 +194,17 @@ class EventFeedbackView(Screen):
 
                 with Vertical(classes="section_card"):
                     yield Static("Comentários do evento", classes="section_title")
-
-                    if not feedbacks:
-                        yield Static(
-                            "Nenhum comentário registrado para este evento.",
-                            classes="empty_state",
-                        )
-                    else:
-                        for feedback in feedbacks:
-                            comment = feedback["comment"] or "Sem comentário textual."
-                            username = feedback["username"] or "sem_username"
-
-                            yield Static(
-                                f"{format_stars(feedback['rating'])} · "
-                                f"{feedback['user_name']} - @{username}\n"
-                                f"{comment}",
-                                classes="social_text",
-                            )
+                    yield Vertical(id="feedbacks_container")
 
                 yield Button("Voltar", id="button_return", variant="primary")
 
     async def on_mount(self) -> None:
         await self.reload_rating_buttons()
+        await self.reload_feedbacks()
 
     def _get_rating_label(self) -> str:
         if self.selected_rating is None:
-            return "Selecione de 1 a 5 estrelas: ☆ ☆ ☆ ☆ ☆"
+            return "Sua nota: ☆ ☆ ☆ ☆ ☆"
 
         filled = "★ " * self.selected_rating
         empty = "☆ " * (5 - self.selected_rating)
@@ -284,11 +271,9 @@ class EventFeedbackView(Screen):
         self.app.notify(message)
 
         if success:
-            summary = event_feedback_service.get_feedback_summary(
-                self.event_id)
-            self.query_one("#feedback_summary", Static).update(
-                format_feedback_summary(summary)
-            )
+            await self.reload_summary()
+            await self.reload_feedbacks()
+            await self.reload_rating_buttons()
 
     async def delete_feedback(self) -> None:
         success, message = event_feedback_service.delete_feedback(
@@ -302,9 +287,39 @@ class EventFeedbackView(Screen):
             self.selected_rating = None
             self.query_one("#feedback_comment", Input).value = ""
             await self.reload_rating_buttons()
+            await self.reload_summary()
+            await self.reload_feedbacks()
 
-            summary = event_feedback_service.get_feedback_summary(
-                self.event_id)
-            self.query_one("#feedback_summary", Static).update(
-                format_feedback_summary(summary)
+    async def reload_summary(self) -> None:
+        summary = event_feedback_service.get_feedback_summary(self.event_id)
+        self.query_one("#feedback_summary", Static).update(
+            format_feedback_summary(summary)
+        )
+
+    async def reload_feedbacks(self) -> None:
+        container = self.query_one("#feedbacks_container")
+        await container.remove_children()
+
+        feedbacks = event_feedback_service.list_event_feedbacks(self.event_id)
+
+        if not feedbacks:
+            await container.mount(
+                Static(
+                    "Nenhum comentário registrado para este evento.",
+                    classes="empty_state",
+                )
+            )
+            return
+
+        for feedback in feedbacks:
+            comment = feedback["comment"] or "Sem comentário textual."
+            username = feedback["username"] or "sem_username"
+
+            await container.mount(
+                Static(
+                    f"{format_stars(feedback['rating'])} · "
+                    f"{feedback['user_name']} - @{username}\n"
+                    f"{comment}",
+                    classes="social_text",
+                )
             )
