@@ -89,13 +89,41 @@ class ForumService:
                 reporter_id INTEGER NOT NULL,
                 reason TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT 'pending',
+                reviewed_by INTEGER,
+                reviewed_at TEXT,
+                admin_note TEXT,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 CHECK(status IN ('pending', 'accepted', 'rejected')),
                 UNIQUE(topic_id, reporter_id),
                 FOREIGN KEY(topic_id) REFERENCES forum_topics(topic_id) ON DELETE CASCADE,
-                FOREIGN KEY(reporter_id) REFERENCES users(user_id) ON DELETE CASCADE
+                FOREIGN KEY(reporter_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                FOREIGN KEY(reviewed_by) REFERENCES users(user_id) ON DELETE SET NULL
             )
             """
+        )
+
+        self._ensure_column(
+            table_name="users",
+            column_name="role",
+            column_definition="role TEXT NOT NULL DEFAULT 'user'",
+        )
+
+        self._ensure_column(
+            table_name="forum_topic_reports",
+            column_name="reviewed_by",
+            column_definition="reviewed_by INTEGER",
+        )
+
+        self._ensure_column(
+            table_name="forum_topic_reports",
+            column_name="reviewed_at",
+            column_definition="reviewed_at TEXT",
+        )
+
+        self._ensure_column(
+            table_name="forum_topic_reports",
+            column_name="admin_note",
+            column_definition="admin_note TEXT",
         )
 
         self.cursor.execute(
@@ -442,6 +470,195 @@ class ForumService:
 
     def _normalize_text(self, value: str | None) -> str:
         return ' '.join((value or '').strip().split())
+
+    def _column_exists(self, table_name: str, column_name: str) -> bool:
+        rows = self.cursor.execute(
+            f"PRAGMA table_info({table_name})").fetchall()
+
+        return any(row["name"] == column_name for row in rows)
+
+    def _ensure_column(self, table_name: str, column_name: str, column_definition: str) -> None:
+        if self._column_exists(table_name, column_name):
+            return
+
+        self.cursor.execute(
+            f"""
+            ALTER TABLE {table_name}
+            ADD COLUMN {column_definition}
+            """
+        )
+
+    def is_user_admin(self, user_id: int) -> bool:
+        """
+        Verifica se o usuário tem perfil de administrador.
+        """
+        row = self.cursor.execute(
+            """
+            SELECT role
+            FROM users
+            WHERE user_id = ?
+            """,
+            (user_id,)).fetchone()
+
+        if row is None:
+            return False
+
+        return row["role"] == "admin"
+
+    def list_pending_reports(self) -> list[dict[str, Any]]:
+        """
+        Lista denúncias pendentes para análise administrativa.
+        """
+        rows = self.cursor.execute(
+            """
+            SELECT
+                fr.report_id,
+                fr.topic_id,
+                fr.reporter_id,
+                fr.reason,
+                fr.status,
+                fr.created_at,
+
+                ft.title AS topic_title,
+                ft.description AS topic_description,
+                ft.status AS topic_status,
+                ft.author_id AS topic_author_id,
+
+                topic_author.name AS topic_author_name,
+                topic_author.username AS topic_author_username,
+
+                reporter.name AS reporter_name,
+                reporter.username AS reporter_username
+
+            FROM forum_topic_reports fr
+            JOIN forum_topics ft ON ft.topic_id = fr.topic_id
+            JOIN users topic_author ON topic_author.user_id = ft.author_id
+            JOIN users reporter ON reporter.user_id = fr.reporter_id
+
+            WHERE fr.status = 'pending'
+            ORDER BY fr.created_at ASC
+            """
+        ).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def get_report_details(self, report_id: int) -> dict[str, Any] | None:
+        """
+        Busca os detalhes completos de uma denúncia.
+        """
+        row = self.cursor.execute(
+            """
+            SELECT
+                fr.report_id,
+                fr.topic_id,
+                fr.reporter_id,
+                fr.reason,
+                fr.status,
+                fr.created_at,
+                fr.reviewed_by,
+                fr.reviewed_at,
+                fr.admin_note,
+
+                ft.title AS topic_title,
+                ft.description AS topic_description,
+                ft.status AS topic_status,
+                ft.author_id AS topic_author_id,
+                ft.created_at AS topic_created_at,
+
+                topic_author.name AS topic_author_name,
+                topic_author.username AS topic_author_username,
+
+                reporter.name AS reporter_name,
+                reporter.username AS reporter_username
+
+            FROM forum_topic_reports fr
+            JOIN forum_topics ft ON ft.topic_id = fr.topic_id
+            JOIN users topic_author ON topic_author.user_id = ft.author_id
+            JOIN users reporter ON reporter.user_id = fr.reporter_id
+
+            WHERE fr.report_id = ?
+            """,
+            (report_id,)).fetchone()
+
+        return dict(row) if row else None
+
+    def accept_report(self, report_id: int, admin_id: int, admin_note: str | None = None,) -> tuple[bool, str]:
+        """
+        Aceita uma denúncia.
+        """
+        if not self.is_user_admin(admin_id):
+            return False, "Apenas administradores podem aceitar denúncias."
+
+        report = self.get_report_details(report_id)
+
+        if report is None:
+            return False, "Denúncia não encontrada."
+
+        if report["status"] != "pending":
+            return False, "Esta denúncia já foi analisada."
+
+        admin_note = self._normalize_text(admin_note)
+
+        self.cursor.execute(
+            """
+            UPDATE forum_topic_reports
+            SET
+                status = 'accepted',
+                reviewed_by = ?,
+                reviewed_at = CURRENT_TIMESTAMP,
+                admin_note = ?
+            WHERE report_id = ?
+            """,
+            (admin_id, admin_note, report_id),
+        )
+
+        self.cursor.execute(
+            """
+            UPDATE forum_topics
+            SET
+                status = 'removed',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE topic_id = ?
+            """,
+            (report["topic_id"],),
+        )
+
+        self.connection.commit()
+
+        return True, "Denúncia aceita. O tópico foi removido da listagem pública."
+
+    def reject_report(self, report_id: int, admin_id: int, admin_note: str | None = None,) -> tuple[bool, str]:
+        """
+        Rejeita uma denúncia.
+        """
+        if not self.is_user_admin(admin_id):
+            return False, "Apenas administradores podem rejeitar denúncias."
+
+        report = self.get_report_details(report_id)
+
+        if report is None:
+            return False, "Denúncia não encontrada."
+
+        if report["status"] != "pending":
+            return False, "Esta denúncia já foi analisada."
+
+        admin_note = self._normalize_text(admin_note)
+
+        self.cursor.execute(
+            """
+            UPDATE forum_topic_reports
+            SET
+                status = 'rejected',
+                reviewed_by = ?,
+                reviewed_at = CURRENT_TIMESTAMP,
+                admin_note = ?
+            WHERE report_id = ?
+            """,
+            (admin_id, admin_note, report_id))
+
+        self.connection.commit()
+
+        return True, "Denúncia rejeitada. O tópico foi mantido no fórum."
 
 
 forum_service = ForumService()
