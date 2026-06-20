@@ -59,6 +59,8 @@ class EventParticipationService:
         """
         Confirma presença do usuário em um evento.
         """
+        if self.check_presence(user_id, event_id):
+            return False, "Você já confirmou presença neste evento"
 
         self.cursor.execute(
             """
@@ -95,10 +97,11 @@ class EventParticipationService:
             return False, "Você ainda não confirmou presença neste evento."
 
         self.connection.commit()
-        removed = ranking_repository_services.remove_event_points(user_id, event_id)
+        removed = ranking_repository_services.remove_event_points(
+            user_id, event_id)
         if removed:
             return True, "Presença desmarcada com sucesso. Pontuação do evento removida do ranking."
-            
+
         else:
             return True, "Presença desmarcada com sucesso. Nenhuma pontuação encontrada para remoção."
 
@@ -120,7 +123,6 @@ class EventParticipationService:
         )
 
         return bool(self.cursor.fetchone()[0])
-
 
     def check_activities(self, user_id: int, event_id: int) -> list[str]:
         """
