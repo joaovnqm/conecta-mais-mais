@@ -1,6 +1,6 @@
 import sqlite3
+from datetime import datetime
 from typing import List, Optional
-
 from database.repositories.interest_repository import interest_services
 from models.event import Event
 from utils.validations import validation_services
@@ -10,7 +10,6 @@ class EventServices:
     """
     Classe responsável por operações relacionadas aos eventos e pela conexão com o banco de dados.
     """
-
     def __init__(self, database_path: str = "conecta++.db"):
         self.database_path = database_path
         self.connection = sqlite3.connect(self.database_path)
@@ -23,7 +22,6 @@ class EventServices:
         Cria a tabela events caso ela não exista e garante as colunas
         necessárias para a funcionalidade de datas importantes.
         """
-
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS events (
                 event_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,7 +47,6 @@ class EventServices:
         """
         Garante que bancos antigos recebam as colunas novas sem apagar dados.
         """
-
         self.cursor.execute("PRAGMA table_info(events)")
         columns = {column[1] for column in self.cursor.fetchall()}
 
@@ -66,13 +63,30 @@ class EventServices:
         """
         Normaliza campos opcionais de texto.
         """
-
         if value is None:
             return None
 
         value = value.strip()
 
         return value if value else None
+
+    def is_event_expired(self, date: Optional[str]) -> bool:
+        """
+        Verifica se um evento já passou com base na data armazenada (dd-mm-aaaa).
+        Eventos sem data definida são considerados como não expirados, já
+        que não há informação suficiente para confirmar que já ocorreram.
+        """
+        if not date:
+            return False
+
+        try:
+            event_date = datetime.strptime(date, "%d-%m-%Y").date()
+        
+        except ValueError:
+            return False
+
+        today = datetime.now().date()
+        return event_date < today
 
     def create_event(
         self,
@@ -89,14 +103,12 @@ class EventServices:
         """
         Cria um evento validando os campos obrigatórios e opcionais.
         """
-
         name = name.strip()
         description = description.strip()
         event_location = self._normalize_optional_text(event_location)
         date = self._normalize_optional_text(date)
         hour = self._normalize_optional_text(hour)
         official_url = self._normalize_optional_text(official_url)
-
         if not validation_services.valid_name_events(name):
             return False, "O nome precisa ter pelo menos 2 caracteres."
 
@@ -129,7 +141,6 @@ class EventServices:
         )
 
         event_registered = bool(self.cursor.fetchone()[0])
-
         if event_registered:
             return False, "Esse evento já foi cadastrado."
 
@@ -160,11 +171,8 @@ class EventServices:
         )
 
         self.connection.commit()
-
         event_id = self.cursor.lastrowid
-
         interest_id = interest_services.index_interest(interest)
-
         self.cursor.execute(
             """
             INSERT INTO events_interests (
@@ -177,18 +185,15 @@ class EventServices:
         )
 
         self.connection.commit()
-
         return True, "Evento criado com sucesso!"
 
     def check_events_by_interests(self, user_id: int) -> List[Event]:
         """
         Retorna eventos com base nos interesses do usuário.
         """
-
         interests = interest_services.check_user_interests(user_id)
         events = []
         seen_ids = set()
-
         for interest in interests:
             self.cursor.execute(
                 "SELECT event_id FROM events_interests WHERE interest_id = ?",
@@ -203,7 +208,7 @@ class EventServices:
 
                 self.cursor.execute(
                     """
-                    SELECT event_id, name, description
+                    SELECT event_id, name, description, date
                     FROM events
                     WHERE event_id = ?
                     """,
@@ -214,7 +219,9 @@ class EventServices:
 
                 if result:
                     seen_ids.add(event_id)
-                    events.append(Event(result[0], result[1], result[2]))
+                    events.append(
+                        Event(result[0], result[1], result[2], date=result[3])
+                    )
 
         return events
 
@@ -222,10 +229,8 @@ class EventServices:
         """
         Retorna eventos com base em um interesse selecionado.
         """
-
         events = []
         interest_id = interest_services.index_interest(selected_interest)
-
         self.cursor.execute(
             "SELECT event_id FROM events_interests WHERE interest_id = ?",
             (interest_id,)
@@ -233,10 +238,9 @@ class EventServices:
 
         for row in self.cursor.fetchall():
             event_id = row[0]
-
             self.cursor.execute(
                 """
-                SELECT event_id, name, description
+                SELECT event_id, name, description, date
                 FROM events
                 WHERE event_id = ?
                 """,
@@ -246,7 +250,9 @@ class EventServices:
             result = self.cursor.fetchone()
 
             if result:
-                events.append(Event(result[0], result[1], result[2]))
+                events.append(
+                    Event(result[0], result[1], result[2], date=result[3])
+                )
 
         return events
 
@@ -254,10 +260,8 @@ class EventServices:
         """
         Retorna eventos criados por amigos aceitos do usuário.
         """
-
         events = []
         friends = set()
-
         self.cursor.execute(
             """
             SELECT user_low_id
@@ -287,7 +291,7 @@ class EventServices:
         for friend in friends:
             self.cursor.execute(
                 """
-                SELECT event_id, name, description
+                SELECT event_id, name, description, date
                 FROM events
                 WHERE creator_id = ?
                 """,
@@ -295,7 +299,9 @@ class EventServices:
             )
 
             for event in self.cursor.fetchall():
-                events.append(Event(event[0], event[1], event[2]))
+                events.append(
+                    Event(event[0], event[1], event[2], date=event[3])
+                )
 
         return events
 
@@ -303,9 +309,7 @@ class EventServices:
         """
         Retorna eventos criados pelo usuário.
         """
-
         events = []
-
         self.cursor.execute(
             """
             SELECT event_id, name, description
@@ -324,7 +328,6 @@ class EventServices:
         """
         Retorna os detalhes completos de um evento específico.
         """
-
         self.cursor.execute(
             """
             SELECT
@@ -344,7 +347,6 @@ class EventServices:
         )
 
         event = self.cursor.fetchone()
-
         if event is None:
             raise ValueError("Evento não encontrado.")
 
@@ -374,14 +376,12 @@ class EventServices:
         """
         Edita um evento específico.
         """
-
         name = name.strip()
         description = description.strip()
         event_location = self._normalize_optional_text(event_location)
         date = self._normalize_optional_text(date)
         hour = self._normalize_optional_text(hour)
         official_url = self._normalize_optional_text(official_url)
-
         if not validation_services.valid_name_events(name):
             return False, "O nome precisa ter pelo menos 2 caracteres."
 
@@ -426,22 +426,18 @@ class EventServices:
         )
 
         self.connection.commit()
-
         return True, "Evento editado com sucesso!"
 
     def delete_event(self, event_id: int):
         """
         Deleta um evento específico.
         """
-
         self.cursor.execute(
             "DELETE FROM events WHERE event_id = ?",
             (event_id,)
         )
 
         self.connection.commit()
-
         return True, "Evento deletado com sucesso!"
-
 
 event_services = EventServices()
