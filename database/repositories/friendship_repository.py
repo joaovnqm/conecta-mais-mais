@@ -150,7 +150,8 @@ class FriendshipServices:
         if requester_id == target_id:
             return False, "Você não pode enviar solicitação para si mesmo."
 
-        user_low_id, user_high_id = self.make_user_pair(requester_id, target_id)
+        user_low_id, user_high_id = self.make_user_pair(
+            requester_id, target_id)
 
         self.cursor.execute(
             """
@@ -240,6 +241,28 @@ class FriendshipServices:
             requester_id,
             target_user["user_id"]
         )
+
+    def send_friend_request_by_user_id(self, requester_id: int, target_id: int) -> tuple[bool, str]:
+        """
+        Envia solicitação de amizade usando diretamente o ID do usuário
+        """
+        if requester_id == target_id:
+            return False, "Você não pode enviar solicitação para si mesmo"
+        self.cursor.execute(
+            """
+            SELECT EXISTS(
+                SELECT 1
+                FROM users
+                WHERE user_id = ?
+            )
+            """,
+            (target_id,)
+        )
+        target_exists = bool(self.cursor.fetchone()[0])
+
+        if not target_exists:
+            return False, "Usuário não encontrado"
+        return self._create_or_update_friend_request(requester_id, target_id)
 
     def list_pending_requests(self, user_id: int) -> List[FriendRequest]:
         """
