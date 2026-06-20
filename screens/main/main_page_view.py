@@ -1,15 +1,13 @@
 from textual.app import ComposeResult
-from textual.screen import Screen
-from textual.widgets import Static, Button
 from textual.containers import Center, Vertical
-from screens.profile.profile_view import ProfileView
-from screens.social.friends_view import FriendsView
-from screens.events.favorite_events_list_view import FavoriteEventsList
-from screens.events.events_general_view import EventsGeneralView
-from screens.ranking.ranking_view import RankingView
-from screens.social.chats_view import ChatsView
-from utils.validations import validation_services
+from textual.screen import Screen
+from textual.widgets import Button, Static
 from database.repositories.user_repository import user_services
+from screens.events.events_general_view import EventsGeneralView
+from screens.profile.profile_view import ProfileView
+from screens.social.chats_view import ChatsView
+from screens.social.friends_view import FriendsView
+from utils.validations import validation_services
 
 MAIN_PAGE_CSS = """
 Screen {
@@ -46,8 +44,7 @@ Button {
 
 class MainPageView(Screen):
     """
-    Classe responsável pela tela principal do aplicativo. Ela é exibida após o login bem-sucedido, e oferece opções de navegação para
-    o perfil do usuário, a lista de eventos disponíveis, a lista de eventos favoritados, e a opção de logout.
+    Tela principal exibida após o login. Possui: Perfil, Eventos, Amigos, Chat e Logout
     """
     CSS = MAIN_PAGE_CSS
 
@@ -65,8 +62,6 @@ class MainPageView(Screen):
                 yield Static(f"Bem-vindo(a), {self.user_name}!", classes="main_subtitle", id="name")
                 yield Button("Meu perfil", id="button_profile")
                 yield Button("Eventos", id="button_events")
-                yield Button("Eventos Favoritados", id="button_favorite_events")
-                yield Button("Ranking de Eventos", id="ranking_button")
                 yield Button("Amigos", id="button_friends")
                 yield Button("Chat", id="button_chat")
                 yield Button("Logout", id="button_logout", variant="error")
@@ -74,10 +69,9 @@ class MainPageView(Screen):
     # Atualiza a mensagem de boas-vindas com o nome do usuário sempre que a tela for exibida
     def on_screen_resume(self) -> None:
         user_data = user_services.get_user_profile(self.user_id)
-        name = user_data.name
-        self.user_name = validation_services.normalize_name(name)
-        welcome_message = self.query_one("#name", Static)
-        welcome_message.update(f"Bem-vindo(a), {self.user_name}!")
+        self.user_name = validation_services.normalize_name(user_data.name)
+        self.query_one("#name", Static).update(
+            f"Bem vindo(a), {self.user_name}!")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """
@@ -86,7 +80,6 @@ class MainPageView(Screen):
         - Se for o botão de perfil, ela navega para a tela de perfil do usuário.
         - Se for o botão de eventos, ela navega para a tela de eventos gerais, onde o usuário pode escolher entre eventos de diferentes áreas e
         eventos sociais.
-        - Se for o botão de eventos favoritados, ela navega para a tela de listagem de eventos favoritados pelo usuário.
         - Se for o botão de logout, ela navega para a tela de login e reseta os campos do formulário de login para 
         facilitar uma nova tentativa de login.
         """
@@ -98,12 +91,6 @@ class MainPageView(Screen):
         elif event.button.id == "button_events":
             self.app.push_screen(EventsGeneralView(
                 self.user_id, self.user_name))
-
-        elif event.button.id == "button_favorite_events":
-            self.app.push_screen(FavoriteEventsList(self.user_id))
-
-        elif event.button.id == "ranking_button":
-            self.app.push_screen(RankingView())
 
         elif event.button.id == "button_friends":
             self.app.push_screen(FriendsView(self.user_id))
