@@ -157,10 +157,7 @@ class ForumTopicDetailsView(Screen):
 
                 if topic is None:
                     with Vertical(classes="section_card"):
-                        yield Static(
-                            "Tópico não encontrado.",
-                            classes="empty_state",
-                        )
+                        yield Static("Tópico não encontrado.", classes="empty_state")
 
                     yield Button("Voltar", id="button_return", variant="primary")
                     return
@@ -361,9 +358,10 @@ class ForumTopicDetailsView(Screen):
             self.app.notify("Tópico não encontrado.", severity="error")
             return
 
-        success, message = friendship_services.send_friend_request_by_user_id(requester_id=self.user_id,
-                                                                              target_id=topic["author_id"],
-                                                                              )
+        success, message = friendship_services.send_friend_request_by_user_id(
+            requester_id=self.user_id,
+            target_id=topic["author_id"],
+        )
 
         self.app.notify(message)
 
