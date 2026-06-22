@@ -5,6 +5,7 @@ from textual.widgets import Button, Static
 from database.repositories.forum_repository import forum_service
 from screens.forum.create_forum_topic_view import CreateForumTopicView
 from screens.forum.forum_topic_details_view import ForumTopicDetailsView
+from screens.forum.saved_forum_topics_view import SavedForumTopicsView
 
 FORUM_VIEW_CSS = """
 Screen {
@@ -25,6 +26,12 @@ Screen {
     content-align: center middle;
     text-style: bold;
     margin-bottom: 1;
+}
+
+#button_saved_topics {
+    width: 100%;
+    height: 3;
+    margin-top: 1;
 }
 
 .subtitle {
@@ -83,6 +90,7 @@ class ForumView(Screen):
                 yield Static("Fórum", id="main_title")
                 yield Static("Encontre pessoas para pesquisar, projetos e colaboração acadêmica", classes="subtitle")
                 yield Button("Criar tópico", id="button_create_topic", variant="success")
+                yield Button("Ver tópicos salvos",id="button_saved_topics",variant="primary")
 
                 with Vertical(classes="section_card"):
                     yield Static("Tópicos disponíveis", classes="section_title")
@@ -106,9 +114,7 @@ class ForumView(Screen):
 
         if not topics:
             await container.mount(
-                Static(
-                    "Nenhum tópico criado ainda. Seja o primeiro a iniciar uma colaboração", classes="empty_state")
-            )
+                Static("Nenhum tópico criado ainda. Seja o primeiro a iniciar uma colaboração", classes="empty_state"))
             return
 
         for topic in topics:
@@ -119,27 +125,22 @@ class ForumView(Screen):
                     f"{topic['title']}\n"
                     f"Autor: {topic['author_name']} - @{username}\n"
                     f"Likes: {topic['total_likes']} | Comentários: {topic['total_comments']}",
-                    classes="topic_text",
-                )
-            )
+                    classes="topic_text"))
 
             await container.mount(
-                Button(
-                    f"Abrir tópico #{topic['topic_id']}",
-                    id=f"button_open_topic_{topic['topic_id']}",
-                )
-            )
+                Button(f"Abrir tópico #{topic['topic_id']}",id=f"button_open_topic_{topic['topic_id']}"))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id or ""
 
         if button_id == "button_create_topic":
             self.app.push_screen(CreateForumTopicView(self.user_id))
-
+        elif button_id == "button_saved_topics":
+            self.app.push_screen(SavedForumTopicsView(self.user_id))
+            return
         elif button_id.startswith("button_open_topic_"):
             topic_id = int(button_id.replace("button_open_topic_", ""))
-            self.app.push_screen(ForumTopicDetailsView(
-                user_id=self.user_id, topic_id=topic_id))
+            self.app.push_screen(ForumTopicDetailsView(user_id=self.user_id, topic_id=topic_id))
 
         elif button_id == "button_return":
             self.app.pop_screen()
