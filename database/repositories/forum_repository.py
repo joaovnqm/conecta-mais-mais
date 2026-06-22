@@ -47,10 +47,12 @@ class ForumService:
                 comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 topic_id INTEGER NOT NULL,
                 author_id INTEGER NOT NULL,
+                parent_comment_id INTEGER,
                 content TEXT NOT NULL,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(topic_id) REFERENCES forum_topics(topic_id) ON DELETE CASCADE,
-                FOREIGN KEY(author_id) REFERENCES users(user_id) ON DELETE CASCADE
+                FOREIGN KEY(author_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                FOREIGN KEY(parent_comment_id) REFERENCES forum_comments(comment_id) ON DELETE CASCADE
             )
             """
         )
@@ -125,7 +127,11 @@ class ForumService:
             column_name="admin_note",
             column_definition="admin_note TEXT",
         )
-
+        self._ensure_column(
+            table_name="forum_comments",
+            column_name="parent_comment_id",
+            column_definition="parent_comment_id INTEGER",
+        )
         self.cursor.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_forum_topics_status
@@ -144,6 +150,13 @@ class ForumService:
             """
             CREATE INDEX IF NOT EXISTS idx_forum_reports_status
             ON forum_topic_reports(status)
+            """
+        )
+
+        self.cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_forum_comments_parent
+            ON forum_comments(parent_comment_id)
             """
         )
 
@@ -178,7 +191,46 @@ class ForumService:
         self.connection.commit()
 
         return True, 'Tópico criado com sucesso', self.cursor.lastrowid
+    
+    def delete_topic(self, topic_id: int, requester_id: int) -> tuple[bool, str]:
+        """
+        Remove logicamente um tópico do fórum.
+        """
+        topic = self.cursor.execute(
+            """
+            SELECT
+                topic_id,
+                author_id,
+                status
+            FROM forum_topics
+            WHERE topic_id = ?
+            AND status = 'active'
+            """,
+            (topic_id,)).fetchone()
 
+        if topic is None:
+            return False, "Tópico não encontrado ou já removido."
+
+        is_author = topic["author_id"] == requester_id
+        is_admin = self.is_user_admin(requester_id)
+
+        if not is_author and not is_admin:
+            return False, "Você não tem permissão para remover este tópico."
+
+        self.cursor.execute(
+            """
+            UPDATE forum_topics
+            SET
+                status = 'removed',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE topic_id = ?
+            """,
+            (topic_id,),
+        )
+
+        self.connection.commit()
+        return True, "Tópico removido com sucesso."
+    
     def list_topics(self) -> list[dict[str, Any]]:
         """
         Lista os tópicos ativos do fórum com autor, likes e comentários
@@ -213,7 +265,50 @@ class ForumService:
         ).fetchall()
 
         return [dict(row) for row in rows]
+    
+    def list_saved_topics(self, user_id: int) -> list[dict[str, Any]]:
+        """
+    Lista os tópicos salvos por um usuário. Só retorna tópicos ativos
+    """
+        rows = self.cursor.execute(
+        """
+        SELECT
+            ft.topic_id,
+            ft.author_id,
+            ft.title,
+            ft.description,
+            ft.status,
+            ft.created_at,
+            ft.updated_at,
+            fs.created_at AS saved_at,
+            u.name AS author_name,
+            u.username AS author_username,
+            (
+                SELECT COUNT(*)
+                FROM forum_topic_likes fl
+                WHERE fl.topic_id = ft.topic_id
+            ) AS total_likes,
+            (
+                SELECT COUNT(*)
+                FROM forum_comments fc
+                WHERE fc.topic_id = ft.topic_id
+            ) AS total_comments,
+            (
+                SELECT COUNT(*)
+                FROM forum_topic_saves fsave
+                WHERE fsave.topic_id = ft.topic_id
+            ) AS total_saves
 
+        FROM forum_topic_saves fs
+        JOIN forum_topics ft ON ft.topic_id = fs.topic_id
+        JOIN users u ON u.user_id = ft.author_id
+        WHERE fs.user_id = ?
+        AND ft.status = 'active'
+        ORDER BY fs.created_at DESC
+        """,
+        (user_id,)).fetchall()
+        return [dict(row) for row in rows]
+    
     def get_topic(self, topic_id: int) -> dict[str, Any] | None:
         """
         Busca um Tópico específico
@@ -278,9 +373,60 @@ class ForumService:
 
         return True, "comentário publicado com sucesso"
 
+    def add_comment_reply(self,topic_id: int,parent_comment_id: int,author_id: int, content: str | None) -> tuple[bool, str]:
+        """
+        Adiciona uma resposta a qualquer comentário do fórum.
+        """
+        content = self._normalize_text(content)
+
+        if not content:
+            return False, "A resposta não pode ficar vazia."
+
+        if len(content) > self.MAX_COMMENT_LENGTH:
+            return False, f"A resposta deve ter no máximo {self.MAX_COMMENT_LENGTH} caracteres."
+
+        if self.get_topic(topic_id) is None:
+            return False, "Tópico não encontrado ou indisponível."
+
+        parent_comment = self.cursor.execute(
+            """
+            SELECT comment_id
+            FROM forum_comments
+            WHERE comment_id = ?
+            AND topic_id = ?
+            """,
+            (parent_comment_id, topic_id)).fetchone()
+
+        if parent_comment is None:
+            return False, "Comentário que você tentou responder não foi encontrado."
+
+        self.cursor.execute(
+            """
+            INSERT INTO forum_comments (
+                topic_id,
+                author_id,
+                parent_comment_id,
+                content
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (topic_id, author_id, parent_comment_id, content))
+
+        self.cursor.execute(
+            """
+            UPDATE forum_topics
+            SET updated_at = CURRENT_TIMESTAMP
+            WHERE topic_id = ?
+            """,
+            (topic_id))
+
+        self.connection.commit()
+
+        return True, "Resposta publicada com sucesso."
+    
     def list_comments(self, topic_id: int) -> list[dict[str, Any]]:
         """
-        Lista comentários de um tópico
+        Lista apenas os comentários de um tópico
         """
         rows = self.cursor.execute(
             """
@@ -288,6 +434,7 @@ class ForumService:
                 fc.comment_id,
                 fc.topic_id,
                 fc.author_id,
+                fc.parent_comment_id,
                 fc.content,
                 fc.created_at,
                 u.name AS author_name,
@@ -295,11 +442,35 @@ class ForumService:
             FROM forum_comments fc
             JOIN users u ON u.user_id = fc.author_id
             WHERE fc.topic_id = ?
+            AND fc.parent_comment_id IS NULL
             ORDER BY fc.created_at ASC
             """,
-            (topic_id,),
-        ).fetchall()
+            (topic_id,)).fetchall()
 
+        return [dict(row) for row in rows]
+
+    def list_comment_replies(self,topic_id: int, parent_comment_id: int) -> list[dict[str, Any]]:
+        """
+        Lista as respostas de um comentário
+        """
+        rows = self.cursor.execute(
+            """
+            SELECT
+                fc.comment_id,
+                fc.topic_id,
+                fc.author_id,
+                fc.parent_comment_id,
+                fc.content,
+                fc.created_at,
+                u.name AS author_name,
+                u.username AS author_username
+            FROM forum_comments fc
+            JOIN users u ON u.user_id = fc.author_id
+            WHERE fc.topic_id = ?
+            AND fc.parent_comment_id = ?
+            ORDER BY fc.created_at ASC
+            """,
+            (topic_id, parent_comment_id)).fetchall()
         return [dict(row) for row in rows]
 
     def toggle_like(self, topic_id: int, user_id: int) -> tuple[bool, str]:
@@ -463,7 +634,67 @@ class ForumService:
             """,
             (topic_id, user_id),
         )
+    
+    def delete_comment(self,comment_id: int,requester_id: int) -> tuple[bool, str]:
+        """
+        Remove um comentário do fórum.
+        """
+        comment = self.cursor.execute(
+            """
+            SELECT
+                comment_id,
+                topic_id,
+                author_id
+            FROM forum_comments
+            WHERE comment_id = ?
+            """,
+            (comment_id,)).fetchone()
 
+        if comment is None:
+            return False, "Comentário não encontrado."
+
+        is_author = comment["author_id"] == requester_id
+        is_admin = self.is_user_admin(requester_id)
+
+        if not is_author and not is_admin:
+            return False, "Você não tem permissão para remover este comentário."
+
+        self._delete_comment_with_replies(comment_id)
+
+        self.cursor.execute(
+            """
+            UPDATE forum_topics
+            SET updated_at = CURRENT_TIMESTAMP
+            WHERE topic_id = ?
+            """,
+            (comment["topic_id"]))
+
+        self.connection.commit()
+
+        return True, "Comentário removido com sucesso."
+
+    def _delete_comment_with_replies(self, comment_id: int) -> None:
+        """
+        Remove um comentário e todas as respostas ligadas a ele.
+        """
+        replies = self.cursor.execute(
+            """
+            SELECT comment_id
+            FROM forum_comments
+            WHERE parent_comment_id = ?
+            """,
+            (comment_id,)).fetchall()
+
+        for reply in replies:
+            self._delete_comment_with_replies(reply["comment_id"])
+
+        self.cursor.execute(
+            """
+            DELETE FROM forum_comments
+            WHERE comment_id = ?
+            """,
+            (comment_id))
+        
     def _exists(self, query: str, params: tuple) -> bool:
         row = self.cursor.execute(query, params).fetchone()
         return row is not None
@@ -472,9 +703,10 @@ class ForumService:
         return ' '.join((value or '').strip().split())
 
     def _column_exists(self, table_name: str, column_name: str) -> bool:
-        rows = self.cursor.execute(
-            f"PRAGMA table_info({table_name})").fetchall()
-
+        """
+        Verifica se uma coluna já existe em uma tabela SQLite
+        """
+        rows = self.cursor.execute(f"PRAGMA table_info({table_name})").fetchall()
         return any(row["name"] == column_name for row in rows)
 
     def _ensure_column(self, table_name: str, column_name: str, column_definition: str) -> None:
