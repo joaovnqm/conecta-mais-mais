@@ -1,11 +1,11 @@
-# Conecta++ Release 3.0 🚀
+# Conecta++ Release 4.0 🚀
 
-O **Conecta++** é uma aplicação de interface de terminal (TUI) desenvolvida como projeto prático para o curso de **Sistemas de Informação** da **UFRPE**. A plataforma visa conectar a comunidade acadêmica a eventos, permitindo a gestão de perfis, personalização de experiências com base em interesses, interação entre usuários, acompanhamento de presença, emissão de certificados, integração com calendário e ranqueamento por participação.
+O **Conecta++** é uma aplicação de interface de terminal (TUI) desenvolvida como projeto prático para o curso de **Sistemas de Informação** da **UFRPE**. A plataforma visa conectar a comunidade acadêmica a eventos, permitindo a gestão de perfis, personalização de experiências com base em interesses, interação entre usuários através de chat e fóruns, acompanhamento de presença, emissão de certificados, integração com calendário e ranqueamento por participação.
 
 ## 🖼️ Visualização da Tela de Eventos
 
 Abaixo estão algumas capturas da tela responsável por listar os eventos disponíveis no sistema.
-Nessa interface, o usuário pode filtrar os eventos por interesse, visualizar a lista de eventos cadastrados, acompanhar informações relevantes e acessar mais detalhes clicando em uma opção.
+Nessa interface, o usuário pode filtrar os eventos por interesse, visualizar a lista de eventos cadastrados e o botão que leva aos eventos expirados, acompanhar informações relevantes e acessar mais detalhes clicando em uma opção.
 
 <div align="center">
 
@@ -28,7 +28,7 @@ Nessa interface, o usuário pode filtrar os eventos por interesse, visualizar a 
 
 ### 📌 Funcionalidade exibida
 
-A tela apresenta uma vitrine de eventos cadastrados no sistema, permitindo que o usuário visualize conferências, simpósios, encontros acadêmicos e eventos sociais relacionados aos seus interesses.
+A tela apresenta uma vitrine de eventos cadastrados no sistema, permitindo que o usuário visualize conferências, simpósios, encontros acadêmicos e eventos sociais que ainda irão acontecer e que são relacionados aos seus interesses.
 
 Entre os elementos exibidos estão:
 
@@ -37,6 +37,8 @@ Entre os elementos exibidos estão:
 * Cards individuais para cada evento;
 * Barra de rolagem para navegação;
 * Botão de retorno para a tela anterior;
+* Botão para página de eventos expirados;
+* Botão de retorno a página inicial;
 * Informações detalhadas sobre cada evento;
 * Possibilidade de favoritar eventos;
 * Confirmação de presença;
@@ -61,20 +63,23 @@ Essa funcionalidade faz parte da proposta principal do projeto, que é facilitar
 
 ### Bibliotecas nativas do Python
 
-| Biblioteca      | Objetivo no projeto                                                              |
-| --------------- | -------------------------------------------------------------------------------- |
-| `sqlite3`       | Criar e manipular o banco de dados local SQLite.                                 |
-| `hashlib`       | Gerar hash seguro de senhas e códigos.                                           |
-| `hmac`          | Comparar hashes de forma mais segura.                                            |
-| `secrets`       | Gerar salt aleatório para aumentar a segurança das senhas.                       |
-| `smtplib`       | Enviar e-mails usando servidor SMTP.                                             |
-| `email.message` | Montar a mensagem de e-mail enviada ao usuário.                                  |
-| `datetime`      | Controlar data e hora de expiração dos códigos de verificação, eventos e prazos. |
-| `random`        | Gerar códigos numéricos aleatórios.                                              |
-| `re`            | Validar campos como nome, e-mail, senha, username, data, hora e links sociais.   |
-| `os`            | Ler variáveis de ambiente configuradas no sistema ou arquivo `.env`.             |
-| `pathlib`       | Manipular caminhos de arquivos e diretórios do projeto.                          |
-| `typing`        | Melhorar a organização do código com anotações de tipo.                          |
+| Biblioteca      | Objetivo no projeto                                                                 |
+| --------------- | ----------------------------------------------------------------------------------- |
+| `sqlite3`       | Criar e manipular o banco de dados local SQLite.                                    |
+| `hashlib`       | Gerar hash seguro de senhas e códigos.                                              |
+| `hmac`          | Comparar hashes de forma mais segura.                                               |
+| `secrets`       | Gerar salt aleatório para aumentar a segurança das senhas.                          | 
+| `smtplib`       | Enviar e-mails usando servidor SMTP.                                                |
+| `email.message` | Montar a mensagem de e-mail enviada ao usuário.                                     |
+| `datetime`      | Controlar data e hora de expiração dos códigos de verificação, eventos e prazos.    |
+| `random`        | Gerar códigos numéricos aleatórios.                                                 |
+| `re`            | Validar campos como nome, e-mail, senha, username, data, hora e links sociais.      |
+| `os`            | Ler variáveis de ambiente configuradas no sistema ou arquivo `.env`.                |
+| `pathlib`       | Manipular caminhos de arquivos e diretórios do projeto.                             |
+| `typing`        | Melhorar a organização do código com anotações de tipo.                             |
+| `threading`     | Permite a execução de múltiplas tarefas concorrentes dentro de um processo.         |
+| `asyncio`       | Gerencia múltiplas tarefas de Entrada/Saída (I/O) simultaneamente.                  |
+| `time`          | Foca no tempo de execução de processos em relação ao relógio do sistema operacional.|
 
 ---
 
@@ -262,6 +267,90 @@ Essa versão passou a valorizar não apenas a participação em eventos, mas tam
 | 9     | Mestre        |
 | 10    | Lendário      |
 
+---
+
+### ✅ Funcionalidades entregues na versão 4.0 — Terceira VA de Princípios de Programação
+ 
+As funcionalidades da **Release 4.0** expandiram o Conecta++ com recursos voltados para interação e colaboração acadêmica, introduzindo um fórum de discussão, sistema de mensagens privadas (chat), avaliações de eventos, perfis públicos e um sistema de conquistas (badges).
+ 
+Essa versão consolidou a plataforma como um espaço completo para networking, produção acadêmica e engajamento contínuo entre usuários.
+ 
+---
+ 
+### 💬 Fórum Acadêmico
+ 
+| Funcionalidade                        | Descrição                                                                                                                 | Objetivo                                                                                     |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **Criação de tópicos**                | Permite que o usuário abra novos tópicos de discussão no fórum com título e descrição.                                    | Estimular a troca de conhecimento e a colaboração acadêmica entre os usuários da plataforma. |
+| **Listagem de tópicos**               | Exibe todos os tópicos do fórum com autor, número de curtidas e quantidade de comentários.                                | Facilitar a descoberta de discussões ativas e relevantes para a comunidade.                  |
+| **Detalhes do tópico**                | Apresenta as informações completas do tópico, incluindo descrição, autor e data de criação.                               | Permitir ao usuário ler e interagir com o conteúdo do tópico selecionado.                    |
+| **Comentários e respostas**           | Permite comentar em tópicos e responder a comentários existentes, com visualização em árvore hierárquica.                 | Organizar as discussões de forma clara e facilitar o acompanhamento das trocas de ideias.    |
+| **Curtir tópicos**                    | Permite curtir ou remover a curtida de um tópico do fórum.                                                                | Destacar conteúdos de qualidade e indicar engajamento com os temas debatidos.               |
+| **Salvar tópicos**                    | Permite salvar tópicos em uma lista própria para consulta posterior.                                                      | Organizar os tópicos de maior interesse para o usuário.                                      |
+| **Tópicos salvos**                    | Exibe todos os tópicos que o usuário salvou.                                                                              | Centralizar o acesso rápido às discussões que o usuário deseja acompanhar.                   |
+| **Denunciar tópicos**                 | Permite que o usuário reporte tópicos com conteúdo inapropriado.                                                          | Manter a qualidade e a segurança das discussões dentro da plataforma.                        |
+| **Exclusão de tópicos e comentários** | Permite que o autor ou um administrador remova tópicos e comentários do fórum.                                            | Dar controle sobre o conteúdo publicado e garantir a moderação da comunidade.                |
+| **Moderação do fórum**                | Oferece uma área exclusiva para administradores revisarem as denúncias recebidas.                                         | Garantir que as denúncias sejam analisadas e tratadas de forma centralizada.                 |
+| **Adicionar amigo pelo fórum**        | Permite enviar uma solicitação de amizade diretamente da tela de um tópico.                                               | Facilitar o networking a partir das interações acadêmicas no fórum.                          |
+| **Ver perfil pelo fórum**             | Permite acessar o perfil público do autor de um tópico diretamente pela tela de detalhes.                                | Aproximar usuários com interesses comuns identificados nas discussões.                       |
+ 
+---
+ 
+### ✉️ Mensagens Privadas
+ 
+| Funcionalidade                       | Descrição                                                                                                           | Objetivo                                                                              |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Listagem de conversas**            | Exibe todas as conversas do usuário com prévia da última mensagem, horário e indicador de não lidas.               | Oferecer uma visão rápida e organizada da caixa de entrada do usuário.               |
+| **Conversa privada**                 | Permite trocar mensagens em tempo real com outro usuário da plataforma.                                             | Possibilitar comunicação direta entre usuários para fins acadêmicos ou de networking. |
+| **Nova conversa**                    | Permite ao usuário iniciar uma conversa com outro usuário ainda não contactado.                                     | Facilitar a criação de novos canais de comunicação dentro da plataforma.              |
+| **Indicador de mensagens não lidas** | Destaca conversas com mensagens ainda não visualizadas.                                                             | Evitar que o usuário perca mensagens importantes recebidas.                           |
+ 
+---
+ 
+### ⭐ Avaliação de Eventos (Feedback)
+ 
+| Funcionalidade             | Descrição                                                                                                   | Objetivo                                                                                                               |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Envio de feedback**      | Permite que o usuário avalie um evento com uma nota de 1 a 5 estrelas e um comentário opcional.             | Coletar impressões dos participantes e enriquecer as informações disponíveis sobre os eventos.                         |
+| **Edição de feedback**     | Permite que o usuário atualize a nota ou o comentário de uma avaliação já enviada.                          | Oferecer flexibilidade caso o usuário queira revisar sua avaliação.                                                    |
+| **Listagem de feedbacks**  | Exibe todas as avaliações recebidas por um evento, com nota, comentário e autor.                            | Permitir que organizadores e participantes visualizem as opiniões coletadas.                                           |
+| **Resumo de avaliações**   | Apresenta a média de notas e o total de feedbacks de um evento de forma condensada.                         | Facilitar a compreensão rápida da recepção geral de um evento.                                                        |
+| **Restrição por presença** | Impede que o usuário avalie um evento sem ter confirmado presença previamente.                              | Garantir que apenas participantes reais possam emitir avaliações, preservando a credibilidade dos feedbacks recebidos. |
+ 
+---
+ 
+### 🏅 Conquistas (Badges)
+ 
+| Funcionalidade                 | Descrição                                                                                                           | Objetivo                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Sistema de badges**          | Atribui conquistas ao usuário com base em critérios de participação, apresentações e pontuação acumulada.           | Recompensar o engajamento progressivo e tornar a jornada do usuário mais motivadora.       |
+| **Visualização de conquistas** | Exibe todas as badges disponíveis, indicando quais já foram desbloqueadas e quais ainda estão bloqueadas.           | Dar ao usuário uma visão clara do seu progresso e dos objetivos que ainda pode alcançar.   |
+ 
+### Badges disponíveis
+ 
+| Badge                    | Ícone | Critério de desbloqueio                |
+| ------------------------ | :---: | -------------------------------------- |
+| Primeiro Evento          |  🎉   | Confirmar presença no primeiro evento  |
+| Participante Ativo       |  🚀   | Participar de 5 eventos                |
+| Explorador               |  🧭   | Participar de 10 eventos               |
+| Veterano de Eventos      |  🏆   | Participar de 25 eventos               |
+| Lenda Acadêmica          |  👑   | Participar de 50 eventos               |
+| Palestrante              |  🎤   | Realizar 1 apresentação                |
+| Palestrante Sênior       |  🎙️  | Realizar 5 apresentações               |
+| Instrutor de Workshop    |  🛠️  | Ministrar 1 workshop                   |
+| Mestre dos Workshops     |  ⚙️   | Ministrar 5 workshops                  |
+| Engajado na Comunidade   |  ❤️   | Participar de 20 eventos               |
+| Influenciador Acadêmico  |  ⭐   | Acumular 10.000 pontos no ranking      |
+ 
+---
+ 
+### 👤 Perfil Público
+ 
+| Funcionalidade                     | Descrição                                                                                                              | Objetivo                                                                                              |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Visualização de perfil público** | Permite que qualquer usuário veja o perfil de outro, incluindo nome, username, LinkedIn e GitHub.                     | Fortalecer o networking ao oferecer acesso às informações profissionais e acadêmicas de outros usuários. |
+| **Adicionar amigo pelo perfil**    | Permite enviar solicitação de amizade diretamente da tela de perfil público.                                           | Facilitar conexões a partir da visualização do perfil de outros participantes da plataforma.          |
+ 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
