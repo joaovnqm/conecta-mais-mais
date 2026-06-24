@@ -635,10 +635,7 @@ class ForumService:
             (topic_id, user_id),
         )
     
-    def delete_comment(self,comment_id: int,requester_id: int) -> tuple[bool, str]:
-        """
-        Remove um comentário do fórum.
-        """
+    def delete_comment(self, comment_id: int, requester_id: int, ) -> tuple[bool, str]:
         comment = self.cursor.execute(
             """
             SELECT
@@ -648,7 +645,7 @@ class ForumService:
             FROM forum_comments
             WHERE comment_id = ?
             """,
-            (comment_id,)).fetchone()
+            (comment_id,),).fetchone()
 
         if comment is None:
             return False, "Comentário não encontrado."
@@ -667,23 +664,21 @@ class ForumService:
             SET updated_at = CURRENT_TIMESTAMP
             WHERE topic_id = ?
             """,
-            (comment["topic_id"]))
+            (comment["topic_id"],),
+        )
 
         self.connection.commit()
 
         return True, "Comentário removido com sucesso."
 
     def _delete_comment_with_replies(self, comment_id: int) -> None:
-        """
-        Remove um comentário e todas as respostas ligadas a ele.
-        """
         replies = self.cursor.execute(
             """
             SELECT comment_id
             FROM forum_comments
             WHERE parent_comment_id = ?
             """,
-            (comment_id,)).fetchall()
+            (comment_id,),).fetchall()
 
         for reply in replies:
             self._delete_comment_with_replies(reply["comment_id"])
@@ -693,7 +688,7 @@ class ForumService:
             DELETE FROM forum_comments
             WHERE comment_id = ?
             """,
-            (comment_id))
+            (comment_id,),)
         
     def _exists(self, query: str, params: tuple) -> bool:
         row = self.cursor.execute(query, params).fetchone()

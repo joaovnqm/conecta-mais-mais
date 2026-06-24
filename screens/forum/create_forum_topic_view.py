@@ -57,9 +57,6 @@ Button {
 class CreateForumTopicView(Screen):
     """
     Tela responsável pela criação de tópicos no fórum.
-
-    A tela apenas coleta os dados do formulário e chama o ForumService.
-    A regra de negócio fica em database/repositories/forum_repository.py.
     """
 
     CSS = CREATE_FORUM_TOPIC_CSS
@@ -73,32 +70,14 @@ class CreateForumTopicView(Screen):
             with Vertical(id="main_box"):
                 yield Static("Criar tópico", id="main_title")
 
-                yield Static(
-                    "Descreva sua ideia e encontre pessoas para colaborar.",
-                    classes="subtitle",
-                )
-
+                yield Static("Descreva sua ideia e encontre pessoas para colaborar.", classes="subtitle")
                 with Vertical(classes="section_card"):
                     yield Static("Título:", classes="info_label")
-
-                    yield Input(
-                        id="input_title",
-                        placeholder="Ex.: Inteligência Artificial",
-                    )
-
+                    yield Input(id="input_title", placeholder="Ex.: Inteligência Artificial")
                     yield Static("Descrição:", classes="info_label")
-
-                    yield Input(
-                        id="input_description",
-                        placeholder="Explique a pesquisa, projeto ou perfil de colaboração que procura.",
-                    )
-
-                    yield Button(
-                        "Criar tópico",
-                        id="button_save_topic",
-                        variant="success",
-                    )
-
+                    yield Input(id="input_description",
+                        placeholder="Explique a pesquisa, projeto ou perfil de colaboração que procura.")
+                    yield Button("Criar tópico", id="button_save_topic", variant="success")
                 yield Button("Voltar", id="button_return", variant="primary")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -120,10 +99,7 @@ class CreateForumTopicView(Screen):
         description = self.query_one("#input_description", Input).value
 
         success, message, _topic_id = forum_service.create_topic(
-            author_id=self.user_id,
-            title=title,
-            description=description,
-        )
+            author_id=self.user_id, title=title, description=description)
 
         self.app.notify(message)
 

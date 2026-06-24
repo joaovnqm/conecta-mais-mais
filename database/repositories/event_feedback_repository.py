@@ -60,16 +60,9 @@ class EventFeedbackService:
 
         self.connection.commit()
 
-    def save_feedback(
-        self,
-        user_id: int,
-        event_id: int,
-        rating: int | str | None,
-        comment: str | None,
-    ) -> tuple[bool, str]:
+    def save_feedback(self, user_id: int, event_id: int, rating: int | str | None, comment: str | None) -> tuple[bool, str]:
         """
         Salva ou atualiza o feedback do usuário para um evento.
-
         Se o usuário ainda não avaliou, cria.
         Se já avaliou, atualiza.
         """
@@ -80,16 +73,10 @@ class EventFeedbackService:
             return False, "Selecione uma nota de 1 a 5 estrelas."
 
         if len(comment) > self.MAX_COMMENT_LENGTH:
-            return (
-                False,
-                f"O comentário precisa ter no máximo {self.MAX_COMMENT_LENGTH} caracteres.",
-            )
+            return (False, f"O comentário precisa ter no máximo {self.MAX_COMMENT_LENGTH} caracteres.")
 
         if not self.participation_service.check_presence(user_id, event_id):
-            return (
-                False,
-                "Você precisa confirmar presença no evento antes de enviar feedback.",
-            )
+            return (False, "Você precisa confirmar presença no evento antes de enviar feedback.")
 
         self.cursor.execute(
             """
@@ -199,12 +186,6 @@ class EventFeedbackService:
         return None
 
     def _normalize_comment(self, comment: str | None) -> str:
-        """
-        Limpa espaços extras do comentário.
-
-        Exemplo:
-        '  muito    bom  ' vira 'muito bom'
-        """
         return " ".join((comment or "").strip().split())
 
 
