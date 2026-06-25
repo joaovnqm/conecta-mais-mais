@@ -123,21 +123,9 @@ class EventFeedbackView(Screen):
 
     def compose(self) -> ComposeResult:
         event = event_services.check_event(self.event_id)
-
-        user_feedback = event_feedback_service.get_user_feedback(
-            self.user_id,
-            self.event_id,
-        )
-
-        has_presence = event_participation_service.check_presence(
-            self.user_id,
-            self.event_id,
-        )
-
-        feedback_summary = event_feedback_service.get_feedback_summary(
-            self.event_id
-        )
-
+        user_feedback = event_feedback_service.get_user_feedback(self.user_id, self.event_id)
+        has_presence = event_participation_service.check_presence(self.user_id, self.event_id)
+        feedback_summary = event_feedback_service.get_feedback_summary(self.event_id)
         if user_feedback:
             self.selected_rating = user_feedback["rating"]
 
