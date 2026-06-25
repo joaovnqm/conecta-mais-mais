@@ -164,7 +164,7 @@ class ChatsView(Screen):
                 await container.mount(self._build_conversation_row(conversation))
 
         else:
-            await container.mount(Static("Nenhuma conversa ainda. Clique em '✉ Nova' para começar!", classes="main_subtitle"))
+            await container.mount(Static("Nenhuma conversa ainda. Clique em 'Nova Conversa' para começar!", classes="main_subtitle"))
 
     def _build_conversation_row(self, conversation) -> Horizontal:
         """
